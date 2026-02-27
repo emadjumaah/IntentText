@@ -1,0 +1,29 @@
+{
+  "$schema": "https://www.schemastore.org/package",
+  "name": "intenttext",
+  "version": "1.0.0",
+  "description": "IntentText v1.0 - Semantic Document Language",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "dev": "npm run dev --workspaces",
+    "demo": "node demo.js",
+    "preview": "open preview.html",
+    "parse": "node cli.js",
+    "parse:html": "node cli.js examples/sample.it --html",
+    "parse:output": "node cli.js examples/sample.it --output"
+  },
+  "keywords": [
+    "intenttext",
+    "parser",
+    "markdown",
+    "semantic",
+    "ai"
+  ],
+  "author": "IntentText Team",
+  "license": "MIT"
+}
