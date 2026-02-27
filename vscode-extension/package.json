@@ -1,0 +1,67 @@
+{
+  "name": "intenttext",
+  "displayName": "IntentText",
+  "description": "IntentText v1.3 - Semantic Document Language support",
+  "version": "1.3.0",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Other"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "intenttext",
+        "aliases": [
+          "IntentText",
+          "it"
+        ],
+        "extensions": [
+          ".it"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "intenttext",
+        "scopeName": "source.intenttext",
+        "path": "./syntaxes/intenttext.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "intenttext",
+        "path": "./snippets/intenttext.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "intenttext.renderHTML",
+        "title": "Render to HTML",
+        "category": "IntentText"
+      },
+      {
+        "command": "intenttext.query",
+        "title": "Query Documents",
+        "category": "IntentText"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "20.x",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@intenttext/core": "file:../packages/core"
+  }
+}
