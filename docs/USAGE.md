@@ -5,6 +5,7 @@ This guide covers how to use the IntentText parser and renderer in different sce
 ## 📦 Installation
 
 ### From Source
+
 ```bash
 git clone https://github.com/your-username/intenttext.git
 cd intenttext
@@ -13,6 +14,7 @@ npm run build
 ```
 
 ### As npm Package (when published)
+
 ```bash
 npm install @intenttext/core
 ```
@@ -22,7 +24,7 @@ npm install @intenttext/core
 ### 1. Parse IntentText Content
 
 ```javascript
-const { parseIntentText } = require('@intenttext/core');
+const { parseIntentText } = require("@intenttext/core");
 
 const content = `title: My Document
 section: Tasks
@@ -35,7 +37,7 @@ console.log(JSON.stringify(document, null, 2));
 ### 2. Render to HTML
 
 ```javascript
-const { parseIntentText, renderHTML } = require('@intenttext/core');
+const { parseIntentText, renderHTML } = require("@intenttext/core");
 
 const content = `title: My Document
 task: Complete this | owner: Me`;
@@ -86,26 +88,26 @@ npm run parse:output
 ```html
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>IntentText Demo</title>
-</head>
-<body>
+  </head>
+  <body>
     <div id="output"></div>
-    
+
     <script src="path/to/@intenttext/core/dist/index.js"></script>
     <script>
-        const { parseIntentText, renderHTML } = IntentText;
-        
-        const content = `title: *My Document*
+      const { parseIntentText, renderHTML } = IntentText;
+
+      const content = `title: *My Document*
 section: Demo
 task: Parse this | owner: Browser`;
-        
-        const document = parseIntentText(content);
-        const html = renderHTML(document);
-        
-        document.getElementById('output').innerHTML = html;
+
+      const document = parseIntentText(content);
+      const html = renderHTML(document);
+
+      document.getElementById("output").innerHTML = html;
     </script>
-</body>
+  </body>
 </html>
 ```
 
@@ -113,10 +115,10 @@ task: Parse this | owner: Browser`;
 
 ```javascript
 // ES6 modules
-import { parseIntentText, renderHTML } from '@intenttext/core';
+import { parseIntentText, renderHTML } from "@intenttext/core";
 
 // CommonJS
-const { parseIntentText, renderHTML } = require('@intenttext/core');
+const { parseIntentText, renderHTML } = require("@intenttext/core");
 ```
 
 ## 📚 API Reference
@@ -126,13 +128,15 @@ const { parseIntentText, renderHTML } = require('@intenttext/core');
 Parses IntentText content into structured JSON.
 
 **Parameters:**
+
 - `content` - Raw IntentText string
 
 **Returns:** `IntentDocument` object
 
 **Example:**
+
 ```javascript
-const document = parseIntentText('title: My Doc');
+const document = parseIntentText("title: My Doc");
 console.log(document.blocks[0].type); // 'title'
 console.log(document.metadata?.title); // 'My Doc'
 ```
@@ -142,11 +146,13 @@ console.log(document.metadata?.title); // 'My Doc'
 Renders parsed IntentDocument to HTML string.
 
 **Parameters:**
+
 - `document` - Parsed IntentDocument object
 
 **Returns:** HTML string
 
 **Example:**
+
 ```javascript
 const html = renderHTML(document);
 document.body.innerHTML = html;
@@ -160,40 +166,40 @@ document.body.innerHTML = html;
 const document = parseIntentText(content);
 
 // Get all tasks
-const tasks = document.blocks.filter(b => b.type === 'task');
+const tasks = document.blocks.filter((b) => b.type === "task");
 
 // Get all sections
-const sections = document.blocks.filter(b => b.type === 'section');
+const sections = document.blocks.filter((b) => b.type === "section");
 
 // Get nested blocks
-const sectionChildren = sections.flatMap(s => s.children || []);
+const sectionChildren = sections.flatMap((s) => s.children || []);
 
 // Find specific block
-const specificTask = document.blocks.find(b => 
-  b.type === 'task' && b.content.includes('urgent')
+const specificTask = document.blocks.find(
+  (b) => b.type === "task" && b.content.includes("urgent"),
 );
 ```
 
 ### Working with Properties
 
 ```javascript
-const tasks = document.blocks.filter(b => b.type === 'task');
+const tasks = document.blocks.filter((b) => b.type === "task");
 
-tasks.forEach(task => {
-  console.log('Task:', task.content);
-  console.log('Owner:', task.properties?.owner);
-  console.log('Due:', task.properties?.due);
-  console.log('Priority:', task.properties?.priority);
+tasks.forEach((task) => {
+  console.log("Task:", task.content);
+  console.log("Owner:", task.properties?.owner);
+  console.log("Due:", task.properties?.due);
+  console.log("Priority:", task.properties?.priority);
 });
 ```
 
 ### Handling Inline Formatting
 
 ```javascript
-const titleBlock = document.blocks.find(b => b.type === 'title');
+const titleBlock = document.blocks.find((b) => b.type === "title");
 
 if (titleBlock.marks) {
-  titleBlock.marks.forEach(mark => {
+  titleBlock.marks.forEach((mark) => {
     console.log(`${mark.type}: ${mark.start}-${mark.end}`);
     // bold: 0-12, italic: 20-25, etc.
   });
@@ -205,21 +211,23 @@ if (titleBlock.marks) {
 ### Custom Rendering
 
 ```javascript
-const { parseIntentText } = require('@intenttext/core');
+const { parseIntentText } = require("@intenttext/core");
 
 function customRenderer(document) {
-  return document.blocks.map(block => {
-    switch (block.type) {
-      case 'task':
-        return `<task-item owner="${block.properties?.owner}">
+  return document.blocks
+    .map((block) => {
+      switch (block.type) {
+        case "task":
+          return `<task-item owner="${block.properties?.owner}">
           ${block.content}
         </task-item>`;
-      case 'section':
-        return `<section>${block.content}</section>`;
-      default:
-        return `<div>${block.content}</div>`;
-    }
-  }).join('\n');
+        case "section":
+          return `<section>${block.content}</section>`;
+        default:
+          return `<div>${block.content}</div>`;
+      }
+    })
+    .join("\n");
 }
 
 const document = parseIntentText(content);
@@ -229,27 +237,27 @@ const customHTML = customRenderer(document);
 ### File Processing
 
 ```javascript
-const fs = require('fs');
-const { parseIntentText, renderHTML } = require('@intenttext/core');
+const fs = require("fs");
+const { parseIntentText, renderHTML } = require("@intenttext/core");
 
 // Process single file
 function processFile(filePath) {
-  const content = fs.readFileSync(filePath, 'utf-8');
+  const content = fs.readFileSync(filePath, "utf-8");
   const document = parseIntentText(content);
   const html = renderHTML(document);
-  
-  const outputPath = filePath.replace('.it', '.html');
+
+  const outputPath = filePath.replace(".it", ".html");
   fs.writeFileSync(outputPath, html);
-  
+
   console.log(`✅ Processed: ${filePath} → ${outputPath}`);
 }
 
 // Process directory
 function processDirectory(dirPath) {
   const files = fs.readdirSync(dirPath);
-  
-  files.forEach(file => {
-    if (file.endsWith('.it')) {
+
+  files.forEach((file) => {
+    if (file.endsWith(".it")) {
       processFile(`${dirPath}/${file}`);
     }
   });
@@ -260,33 +268,33 @@ function processDirectory(dirPath) {
 
 ```javascript
 // Express.js example
-const express = require('express');
-const { parseIntentText, renderHTML } = require('@intenttext/core');
+const express = require("express");
+const { parseIntentText, renderHTML } = require("@intenttext/core");
 
 const app = express();
 
-app.post('/parse', (req, res) => {
+app.post("/parse", (req, res) => {
   const { content } = req.body;
-  
+
   try {
     const document = parseIntentText(content);
     const html = renderHTML(document);
-    
+
     res.json({
       success: true,
       document,
-      html
+      html,
     });
   } catch (error) {
     res.status(400).json({
       success: false,
-      error: error.message
+      error: error.message,
     });
   }
 });
 
 app.listen(3000, () => {
-  console.log('IntentText server running on port 3000');
+  console.log("IntentText server running on port 3000");
 });
 ```
 
@@ -295,25 +303,25 @@ app.listen(3000, () => {
 ### Unit Tests
 
 ```javascript
-const { parseIntentText } = require('@intenttext/core');
+const { parseIntentText } = require("@intenttext/core");
 
-describe('My IntentText Integration', () => {
-  test('should parse tasks correctly', () => {
-    const content = 'task: Test task | owner: John';
+describe("My IntentText Integration", () => {
+  test("should parse tasks correctly", () => {
+    const content = "task: Test task | owner: John";
     const document = parseIntentText(content);
-    
-    const task = document.blocks.find(b => b.type === 'task');
-    expect(task.content).toBe('Test task');
-    expect(task.properties.owner).toBe('John');
+
+    const task = document.blocks.find((b) => b.type === "task");
+    expect(task.content).toBe("Test task");
+    expect(task.properties.owner).toBe("John");
   });
-  
-  test('should handle inline formatting', () => {
-    const content = 'title: *Bold Title*';
+
+  test("should handle inline formatting", () => {
+    const content = "title: *Bold Title*";
     const document = parseIntentText(content);
-    
-    const title = document.blocks.find(b => b.type === 'title');
+
+    const title = document.blocks.find((b) => b.type === "title");
     expect(title.marks).toHaveLength(1);
-    expect(title.marks[0].type).toBe('bold');
+    expect(title.marks[0].type).toBe("bold");
   });
 });
 ```
@@ -321,17 +329,17 @@ describe('My IntentText Integration', () => {
 ### Integration Tests
 
 ```javascript
-const fs = require('fs');
-const { parseIntentText, renderHTML } = require('@intenttext/core');
+const fs = require("fs");
+const { parseIntentText, renderHTML } = require("@intenttext/core");
 
-test('should process real .it file', () => {
-  const content = fs.readFileSync('./test-document.it', 'utf-8');
+test("should process real .it file", () => {
+  const content = fs.readFileSync("./test-document.it", "utf-8");
   const document = parseIntentText(content);
   const html = renderHTML(document);
-  
+
   expect(document.blocks.length).toBeGreaterThan(0);
   expect(html).toContain('<div class="intent-document"');
-  expect(html).not.toContain('undefined');
+  expect(html).not.toContain("undefined");
 });
 ```
 
@@ -340,17 +348,17 @@ test('should process real .it file', () => {
 ### Common Errors
 
 ```javascript
-const { parseIntentText } = require('@intenttext/core');
+const { parseIntentText } = require("@intenttext/core");
 
 function safeParse(content) {
   try {
     return parseIntentText(content);
   } catch (error) {
-    console.error('Parse error:', error.message);
+    console.error("Parse error:", error.message);
     return {
       blocks: [],
       metadata: {},
-      error: error.message
+      error: error.message,
     };
   }
 }
@@ -358,14 +366,14 @@ function safeParse(content) {
 // Validate document
 function validateDocument(document) {
   if (!document.blocks || document.blocks.length === 0) {
-    throw new Error('No blocks found in document');
+    throw new Error("No blocks found in document");
   }
-  
-  const hasTitle = document.blocks.some(b => b.type === 'title');
+
+  const hasTitle = document.blocks.some((b) => b.type === "title");
   if (!hasTitle) {
-    console.warn('Warning: No title block found');
+    console.warn("Warning: No title block found");
   }
-  
+
   return document;
 }
 ```
@@ -377,15 +385,15 @@ function validateDocument(document) {
 ```javascript
 // Process in chunks for very large files
 function processLargeFile(filePath, chunkSize = 1000) {
-  const content = fs.readFileSync(filePath, 'utf-8');
-  const lines = content.split('\n');
-  
+  const content = fs.readFileSync(filePath, "utf-8");
+  const lines = content.split("\n");
+
   const chunks = [];
   for (let i = 0; i < lines.length; i += chunkSize) {
-    const chunk = lines.slice(i, i + chunkSize).join('\n');
+    const chunk = lines.slice(i, i + chunkSize).join("\n");
     chunks.push(parseIntentText(chunk));
   }
-  
+
   return mergeDocuments(chunks);
 }
 ```
@@ -396,12 +404,15 @@ function processLargeFile(filePath, chunkSize = 1000) {
 const cache = new Map();
 
 function cachedParse(content) {
-  const hash = require('crypto').createHash('md5').update(content).digest('hex');
-  
+  const hash = require("crypto")
+    .createHash("md5")
+    .update(content)
+    .digest("hex");
+
   if (cache.has(hash)) {
     return cache.get(hash);
   }
-  
+
   const document = parseIntentText(content);
   cache.set(hash, document);
   return document;
@@ -410,7 +421,7 @@ function cachedParse(content) {
 
 ## 🔗 Links
 
-- [Specification](../info/SPEC.md)
+- [Specification](./SPEC.md)
 - [API Reference](../packages/core/src/types.ts)
 - [Examples](../examples/)
 - [Tests](../packages/core/tests/)

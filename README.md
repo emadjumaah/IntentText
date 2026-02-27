@@ -124,7 +124,7 @@ Beautifully rendered document with:
 | Bold                   | `*text*`                                | `*important*`                                                |
 | Italic                 | `_text_`                                | `_emphasized_`                                               |
 | Strikethrough          | `~text~`                                | `~deleted~`                                                  |
-| Inline Code            | `` `code` ``                            | `` `console.log()` ``                                        |
+| Inline Code            | ` ```code``` `                          | ` ```console.log()``` `                                      |
 | **Structure**          |                                         |                                                              |
 | Divider                | `divider: Text`                         | `divider: End of section`                                    |
 
@@ -141,7 +141,7 @@ IntentText/
 │   ├── tests/              # 18 comprehensive tests
 │   ├── examples/           # Sample .it files
 │   └── dist/               # Compiled TypeScript
-├── info/                   # Specification docs
+├── docs/                   # Specification docs
 ├── demo.js                 # Demo script
 ├── cli.js                  # Command line tool
 ├── preview.html            # Interactive live editor
@@ -198,9 +198,13 @@ Open `preview.html` in your browser for:
 - **Instant rendering** as you type
 - **Test all features** interactively
 
+You can also try the **live Playground** (GitHub Pages) once enabled for this repository:
+
+- `https://<your-github-username>.github.io/<repo-name>/`
+
 ## 📖 Specification
 
-See `info/SPEC.md` for the complete IntentText v1.0 specification including:
+See `docs/SPEC.md` for the complete IntentText v1.0 specification including:
 
 - Design philosophy
 - Complete keyword reference
@@ -228,15 +232,14 @@ See `info/SPEC.md` for the complete IntentText v1.0 specification including:
 ✅ **Developer Friendly**
 
 - TypeScript with full type definitions
-- 100% test coverage (18/18 tests passing)
+- Unit tests via Vitest (see `packages/core/tests`)
 - CLI tools and interactive demo
 - Clean API design
 
-✅ **Production Ready**
+✅ **Pragmatic & Lightweight**
 
-- Robust error handling
-- Performance optimized
-- Monorepo structure
+- Small, readable TypeScript core
+- Safe-by-default HTML rendering
 - Easy integration
 
 ## 🚀 Usage Examples
@@ -303,8 +306,9 @@ MIT License - see LICENSE file for details.
 
 ## 🔗 Links
 
-- **Specification**: `info/SPEC.md`
+- **Specification**: `docs/SPEC.md`
 - **Live Demo**: Open `preview.html`
+- **Playground (GitHub Pages)**: `https://<your-github-username>.github.io/<repo-name>/`
 - **Package**: `@intenttext/core`
 - **Issues**: GitHub Issues
 

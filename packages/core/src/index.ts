@@ -1,3 +1,13 @@
-export { parseIntentText } from './parser';
-export { renderHTML } from './renderer';
-export type { IntentBlock, IntentDocument, BlockType, InlineMark } from './types';
+export { parseIntentText } from "./parser";
+export { renderHTML } from "./renderer";
+export { convertMarkdownToIntentText } from "./markdown";
+export type {
+  IntentBlock,
+  IntentDocument,
+  BlockType,
+  InlineMark,
+  InlineNode,
+  IntentExtension,
+  ParseOptions,
+  Diagnostic,
+} from "./types";

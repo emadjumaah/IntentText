@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IntentText Live Preview</title>
+    <style>
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #f5f5f5;
+      }
+      .container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        height: 80vh;
+      }
+      .editor,
+      .preview {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      .editor {
+        display: flex;
+        flex-direction: column;
+      }
+      textarea {
+        flex: 1;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 10px;
+        font-family: "Monaco", "Menlo", monospace;
+        font-size: 14px;
+        resize: none;
+      }
+      .preview {
+        overflow: auto;
+      }
+      h1 {
+        color: #333;
+        margin-bottom: 20px;
+      }
+      h2 {
+        color: #666;
+        margin-bottom: 10px;
+      }
+      button {
+        background: #007acc;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-top: 10px;
+      }
+      button:hover {
+        background: #005a9e;
+      }
+      .error {
+        color: #d32f2f;
+        background: #ffebee;
+        padding: 10px;
+        border-radius: 4px;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🚀 IntentText Live Preview</h1>
+
+    <div class="container">
+      <div class="editor">
+        <h2>📝 IntentText Editor</h2>
+        <textarea
+          id="input"
+          placeholder="Enter your IntentText here...
+
+Example:
+title: *My Project* Plan
+summary: This is a _sample_ document.
+
+section: Tasks
+task: Complete documentation | owner: John | due: Friday
+done: Setup repository | time: Monday
+
+note: Remember to review the code."
+        >
+title: *Project Dalil* Launch Plan
+summary: Finalizing the deployment for the AI-Agent hub in _Doha_.
+
+section: Logistics & Equipment
+headers: Item | Location | Status
+row: Dell Server | Rack 04 | Delivered
+row: Fiber Cables | Storage | ~Missing~ Ordered
+
+section: Team Tasks
+- Set up the environment.
+- Configure the firewall.
+task: Database migration | owner: Ahmed | due: Sunday
+done: Secure the domain name | time: 09:00 AM
+
+section: Security Questions
+question: Who has the _Master Key_ for the server room?
+note: Surveillance footage is saved at `/logs/cam1`.
+
+divider: End of Technical Sections
+
+link: *Full Documentation* | to: https://dalil.ai/docs | title: Dalil Docs
+image: Launch Banner | at: examples/placeholder.svg | caption: IntentText Banner</textarea
+        >
+        <button onclick="render()">🎨 Render HTML</button>
+        <div id="error" class="error" style="display: none"></div>
+      </div>
+
+      <div class="preview">
+        <h2>👁️ HTML Preview</h2>
+        <div id="output">
+          <p style="color: #666; font-style: italic">
+            Click "Render HTML" to see the preview...
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Include the parser logic (simplified version for demo)
+      function parseIntentText(content) {
+        const lines = content.split("\n");
+        const blocks = [];
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed) continue;
+
+          // Simple keyword detection
+          const match = trimmed.match(/^([a-zA-Z]+):\s*(.*)$/);
+          if (match) {
+            const keyword = match[1].toLowerCase();
+            const rest = match[2];
+
+            // Handle metadata
+            const parts = rest.split(/\s*\|\s*/);
+            const content = parts[0] || "";
+            const properties = {};
+
+            for (let i = 1; i < parts.length; i++) {
+              const propMatch = parts[i].match(/^([^:]+):\s*(.+)$/);
+              if (propMatch) {
+                properties[propMatch[1].trim()] = propMatch[2].trim();
+              }
+            }
+
+            blocks.push({
+              type: keyword,
+              content: content,
+              properties:
+                Object.keys(properties).length > 0 ? properties : undefined,
+            });
+          } else if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+            blocks.push({
+              type: "list-item",
+              content: trimmed.substring(2),
+            });
+          } else if (trimmed.match(/^\d+\.\s/)) {
+            blocks.push({
+              type: "step-item",
+              content: trimmed.replace(/^\d+\.\s/, ""),
+            });
+          }
+        }
+
+        return { blocks };
+      }
+
+      function renderHTML(document) {
+        const blocks = document.blocks;
+        let html =
+          "<div style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937;\">";
+
+        for (const block of blocks) {
+          const content = applyInlineFormatting(block.content);
+          const props = block.properties || {};
+
+          switch (block.type) {
+            case "title":
+              html += `<h1 style="text-align: center; font-weight: bold; color: #1f2937;">${content}</h1>`;
+              break;
+            case "summary":
+              html += `<div style="background: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 1rem; margin: 1rem 0; border-radius: 0.25rem;">${content}</div>`;
+              break;
+            case "section":
+              html += `<h2 style="border-bottom: 2px solid #e5e7eb; padding-bottom: 0.5rem; margin-top: 2rem; color: #374151;">${content}</h2>`;
+              break;
+            case "task":
+              html += `<div style="display: flex; align-items: center; padding: 0.5rem; margin: 0.25rem 0; background: #fef3c7; border-radius: 0.25rem;">
+                            <input type="checkbox" style="margin-right: 0.75rem;" />
+                            <span>${content}</span>
+                            ${props.owner ? `<small style="margin-left: auto; color: #6b7280;">👤 ${props.owner}</small>` : ""}
+                            ${props.due ? `<small style="margin-left: 0.5rem; color: #6b7280;">📅 ${props.due}</small>` : ""}
+                        </div>`;
+              break;
+            case "done":
+              html += `<div style="display: flex; align-items: center; padding: 0.5rem; margin: 0.25rem 0; background: #d1fae5; border-radius: 0.25rem;">
+                            <input type="checkbox" checked style="margin-right: 0.75rem;" />
+                            <span style="text-decoration: line-through;">${content}</span>
+                            ${props.time ? `<small style="margin-left: auto; color: #6b7280;">✅ ${props.time}</small>` : ""}
+                        </div>`;
+              break;
+            case "question":
+              html += `<div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 1rem; margin: 1rem 0; border-radius: 0.25rem;">
+                            <strong>❓ Question:</strong> ${content}
+                        </div>`;
+              break;
+            case "note":
+              html += `<p style="margin: 0.5rem 0; line-height: 1.6;">${content}</p>`;
+              break;
+            case "headers":
+              const headers = content
+                .split("|")
+                .map((h) => h.trim())
+                .filter((h) => h);
+              html += `<table style="border-collapse: collapse; width: 100%; margin: 1rem 0;">
+                            <thead><tr style="background: #f3f4f6;">
+                                ${headers.map((h) => `<th style="border: 1px solid #d1d5db; padding: 0.5rem; text-align: left; font-weight: 600;">${h}</th>`).join("")}
+                            </tr></thead></table>`;
+              break;
+            case "row":
+              const cells = content
+                .split("|")
+                .map((c) => c.trim())
+                .filter((c) => c);
+              html += `<table style="border-collapse: collapse; width: 100%; margin: 1rem 0;">
+                            <tbody><tr>
+                                ${cells.map((c) => `<td style="border: 1px solid #d1d5db; padding: 0.5rem;">${c}</td>`).join("")}
+                            </tr></tbody></table>`;
+              break;
+            case "divider":
+              html += `<hr style="border: none; border-top: 1px solid #d1d5db; margin: 2rem 0;" />`;
+              break;
+            case "link":
+              html += `<div style="margin: 0.5rem 0;">
+                            <a href="${props.to || content}" ${props.title ? `title="${props.title}"` : ""} style="color: #2563eb; text-decoration: underline;">${content}</a>
+                        </div>`;
+              break;
+            case "image":
+              html += `<div style="margin: 1rem 0;">
+                            <img src="${props.at || content}" alt="${content}" style="max-width: 100%; height: auto; border-radius: 0.5rem;" />
+                            ${props.caption ? `<p style="text-align: center; color: #6b7280; font-size: 0.875rem; margin-top: 0.5rem;">${props.caption}</p>` : ""}
+                        </div>`;
+              break;
+            case "list-item":
+              html += `<ul style="margin: 0.5rem 0; padding-left: 1.5rem;"><li>${content}</li></ul>`;
+              break;
+            case "step-item":
+              html += `<ol style="margin: 0.5rem 0; padding-left: 1.5rem;"><li>${content}</li></ol>`;
+              break;
+            default:
+              html += `<p>${content}</p>`;
+          }
+        }
+
+        html += "</div>";
+        return html;
+      }
+
+      function applyInlineFormatting(text) {
+        return text
+          .replace(/\*([^*]+)\*/g, "<strong>$1</strong>")
+          .replace(/_([^_]+)_/g, "<em>$1</em>")
+          .replace(/~([^~]+)~/g, "<del>$1</del>")
+          .replace(/`([^`]+)`/g, "<code>$1</code>");
+      }
+
+      function render() {
+        const input = document.getElementById("input").value;
+        const output = document.getElementById("output");
+        const error = document.getElementById("error");
+
+        try {
+          const parsed = parseIntentText(input);
+          const html = renderHTML(parsed);
+          output.innerHTML = html;
+          error.style.display = "none";
+        } catch (err) {
+          output.innerHTML = "";
+          error.textContent = "Error: " + err.message;
+          error.style.display = "block";
+        }
+      }
+
+      // Auto-render on load
+      window.onload = render;
+    </script>
+  </body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "blocks": [
+    {
+      "id": "id",
+      "type": "title",
+      "content": "Bold and italic and code",
+      "originalContent": "*Bold* and _italic_ and ```code```",
+      "inline": [
+        { "type": "bold", "value": "Bold" },
+        { "type": "text", "value": " and " },
+        { "type": "italic", "value": "italic" },
+        { "type": "text", "value": " and " },
+        { "type": "code", "value": "code" }
+      ]
+    }
+  ],
+  "metadata": {
+    "title": "Bold and italic and code",
+    "language": "ltr"
+  }
+}

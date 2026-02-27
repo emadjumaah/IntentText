@@ -58,10 +58,17 @@ jspm_packages/
 # Optional eslint cache
 .eslintcache
 
-# Output files
+# Output files (except demo files)
 *.html
 sample-output.html
 
 # Temporary files
 *.tmp
 *.temp
+
+# Keep demo files
+!preview.html
+!examples/*.html
+
+# Keep GitHub Pages site files
+!docs/**/*.html

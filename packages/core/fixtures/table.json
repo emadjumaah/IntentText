@@ -1,0 +1,19 @@
+{
+  "blocks": [
+    {
+      "id": "id",
+      "type": "table",
+      "content": "Name | Age | City",
+      "table": {
+        "headers": ["Name", "Age", "City"],
+        "rows": [
+          ["Ahmed", "30", "Dubai"],
+          ["Sara", "25", "Abu Dhabi"]
+        ]
+      }
+    }
+  ],
+  "metadata": {
+    "language": "ltr"
+  }
+}

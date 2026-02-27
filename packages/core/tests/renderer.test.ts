@@ -9,7 +9,7 @@ describe("HTML Renderer", () => {
 
     expect(html).toContain('<h1 class="intent-title"');
     expect(html).toContain("My Document");
-    expect(html).toContain("text-align: center");
+    expect(html).toContain("intent-document");
   });
 
   it("should render inline formatting", () => {
@@ -26,10 +26,11 @@ describe("HTML Renderer", () => {
     const parsed = parseIntentText(input);
     const html = renderHTML(parsed);
 
-    expect(html).toContain('<input type="checkbox"');
+    expect(html).toContain('class="intent-task"');
+    expect(html).toContain('class="intent-task-checkbox"');
     expect(html).toContain("Database migration");
-    expect(html).toContain("👤 Ahmed");
-    expect(html).toContain("📅 Sunday");
+    expect(html).toContain("Ahmed");
+    expect(html).toContain("Sunday");
   });
 
   it("should render completed tasks", () => {
@@ -37,9 +38,10 @@ describe("HTML Renderer", () => {
     const parsed = parseIntentText(input);
     const html = renderHTML(parsed);
 
-    expect(html).toContain('<input type="checkbox" checked');
-    expect(html).toContain("text-decoration: line-through");
-    expect(html).toContain("✅ 09:00 AM");
+    expect(html).toContain('class="intent-task intent-task-done"');
+    expect(html).toContain('type="checkbox" checked');
+    expect(html).toContain("intent-task-text-done");
+    expect(html).toContain("09:00 AM");
   });
 
   it("should render tables", () => {
@@ -61,9 +63,8 @@ row: Ahmed | 30 | Dubai`;
     const parsed = parseIntentText(input);
     const html = renderHTML(parsed);
 
-    expect(html).toContain("<pre");
-    expect(html).toContain('<code>console.log("Hello")</code>');
-    expect(html).toContain("background: #1f2937");
+    expect(html).toContain('<pre class="intent-code"');
+    expect(html).toContain("<code>console.log(&quot;Hello&quot;)</code>");
   });
 
   it("should render questions", () => {
@@ -71,8 +72,8 @@ row: Ahmed | 30 | Dubai`;
     const parsed = parseIntentText(input);
     const html = renderHTML(parsed);
 
-    expect(html).toContain("❓ Question:");
-    expect(html).toContain("border-left: 4px solid #f59e0b");
+    expect(html).toContain("Question:");
+    expect(html).toContain('class="intent-question"');
   });
 
   it("should render images with captions", () => {
@@ -80,7 +81,7 @@ row: Ahmed | 30 | Dubai`;
     const parsed = parseIntentText(input);
     const html = renderHTML(parsed);
 
-    expect(html).toContain('<img src="logo.png"');
+    expect(html).toContain('src="logo.png"');
     expect(html).toContain('alt="Logo"');
     expect(html).toContain("Company Logo");
   });
@@ -100,5 +101,22 @@ row: Ahmed | 30 | Dubai`;
     const html = renderHTML(parsed);
 
     expect(html).toContain('dir="rtl"');
+  });
+
+  it("should escape HTML to prevent script injection", () => {
+    const input = "note: <script>alert('xss')</script>";
+    const parsed = parseIntentText(input);
+    const html = renderHTML(parsed);
+
+    expect(html).toContain("&lt;script&gt;");
+    expect(html).not.toContain("<script>");
+  });
+
+  it("should sanitize unsafe link schemes", () => {
+    const input = "link: Click me | to: javascript:alert(1)";
+    const parsed = parseIntentText(input);
+    const html = renderHTML(parsed);
+
+    expect(html).toContain('href="#"');
   });
 });
