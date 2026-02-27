@@ -99,34 +99,34 @@ Beautifully rendered document with:
 
 ## 📚 Complete Syntax Reference
 
-| Feature                | Syntax               | Example                     |
-| ---------------------- | -------------------- | --------------------------- | ----------------- | ----------------- | -------------------- | ---------------------- |
-| **Document Structure** |                      |                             |
-| Title                  | `title: Text`        | `title: *My Document*`      |
-| Summary                | `summary: Text`      | `summary: Project overview` |
-| Section                | `section: Text`      | `section: Action Items`     |
-| **Content Blocks**     |                      |                             |
-| Task                   | `task: Text          | owner: X                    | due: Y`           | `task: Write docs | owner: John          | due: Friday`           |
-| Done                   | `done: Text          | time: X`                    | `done: Setup repo | time: Monday`     |
-| Question               | `question: Text`     | `question: Who has access?` |
-| Note                   | `note: Text`         | `note: Remember to backup`  |
-| **Data & Media**       |                      |                             |
-| Headers                | `headers: Col1       | Col2                        | Col3`             | `headers: Name    | Age                  | City`                  |
-| Row                    | `row: Val1           | Val2                        | Val3`             | `row: John        | 30                   | Dubai`                 |
-| Image                  | `image: Text         | at: path                    | caption: X`       | `image: Logo      | at: logo.png         | caption: Company logo` |
-| Link                   | `link: Text          | to: url                     | title: X`         | `link: Docs       | to: https://docs.com | title: Documentation`  |
-| **Code**               |                      |                             |
-| Code Block             | `code:` ... `end:`   | Multi-line code blocks      |
-| **Lists**              |                      |                             |
-| Unordered              | `- Item` or `* Item` | `- First item`              |
-| Ordered                | `1. Item`            | `1. First step`             |
-| **Formatting**         |                      |                             |
-| Bold                   | `*text*`             | `*important*`               |
-| Italic                 | `_text_`             | `_emphasized_`              |
-| Strikethrough          | `~text~`             | `~deleted~`                 |
-| Inline Code            | `` `code` ``         | `` `console.log()` ``       |
-| **Structure**          |                      |                             |
-| Divider                | `divider: Text`      | `divider: End of section`   |
+| Feature                | Syntax                                  | Example                                                      |
+| ---------------------- | --------------------------------------- | ------------------------------------------------------------ |
+| **Document Structure** |                                         |                                                              |
+| Title                  | `title: Text`                           | `title: *My Document*`                                       |
+| Summary                | `summary: Text`                         | `summary: Project overview`                                  |
+| Section                | `section: Text`                         | `section: Action Items`                                      |
+| **Content Blocks**     |                                         |                                                              |
+| Task                   | `task: Text \| owner: X \| due: Y`      | `task: Write docs \| owner: John \| due: Friday`             |
+| Done                   | `done: Text \| time: X`                 | `done: Setup repo \| time: Monday`                           |
+| Question               | `question: Text`                        | `question: Who has access?`                                  |
+| Note                   | `note: Text`                            | `note: Remember to backup`                                   |
+| **Data & Media**       |                                         |                                                              |
+| Headers                | `headers: Col1 \| Col2 \| Col3`         | `headers: Name \| Age \| City`                               |
+| Row                    | `row: Val1 \| Val2 \| Val3`             | `row: John \| 30 \| Dubai`                                   |
+| Image                  | `image: Text \| at: path \| caption: X` | `image: Logo \| at: logo.png \| caption: Company logo`       |
+| Link                   | `link: Text \| to: url \| title: X`     | `link: Docs \| to: https://docs.com \| title: Documentation` |
+| **Code**               |                                         |                                                              |
+| Code Block             | `code:` ... `end:`                      | Multi-line code blocks                                       |
+| **Lists**              |                                         |                                                              |
+| Unordered              | `- Item` or `* Item`                    | `- First item`                                               |
+| Ordered                | `1. Item`                               | `1. First step`                                              |
+| **Formatting**         |                                         |                                                              |
+| Bold                   | `*text*`                                | `*important*`                                                |
+| Italic                 | `_text_`                                | `_emphasized_`                                               |
+| Strikethrough          | `~text~`                                | `~deleted~`                                                  |
+| Inline Code            | `` `code` ``                            | `` `console.log()` ``                                        |
+| **Structure**          |                                         |                                                              |
+| Divider                | `divider: Text`                         | `divider: End of section`                                    |
 
 ## 🏗️ Project Structure
 
