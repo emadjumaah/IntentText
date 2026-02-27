@@ -84,6 +84,20 @@ The parser treats this identically to a standalone `task:` block, but preserves 
 
 Both `image:` and `link:` support optional accessibility properties (`caption:`, `title:`) via the pipe syntax.
 
+### 3.7 References (Cross-Document Links)
+
+| Keyword | Description              | Example                                        |
+| ------- | ------------------------ | ---------------------------------------------- |
+| `ref:`  | Cross-document reference | `ref: Related Doc \| to: doc.it#section:Tasks` |
+
+The `ref:` keyword creates semantic connections between documents. Unlike `link:` which is for external URLs, `ref:` is specifically for internal/cross-document navigation.
+
+**Properties:**
+
+- `to:` — Target document path with optional anchor (e.g., `doc.it#section:Name`)
+
+**Rendering:** References render as italicized links to distinguish them from regular external links.
+
 ### 3.6 Code
 
 | Keyword | Description                              | Example   |
@@ -381,7 +395,9 @@ image: *Launch Banner* | at: assets/banner.png | caption: Project Dalil launch a
 
 All keywords are **case-insensitive** (`Title:` = `title:`). User content is always preserved as written.
 
-**Reserved for v1.1:** `sub2` (deeper hierarchy), `embed` (rich embeds), `ref` (cross-document references).
+**Implemented:** `ref` (cross-document references) — see §3.7 below.
+
+**Reserved for v1.1:** `sub2` (deeper hierarchy), `embed` (rich embeds).
 
 ### 11.1 Extension Keywords
 
@@ -396,12 +412,152 @@ Parsers should preserve unknown extension blocks as `body-text` (or optionally e
 
 ## 12. Versioning
 
-| Version  | Status     | Notes                                          |
-| -------- | ---------- | ---------------------------------------------- |
-| **v1.0** | ✅ Stable  | This document                                  |
-| **v1.1** | 🗓 Planned | `sub2:`, `embed:`, `ref:`, deeper list nesting |
+| Version  | Status     | Notes                            |
+| -------- | ---------- | -------------------------------- |
+| **v1.0** | ✅ Stable  | Core format                      |
+| **v1.1** | 🗓 Planned | See detailed specification below |
+| **v1.2** | ✅ Stable  | Query, Schema, Templates, Export |
 
-Breaking changes require a major version bump. Additive features (new keywords, new standard properties) increment the minor version.
+### 12.1 v1.2 Specification (Implemented)
+
+#### Query Language
+
+Query IntentText documents using a SQL-like syntax.
+
+```bash
+# CLI usage
+intenttext query "type=task owner=Ahmed due<2026-03-01 sort:due:asc limit:10"
+```
+
+**Query Syntax:**
+
+| Operator             | Description     | Example                   |
+| -------------------- | --------------- | ------------------------- |
+| `=`                  | Equality        | `type=task`               |
+| `!=`                 | Not equal       | `status!=done`            |
+| `<`, `>`, `<=`, `>=` | Comparison      | `due<2026-03-01`          |
+| `:contains`          | Substring match | `content:contains=urgent` |
+| `:startsWith`        | Prefix match    | `content:startsWith=API`  |
+| `?`                  | Field exists    | `priority?`               |
+| `sort:field:dir`     | Sorting         | `sort:due:asc`            |
+| `limit:N`            | Limit results   | `limit:10`                |
+| `offset:N`           | Pagination      | `offset:5`                |
+
+#### Schema Validation
+
+Validate documents against predefined or custom schemas.
+
+```bash
+# CLI usage
+intenttext validate project    # Validate against project schema
+intenttext validate article    # Validate against article schema
+```
+
+**Predefined Schemas:**
+
+| Schema      | Required Blocks    | Block Schemas                              |
+| ----------- | ------------------ | ------------------------------------------ |
+| `project`   | `title`            | task (owner, due, priority), done (time)   |
+| `meeting`   | `title`, `section` | note, question, task (owner, due required) |
+| `article`   | `title`, `summary` | image (at required), link, section         |
+| `checklist` | `title`            | task, done                                 |
+
+#### Templates & Includes
+
+Reusable templates and file composition.
+
+```it
+# Define a template
+template: meeting-note | params: date, attendees
+section: Meeting | {{date}}
+note: Attendees: {{attendees}}
+end:
+
+# Use the template
+use: meeting-note | date: 2026-03-01 | attendees: Ahmed, Sarah
+
+# Include another file
+include: ./common-header.it
+```
+
+**Template Syntax:**
+
+- `template:` — Define template with optional params
+- `use:` — Instantiate template with parameter values
+- `include:` — Inline content from another .it file
+- Variable substitution: `{{paramName}}`
+
+#### Export Pipeline (Static Site Generator)
+
+Build static HTML sites from .it files.
+
+```bash
+# CLI usage
+intenttext build ./docs --out ./dist --theme docs
+```
+
+**Themes:**
+
+| Theme     | Description                                     |
+| --------- | ----------------------------------------------- |
+| `default` | Clean, modern styling with task/done indicators |
+| `minimal` | Bare minimal styling                            |
+| `docs`    | Documentation-style with sidebar navigation     |
+
+### 12.2 v1.1 Specification (Draft)
+
+#### `sub2:` — Deeper Hierarchy
+
+Extends `section:` → `sub:` with a third level for complex documents.
+
+```it
+section: Engineering
+sub: Backend
+sub2: Database Layer
+task: Optimize queries
+```
+
+**Scoping Rule:** `sub2:` belongs to its parent `sub:`, which belongs to its parent `section:`. All three levels must be explicitly declared in order (no skipping).
+
+#### `embed:` — Rich Embeds
+
+For external content that should be rendered inline.
+
+```it
+embed: Dashboard Metrics | type: iframe | src: https://metrics.internal/engineering
+embed: Architecture Diagram | type: mermaid | content: graph TD; A-->B;
+```
+
+**Standard Properties:**
+
+- `type:` — `iframe`, `mermaid`, `svg`, `video`, `audio`
+- `src:` — External URL (for iframe, video, audio)
+- `content:` — Inline content (for mermaid, svg)
+
+#### Deeper List Nesting
+
+v1.0 lists are flat. v1.1 allows indentation-based nesting:
+
+```it
+section: Project Plan
+- Phase 1: Discovery
+  - Interview stakeholders
+  - Review existing docs
+  - task: Schedule interviews | owner: Ahmed
+- Phase 2: Design
+  - Wireframes
+  - Technical architecture
+```
+
+**Rules:**
+
+- 2-space or 4-space indentation denotes nesting
+- Any block type can appear inside a nested list item
+- Maximum nesting depth: 3 levels (to preserve readability)
+
+---
+
+_Breaking changes require a major version bump. Additive features (new keywords, new standard properties) increment the minor version._
 
 ---
 

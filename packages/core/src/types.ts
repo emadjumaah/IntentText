@@ -37,6 +37,9 @@ export const KEYWORDS = [
   "ref",
   "code",
   "end",
+  "template",
+  "use",
+  "include",
 ];
 
 export type BlockType =
@@ -58,6 +61,10 @@ export type BlockType =
   | "ref"
   | "code"
   | "end"
+  | "template"
+  | "use"
+  | "template-use"
+  | "include"
   | "list-item"
   | "step-item"
   | "body-text";
@@ -122,4 +129,114 @@ export interface IntentDocument {
     language?: "ltr" | "rtl";
   };
   diagnostics?: Diagnostic[];
+}
+
+// Query types (v1.2)
+export interface QueryClause {
+  field: string;
+  operator:
+    | "="
+    | "!="
+    | "<"
+    | ">"
+    | "<="
+    | ">="
+    | "contains"
+    | "startsWith"
+    | "exists";
+  value?: string | number | boolean;
+}
+
+export interface QuerySort {
+  field: string;
+  direction: "asc" | "desc";
+}
+
+export interface QueryOptions {
+  where?: QueryClause[];
+  sort?: QuerySort[];
+  limit?: number;
+  offset?: number;
+}
+
+export interface QueryResult {
+  blocks: IntentBlock[];
+  total: number;
+  matched: number;
+}
+
+// Schema types (v1.2)
+export interface PropertySchema {
+  type: "string" | "number" | "boolean" | "date" | "enum" | "url" | "email";
+  required?: boolean;
+  default?: string | number | boolean;
+  enumValues?: string[];
+  pattern?: string;
+  min?: number;
+  max?: number;
+  format?: "iso-date" | "iso-datetime" | "time" | "url" | "email";
+}
+
+export interface BlockSchema {
+  type: BlockType;
+  content?: {
+    required?: boolean;
+    minLength?: number;
+    maxLength?: number;
+    pattern?: string;
+  };
+  properties?: Record<string, PropertySchema>;
+  allowUnknownProperties?: boolean;
+}
+
+export interface DocumentSchema {
+  name: string;
+  description?: string;
+  requiredBlocks?: BlockType[];
+  blockSchemas?: Record<string, BlockSchema>;
+  allowUnknownBlocks?: boolean;
+}
+
+export interface ValidationError {
+  blockId: string;
+  blockType: string;
+  field: string;
+  message: string;
+  severity: "error" | "warning";
+}
+
+export interface ValidationResult {
+  valid: boolean;
+  errors: ValidationError[];
+  warnings: ValidationError[];
+}
+
+// Template types (v1.2)
+export interface Template {
+  name: string;
+  description?: string;
+  params: string[];
+  blocks: IntentBlock[];
+}
+
+export interface TemplateRegistry {
+  [name: string]: Template;
+}
+
+// Export types (v1.2)
+export interface ExportOptions {
+  inputDir: string;
+  outputDir: string;
+  template?: string;
+  baseUrl?: string;
+  title?: string;
+  description?: string;
+  theme?: "default" | "minimal" | "docs";
+  includeDrafts?: boolean;
+}
+
+export interface ExportResult {
+  files: string[];
+  errors: string[];
+  warnings: string[];
 }
