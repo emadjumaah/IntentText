@@ -1,4 +1,4 @@
-import { IntentBlock, IntentDocument, InlineNode } from "./types";
+import { IntentBlock, IntentDocument, InlineNode, InlineMark } from "./types";
 
 function escapeHtml(text: string): string {
   return text
@@ -65,56 +65,53 @@ function convertFormattedTextToHTML(text: string): string {
 function applyInlineFormatting(
   content: string,
   inline?: InlineNode[],
-  marks?: Array<{ type: string; start: number; end: number }>,
+  marks?: InlineMark[],
   originalContent?: string,
 ): string {
+  // If inline nodes provided, use them
   if (inline && inline.length > 0) {
     return inline
-      .map((n) => {
-        const v = escapeHtml(n.value);
-        switch (n.type) {
+      .map((node) => {
+        switch (node.type) {
           case "text":
-            return v;
+            return escapeHtml(node.value);
           case "bold":
-            return `<strong>${v}</strong>`;
+            return `<strong>${escapeHtml(node.value)}</strong>`;
           case "italic":
-            return `<em>${v}</em>`;
+            return `<em>${escapeHtml(node.value)}</em>`;
           case "strike":
-            return `<del>${v}</del>`;
+            return `<del>${escapeHtml(node.value)}</del>`;
           case "code":
-            return `<code>${v}</code>`;
+            return `<code>${escapeHtml(node.value)}</code>`;
+          case "link":
+            return `<a href="${escapeHtml(node.href)}" class="intent-inline-link">${escapeHtml(node.value)}</a>`;
           default:
-            return v;
+            return escapeHtml((node as { value: string }).value);
         }
       })
       .join("");
   }
 
-  // Legacy fallback: if original content with delimiters is available,
-  // prefer it over marks offsets.
-  if (originalContent) {
-    return convertFormattedTextToHTML(originalContent);
+  // If no inline nodes but marks exist, use legacy mark-based rendering
+  if (marks && marks.length > 0) {
+    let result = escapeHtml(content);
+    if (marks.some((m) => m.type === "bold")) {
+      result = `<strong>${result}</strong>`;
+    }
+    if (marks.some((m) => m.type === "italic")) {
+      result = `<em>${result}</em>`;
+    }
+    if (marks.some((m) => m.type === "strike")) {
+      result = `<del>${result}</del>`;
+    }
+    if (marks.some((m) => m.type === "code")) {
+      result = `<code>${result}</code>`;
+    }
+    return result;
   }
 
-  if (!marks || marks.length === 0) return escapeHtml(content);
-
-  // Fallback: apply simple formatting to cleaned content
-  let result = escapeHtml(content);
-
-  if (marks.some((m) => m.type === "bold")) {
-    result = `<strong>${result}</strong>`;
-  }
-  if (marks.some((m) => m.type === "italic")) {
-    result = `<em>${result}</em>`;
-  }
-  if (marks.some((m) => m.type === "strike")) {
-    result = `<del>${result}</del>`;
-  }
-  if (marks.some((m) => m.type === "code")) {
-    result = `<code>${result}</code>`;
-  }
-
-  return result;
+  // Default: just escape the original content or content
+  return escapeHtml(originalContent || content);
 }
 
 // Helper function to render a single block
@@ -155,6 +152,18 @@ function renderBlock(block: IntentBlock): string {
     case "note":
     case "body-text":
       return `<p class="intent-note">${content}</p>`;
+
+    case "info":
+      return `<div class="intent-callout intent-info"><span class="intent-callout-icon">ℹ️</span><div class="intent-callout-content">${content}</div></div>`;
+
+    case "warning":
+      return `<div class="intent-callout intent-warning"><span class="intent-callout-icon">⚠️</span><div class="intent-callout-content">${content}</div></div>`;
+
+    case "tip":
+      return `<div class="intent-callout intent-tip"><span class="intent-callout-icon">💡</span><div class="intent-callout-content">${content}</div></div>`;
+
+    case "success":
+      return `<div class="intent-callout intent-success"><span class="intent-callout-icon">✅</span><div class="intent-callout-content">${content}</div></div>`;
 
     case "task":
       return `<div class="intent-task">
@@ -346,6 +355,13 @@ export function renderHTML(document: IntentDocument): string {
 .intent-sub2{margin:16px 0 6px;font-size:1rem;line-height:1.3;color:#4b5563;}
 .intent-embed{margin:16px 0;}
 .intent-embed iframe,.intent-embed video,.intent-embed audio{display:block;width:100%;border-radius:8px;border:1px solid #e5e7eb;}
+.intent-callout{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-radius:10px;margin:12px 0;border-left:4px solid;}
+.intent-callout-icon{font-size:1.2rem;flex-shrink:0;}
+.intent-callout-content{flex:1;}
+.intent-info{background:#eff6ff;border-color:#3b82f6;}
+.intent-warning{background:#fffbeb;border-color:#f59e0b;}
+.intent-tip{background:#f0fdf4;border-color:#22c55e;}
+.intent-success{background:#f0fdf4;border-color:#22c55e;}
 ul,ol{margin:10px 0 10px 22px;padding:0;}
 li{margin:6px 0;}
 </style>

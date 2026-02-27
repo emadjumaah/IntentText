@@ -55,6 +55,10 @@ export type BlockType =
   | "sub2"
   | "divider"
   | "note"
+  | "info"
+  | "warning"
+  | "tip"
+  | "success"
   | "headers"
   | "row"
   | "table"
@@ -91,7 +95,8 @@ export type InlineNode =
   | { type: "bold"; value: string }
   | { type: "italic"; value: string }
   | { type: "strike"; value: string }
-  | { type: "code"; value: string };
+  | { type: "code"; value: string }
+  | { type: "link"; value: string; href: string };
 
 export interface IntentExtension {
   keywords?: string[];

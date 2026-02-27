@@ -18,6 +18,10 @@ const KEYWORDS = [
   "sub2",
   "divider",
   "note",
+  "info",
+  "warning",
+  "tip",
+  "success",
   "headers",
   "row",
   "task",
@@ -110,68 +114,196 @@ function parseInlineNodes(text: string): {
 } {
   const inline: InlineNode[] = [];
   let content = "";
+  let currentText = "";
 
-  const pushText = (value: string) => {
-    if (!value) return;
-    inline.push({ type: "text", value });
-    content += value;
+  const flushText = () => {
+    if (currentText) {
+      inline.push({ type: "text", value: currentText });
+      content += currentText;
+      currentText = "";
+    }
   };
 
-  const pushNode = (type: InlineNode["type"], value: string) => {
-    inline.push({ type: type as any, value });
-    content += value;
+  const addNode = (node: InlineNode) => {
+    flushText();
+    inline.push(node);
+    content += node.value;
   };
 
   let i = 0;
   while (i < text.length) {
-    // Triple backtick code span
+    // Check for link pattern [text](url)
+    if (text[i] === "[") {
+      const linkEnd = text.indexOf("](", i);
+      const urlEnd = linkEnd >= 0 ? text.indexOf(")", linkEnd + 2) : -1;
+      if (linkEnd > i && urlEnd > linkEnd) {
+        const linkText = text.slice(i + 1, linkEnd);
+        const linkUrl = text.slice(linkEnd + 2, urlEnd);
+        addNode({ type: "link", value: linkText, href: linkUrl });
+        i = urlEnd + 1;
+        continue;
+      }
+    }
+
+    // Check for code span ```text```
     if (text.startsWith("```", i)) {
       const end = text.indexOf("```", i + 3);
       if (end === -1) {
-        // Unmatched delimiter -> literal
-        pushText("```");
+        currentText += "```";
         i += 3;
         continue;
       }
-
-      const value = text.slice(i + 3, end);
-      pushNode("code", value);
+      const codeText = text.slice(i + 3, end);
+      addNode({ type: "code", value: codeText });
       i = end + 3;
       continue;
     }
 
+    // Check for bold/italic/strike with */_/~
     const ch = text[i];
     if (ch === "*" || ch === "_" || ch === "~") {
       const end = text.indexOf(ch, i + 1);
       if (end === -1) {
-        pushText(ch);
-        i += 1;
+        currentText += ch;
+        i++;
         continue;
       }
-
-      const value = text.slice(i + 1, end);
+      const innerText = text.slice(i + 1, end);
       const type = ch === "*" ? "bold" : ch === "_" ? "italic" : "strike";
-      pushNode(type, value);
+      addNode({ type, value: innerText });
       i = end + 1;
       continue;
     }
 
-    // Plain text run
-    let next = i + 1;
-    while (
-      next < text.length &&
-      !text.startsWith("```", next) &&
-      text[next] !== "*" &&
-      text[next] !== "_" &&
-      text[next] !== "~"
-    ) {
-      next++;
-    }
-    pushText(text.slice(i, next));
-    i = next;
+    // Regular character
+    currentText += text[i];
+    i++;
   }
 
+  // Flush any remaining text
+  flushText();
+
   return { content, inline };
+}
+
+function processInlineFormatting(text: string): {
+  content: string;
+  inline: InlineNode[];
+} {
+  const inline: InlineNode[] = [];
+  let content = "";
+  let currentText = "";
+
+  const flushText = () => {
+    if (currentText) {
+      inline.push({ type: "text", value: currentText });
+      content += currentText;
+      currentText = "";
+    }
+  };
+
+  const addNode = (node: InlineNode) => {
+    flushText();
+    inline.push(node);
+    content += node.value;
+  };
+
+  let i = 0;
+  while (i < text.length) {
+    // Check for code span ```text```
+    if (text.startsWith("```", i)) {
+      const end = text.indexOf("```", i + 3);
+      if (end === -1) {
+        currentText += "```";
+        i += 3;
+        continue;
+      }
+      const codeText = text.slice(i + 3, end);
+      addNode({ type: "code", value: codeText });
+      i = end + 3;
+      continue;
+    }
+
+    // Check for bold/italic/strike with */_/~
+    const ch = text[i];
+    if (ch === "*" || ch === "_" || ch === "~") {
+      const end = text.indexOf(ch, i + 1);
+      if (end === -1) {
+        currentText += ch;
+        i++;
+        continue;
+      }
+      const innerText = text.slice(i + 1, end);
+      const type = ch === "*" ? "bold" : ch === "_" ? "italic" : "strike";
+      addNode({ type, value: innerText });
+      i = end + 1;
+      continue;
+    }
+
+    // Regular character
+    currentText += text[i];
+    i++;
+  }
+
+  // Flush any remaining text
+  flushText();
+
+  return { content, inline };
+}
+
+function expandPropertyShortcuts(content: string): {
+  content: string;
+  shortcuts: Record<string, string>;
+} {
+  const shortcuts: Record<string, string> = {};
+
+  // Priority shortcuts: !low, !medium, !high, !critical
+  content = content.replace(/!low\b/gi, () => {
+    shortcuts.priority = "low";
+    return "";
+  });
+  content = content.replace(/!medium\b/gi, () => {
+    shortcuts.priority = "medium";
+    return "";
+  });
+  content = content.replace(/!high\b/gi, () => {
+    shortcuts.priority = "high";
+    return "";
+  });
+  content = content.replace(/!critical\b/gi, () => {
+    shortcuts.priority = "critical";
+    return "";
+  });
+
+  // Owner shortcuts: @username
+  content = content.replace(/@(\w+)/g, (match, username) => {
+    shortcuts.owner = username;
+    return "";
+  });
+
+  // Emoji shortcuts (v1.3 Phase 2)
+  // 🚨 urgent/priority, 📅 due date, ✅ status/completed, ⏰ time
+  content = content.replace(/🚨/g, () => {
+    shortcuts.priority = "urgent";
+    return "";
+  });
+  content = content.replace(/📅\s*(\S.*)/g, (match, dateText) => {
+    shortcuts.due = dateText.trim();
+    return "";
+  });
+  content = content.replace(/✅/g, () => {
+    shortcuts.status = "completed";
+    return "";
+  });
+  content = content.replace(/⏰\s*(\S.*)/g, (match, timeText) => {
+    shortcuts.time = timeText.trim();
+    return "";
+  });
+
+  // Clean up extra spaces from removed shortcuts
+  content = content.replace(/\s+/g, " ").trim();
+
+  return { content, shortcuts };
 }
 
 function unescapeIntentText(text: string): string {
@@ -340,6 +472,29 @@ function parseLine(
       content: cleanContent,
       originalContent: content, // Store original content with formatting
       properties: Object.keys(properties).length > 0 ? properties : undefined,
+      inline,
+    };
+  }
+
+  // Check for checkbox tasks (v1.3) - [ ] and [x]
+  const checkboxMatch = trimmed.match(/^(\[ \]|\[x\])\s*(.+)$/);
+  if (checkboxMatch) {
+    const isDone = checkboxMatch[1] === "[x]";
+    let content = unescapeIntentText(checkboxMatch[2]);
+
+    // Expand property shortcuts (v1.3)
+    const { content: cleanContent, shortcuts } =
+      expandPropertyShortcuts(content);
+    content = cleanContent;
+
+    const { content: finalContent, inline } = ctx.parseInline(content);
+
+    return {
+      id: uuidv4(),
+      type: isDone ? "done" : "task",
+      content: finalContent,
+      originalContent: content,
+      properties: Object.keys(shortcuts).length > 0 ? shortcuts : undefined,
       inline,
     };
   }
@@ -564,6 +719,39 @@ export function parseIntentText(
       parseInline,
     });
     if (!block) continue;
+
+    // Markdown-style table detection (v1.3 Phase 2)
+    // Pattern: | col1 | col2 | or | --- | --- |
+    const mdTableMatch = trimmed.match(/^\|(.+)\|$/);
+    if (mdTableMatch && trimmed.includes("|")) {
+      const cells = trimmed
+        .split("|")
+        .slice(1, -1) // Remove empty first and last
+        .map((cell) => cell.trim())
+        .filter((cell) => cell !== "");
+
+      // Check if it's a separator row (| --- | --- |)
+      const isSeparator = cells.every((cell) => /^[-:]+$/.test(cell));
+
+      if (!isSeparator && cells.length > 0) {
+        if (!pendingTable) {
+          // First row becomes headers
+          pendingTable = {
+            headers: cells,
+            rows: [],
+            originalHeaders: trimmed,
+            headerLine: i + 1,
+          };
+        } else {
+          // Subsequent rows are data rows
+          pendingTable.rows.push(cells);
+        }
+        continue;
+      } else if (isSeparator && pendingTable) {
+        // Skip separator row, just continue with the table
+        continue;
+      }
+    }
 
     // Table grouping: headers starts a table, rows are appended.
     if (block.type === "headers") {

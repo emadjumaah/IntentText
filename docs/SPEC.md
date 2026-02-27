@@ -622,6 +622,100 @@ comment-reply: We can adjust | author: sarah
 - `comment:` — block-level comments with threading
 - Change tracking between document versions
 
+#### v1.3 Accessibility Features
+
+Making IntentText accessible to non-technical users.
+
+**Implicit Paragraphs**
+
+Lines without keywords automatically become body text:
+
+```it
+title: My Document
+
+This is a paragraph without a keyword.
+It continues naturally. Very intuitive!
+
+note: This still uses a keyword
+```
+
+**Checkbox Tasks**
+
+Familiar checkbox syntax for tasks:
+
+```it
+[ ] Unchecked task — still to do
+[x] Completed task — already done
+[ ] Another pending task @ahmed !high
+```
+
+**Inline Links**
+
+Markdown-style links in any content:
+
+```it
+note: Visit [our website](https://example.com) for more info.
+task: Review [the proposal](https://docs.com/proposal) @sarah
+```
+
+**Property Shortcuts**
+
+Quick shorthand for common properties:
+
+```it
+[ ] Urgent task !critical          # priority: critical
+[ ] Normal work !high              # priority: high
+[ ] Low priority !low              # priority: low
+[ ] Review doc @john               # owner: john
+[ ] Complex task @sarah !high      # owner: sarah, priority: high
+```
+
+**Visual Callouts**
+
+Color-coded information blocks:
+
+```it
+info: ℹ️ This is informational
+warning: ⚠️ This needs attention
+tip: 💡 Here's a helpful suggestion
+success: ✅ This was completed successfully
+```
+
+**Emoji Properties**
+
+Visual emoji shortcuts for task metadata:
+
+```it
+[ ] Launch feature 🚨              # priority: urgent
+[ ] Meeting tomorrow 📅 2026-03-15  # due: 2026-03-15
+[x] Task finished ✅               # status: completed
+[ ] Reminder ⏰ 9:00 AM             # time: 9:00 AM
+```
+
+**Markdown-Style Tables**
+
+Familiar pipe-delimited table syntax:
+
+```it
+| Feature | Status | Owner |
+| Inline links | Done | Ahmed |
+| Checkboxes | Done | Sarah |
+| Callouts | Done | Mike |
+```
+
+**Natural Language Dates (API)**
+
+Parse natural phrases to ISO dates:
+
+```typescript
+import { parseNaturalDate } from "intenttext";
+
+parseNaturalDate("tomorrow"); // "2026-03-01"
+parseNaturalDate("next Friday"); // "2026-03-06"
+parseNaturalDate("in 3 days"); // "2026-03-03"
+parseNaturalDate("next week"); // "2026-03-08"
+```
+
 ---
 
 _Breaking changes require a major version bump. Additive features (new keywords, new standard properties) increment the minor version._
