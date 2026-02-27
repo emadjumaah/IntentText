@@ -16,6 +16,30 @@ export {
   loadTemplateLibrary,
 } from "./templates";
 export { buildStaticSite, formatExportResult } from "./export";
+export {
+  buildKnowledgeGraph,
+  findRelatedDocuments,
+  generateRelatedDocsBlock,
+  findPath,
+  visualizeGraph,
+  formatGraphSummary,
+} from "./knowledge-graph";
+export {
+  extractAIInstructions,
+  processUncertainty,
+  extractSynthesisTasks,
+  processAIDocument,
+  formatAIResult,
+  generateSynthesis,
+} from "./ai-features";
+export {
+  extractMentions,
+  extractComments,
+  trackChanges,
+  processCollaboration,
+  formatCollaborationSummary,
+  renderMentions,
+} from "./collaboration";
 export type {
   IntentBlock,
   IntentDocument,
@@ -38,4 +62,15 @@ export type {
   TemplateRegistry,
   ExportOptions,
   ExportResult,
+  KnowledgeGraph,
+  DocumentNode,
+  GraphBuildOptions,
+  AIBlock,
+  UncertainBlock,
+  SynthesizeBlock,
+  AIProcessingResult,
+  Mention,
+  Comment,
+  ChangeRecord,
+  CollaborationData,
 } from "./types";

@@ -1,0 +1,81 @@
+title: Project Plan - IntentText v1.2 Launch
+summary: Comprehensive plan for the v1.2 release including all new features: Query, Schema, Templates, Knowledge Graph, AI, and Collaboration.
+
+section: Overview
+note: This document demonstrates the full power of IntentText v1.2
+sub: Key Features
+- Query Language for filtering documents
+- Schema Validation for structured data
+- Templates & Includes for reusability
+- Knowledge Graph for document relationships
+- AI-Native Features for LLM workflows
+- Collaboration Tools for teams
+
+section: Query System Demo
+sub: Task Management
+task: Implement query parser | owner: Ahmed | due: 2026-03-01 | priority: high
+task: Add CLI query command | owner: Sarah | due: 2026-03-05 | priority: high
+done: Design query syntax | time: 2026-02-15
+sub2: Query Examples
+note: Query all pending tasks: type=task status=pending
+task: Write query documentation | owner: Mike | priority: medium
+
+divider: Progress
+
+section: Schema Validation Demo
+sub: Predefined Schemas
+note: This document uses the 'project' schema
+- task: Schema validation engine | owner: Ahmed
+- task: Predefined schema library | owner: Sarah
+done: Schema design document | time: 2026-02-20
+
+section: Templates Demo
+template: meeting-note | params: date, attendees, topic
+section: Meeting | {{date}}
+note: Attendees: {{attendees}}
+section: Topic | {{topic}}
+note: Discussion points...
+end:
+
+use: meeting-note | date: 2026-03-10 | attendees: Ahmed, Sarah, Mike | topic: v1.2 Release Planning
+
+section: Knowledge Graph Demo
+note: Documents are automatically linked through references
+ref: Architecture Document | to: ./architecture.it
+ref: API Documentation | to: ./api-docs.it#section:Authentication
+
+section: AI Features Demo
+ai: Summarize the task list below for stakeholders | model: gpt-4 | target: task-section
+sub: AI Tasks
+note: ?These timelines are estimates and need confirmation
+task: AI instruction parser | owner: AI-Team
+task: Uncertainty marker processor | owner: AI-Team
+done: Synthesis task definition | time: 2026-02-25
+
+synthesize: Executive Summary | scope: document | output: summary
+
+section: Collaboration Demo
+sub: Team Coordination
+task: Review proposal | owner: @sarah | due: 2026-03-08
+note: @#engineering-team please review the query syntax
+comment: Should we add more comparison operators? | author: john | on: block-123
+comment-reply: Good idea, let's add :contains and :startsWith | author: sarah
+
+divider
+
+section: Embed Demo (v1.1)
+embed: Project Dashboard | type: iframe | src: https://dashboard.example.com/project/123
+embed: Architecture Diagram | type: mermaid | content: graph TD; A[Frontend] --> B[API]; B --> C[Database]
+
+section: Deep Hierarchy Demo (v1.1)
+sub: Level 1 - Backend
+sub2: Level 2 - API Layer
+task: REST endpoints | owner: backend-team
+sub2: Level 2 - Database Layer
+task: Schema migrations | owner: backend-team
+done: Initial schema | time: 2026-01-15
+
+section: Summary
+done: v1.2 Feature Complete | time: 2026-03-01
+task: Documentation final review | owner: all | priority: high
+task: Release announcement | owner: marketing | priority: medium

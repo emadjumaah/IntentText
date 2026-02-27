@@ -140,6 +140,9 @@ function renderBlock(block: IntentBlock): string {
     case "sub":
       return `<h3 class="intent-sub">${content}</h3>`;
 
+    case "sub2":
+      return `<h4 class="intent-sub2">${content}</h4>`;
+
     case "divider":
       const label = content
         ? `<span class="intent-divider-label">${content}</span>`
@@ -199,6 +202,27 @@ function renderBlock(block: IntentBlock): string {
       const refText = content || refTo;
       return `<p class="intent-ref"><a href="${refTo}">${refText}</a></p>`;
 
+    case "embed": {
+      const embedType = props.type || "iframe";
+      const src = String(props.src || "");
+      const embedContent = String(props.content || "");
+
+      switch (embedType) {
+        case "iframe":
+          return `<div class="intent-embed"><iframe src="${escapeHtml(sanitizeUrl(src))}" frameborder="0" loading="lazy" style="width:100%;min-height:400px;border-radius:8px;"></iframe></div>`;
+        case "mermaid":
+          return `<div class="intent-embed mermaid">${embedContent}</div>`;
+        case "svg":
+          return `<div class="intent-embed svg">${embedContent}</div>`;
+        case "video":
+          return `<div class="intent-embed video"><video src="${escapeHtml(sanitizeUrl(src))}" controls style="max-width:100%;border-radius:8px;"></video></div>`;
+        case "audio":
+          return `<div class="intent-embed audio"><audio src="${escapeHtml(sanitizeUrl(src))}" controls style="width:100%;"></audio></div>`;
+        default:
+          return `<div class="intent-embed unknown">${escapeHtml(embedContent || src)}</div>`;
+      }
+    }
+
     case "code":
       return `<pre class="intent-code"><code>${escapeHtml(block.content)}</code></pre>`;
 
@@ -250,7 +274,11 @@ export function renderHTML(document: IntentDocument): string {
       html += renderBlock(block);
 
       // Render children
-      if (block.type === "section" || block.type === "sub") {
+      if (
+        block.type === "section" ||
+        block.type === "sub" ||
+        block.type === "sub2"
+      ) {
         // Check if children are list items
         const hasListItems = block.children.some(
           (child) => child.type === "list-item" || child.type === "step-item",
@@ -315,7 +343,9 @@ export function renderHTML(document: IntentDocument): string {
 .intent-ref a{color:#2563eb;text-decoration:none;font-style:italic;}
 .intent-ref a:hover{text-decoration:underline;}
 .intent-unknown{margin:10px 0;padding:10px 12px;border:1px dashed #e5e7eb;border-radius:10px;color:#6b7280;}
-.intent-unknown-type{margin-right:6px;color:#9ca3af;}
+.intent-sub2{margin:16px 0 6px;font-size:1rem;line-height:1.3;color:#4b5563;}
+.intent-embed{margin:16px 0;}
+.intent-embed iframe,.intent-embed video,.intent-embed audio{display:block;width:100%;border-radius:8px;border:1px solid #e5e7eb;}
 ul,ol{margin:10px 0 10px 22px;padding:0;}
 li{margin:6px 0;}
 </style>

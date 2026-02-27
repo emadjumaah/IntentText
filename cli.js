@@ -11,6 +11,13 @@ const {
   PREDEFINED_SCHEMAS,
   buildStaticSite,
   formatExportResult,
+  buildKnowledgeGraph,
+  formatGraphSummary,
+  visualizeGraph,
+  processAIDocument,
+  formatAIResult,
+  processCollaboration,
+  formatCollaborationSummary,
 } = require("./packages/core/dist");
 const fs = require("fs");
 const path = require("path");
@@ -31,6 +38,9 @@ function main() {
   node cli.js <file.it> --query "query"    # Query blocks (v1.2)
   node cli.js <file.it> --validate <schema> # Validate against schema (v1.2)
   node cli.js --build <dir>                # Build static site (v1.2)
+  node cli.js --graph <dir>                # Build knowledge graph (v1.2)
+  node cli.js <file.it> --ai               # Process AI features (v1.2)
+  node cli.js <file.it> --collab           # Show collaboration data (v1.2)
 
 Query Examples:
   node cli.js todo.it --query "type=task owner=Ahmed"
@@ -43,6 +53,16 @@ Validation Examples:
 Build Examples:
   node cli.js --build ./docs --out ./dist
   node cli.js --build ./docs --theme docs
+
+Graph Examples:
+  node cli.js --graph ./docs              # Show graph summary
+  node cli.js --graph ./docs --mermaid    # Output Mermaid diagram
+
+AI Examples:
+  node cli.js doc.it --ai                 # Show AI processing results
+
+Collaboration Examples:
+  node cli.js doc.it --collab             # Show mentions and comments
 
 Available schemas: ${Object.keys(PREDEFINED_SCHEMAS).join(", ")}
 
@@ -70,8 +90,26 @@ Examples:
   const theme = args.includes("--theme")
     ? args[args.indexOf("--theme") + 1]
     : "default";
+  const graphIndex = args.indexOf("--graph");
+  const graphDir = graphIndex >= 0 ? args[graphIndex + 1] : null;
+  const mermaidOutput = args.includes("--mermaid");
 
   try {
+    // Graph mode (v1.2)
+    if (graphDir) {
+      if (!fs.existsSync(graphDir)) {
+        console.error(`❌ Directory not found: ${graphDir}`);
+        process.exit(1);
+      }
+      const graph = buildKnowledgeGraph({ dir: graphDir });
+      if (mermaidOutput) {
+        console.log(visualizeGraph(graph));
+      } else {
+        console.log(formatGraphSummary(graph));
+      }
+      return;
+    }
+
     // Build mode (v1.2)
     if (buildDir) {
       if (!fs.existsSync(buildDir)) {
@@ -120,6 +158,20 @@ Examples:
       const result = validateDocument(document, schemaName);
       console.log(formatValidationResult(result));
       process.exit(result.valid ? 0 : 1);
+    }
+
+    // AI processing mode (v1.2)
+    if (args.includes("--ai")) {
+      const result = processAIDocument(document);
+      console.log(formatAIResult(result));
+      return;
+    }
+
+    // Collaboration mode (v1.2)
+    if (args.includes("--collab")) {
+      const result = processCollaboration(document);
+      console.log(formatCollaborationSummary(result.data));
+      return;
     }
 
     if (outputHtml || saveFile) {

@@ -15,6 +15,7 @@ const KEYWORDS = [
   "summary",
   "section",
   "sub",
+  "sub2",
   "divider",
   "note",
   "headers",
@@ -25,6 +26,7 @@ const KEYWORDS = [
   "image",
   "link",
   "ref",
+  "embed",
   "code",
   "end",
 ];
@@ -594,32 +596,78 @@ export function parseIntentText(
       continue;
     }
 
-    // Handle section hierarchy
-    if (block.type === "section" || block.type === "sub") {
+    // Handle section hierarchy (section -> sub -> sub2, max 3 levels)
+    if (block.type === "section") {
       currentSection = block;
       currentSection.children = [];
       blocks.push(currentSection);
-    } else if (
-      currentSection &&
-      (block.type === "list-item" ||
-        block.type === "step-item" ||
-        block.type === "task" ||
-        block.type === "done" ||
-        block.type === "question" ||
-        block.type === "note")
-    ) {
-      // Add to current section
-      if (!currentSection.children) currentSection.children = [];
-      currentSection.children.push(block);
-    } else {
-      // Add to main blocks
-      blocks.push(block);
-
-      // Reset section if we encounter certain top-level blocks
-      if (block.type === "title" || block.type === "summary") {
-        // These can appear anywhere, don't reset section
+    } else if (block.type === "sub") {
+      if (currentSection) {
+        block.children = [];
+        currentSection.children!.push(block);
       } else {
-        currentSection = null;
+        // No parent section, add to root
+        blocks.push(block);
+      }
+    } else if (block.type === "sub2") {
+      // Find parent sub within current section
+      if (currentSection) {
+        const lastSub =
+          currentSection.children?.[currentSection.children.length - 1];
+        if (lastSub?.type === "sub") {
+          block.children = [];
+          lastSub.children = lastSub.children || [];
+          lastSub.children.push(block);
+        } else {
+          // No sub parent, add directly to section
+          block.children = [];
+          currentSection.children!.push(block);
+        }
+      } else {
+        // No parent section, add to root
+        blocks.push(block);
+      }
+    } else if (block.type === "title" || block.type === "summary") {
+      // These can appear anywhere, don't affect current section
+      blocks.push(block);
+    } else if (
+      block.type === "divider" ||
+      block.type === "image" ||
+      block.type === "link" ||
+      block.type === "ref" ||
+      block.type === "embed" ||
+      block.type === "code" ||
+      block.type === "table" ||
+      block.type === "template" ||
+      block.type === "use" ||
+      block.type === "include" ||
+      block.type === "ai" ||
+      block.type === "synthesize" ||
+      block.type === "comment" ||
+      block.type === "comment-reply" ||
+      block.type === "body-text"
+    ) {
+      // Top-level blocks reset current section
+      blocks.push(block);
+      currentSection = null;
+    } else {
+      // Content blocks (task, note, question, list-item, etc.)
+      // Find target section (deepest nested)
+      let target = currentSection;
+      if (target) {
+        const lastSub = target.children?.[target.children.length - 1];
+        if (lastSub?.type === "sub") {
+          const lastSub2 = lastSub.children?.[lastSub.children.length - 1];
+          if (lastSub2?.type === "sub2") {
+            target = lastSub2;
+          } else {
+            target = lastSub;
+          }
+        }
+        if (!target.children) target.children = [];
+        target.children.push(block);
+      } else {
+        blocks.push(block);
       }
     }
   }

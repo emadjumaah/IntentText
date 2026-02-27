@@ -555,6 +555,73 @@ section: Project Plan
 - Any block type can appear inside a nested list item
 - Maximum nesting depth: 3 levels (to preserve readability)
 
+#### Knowledge Graph
+
+Parse folders of .it files and build document relationships.
+
+```bash
+# CLI usage
+intenttext graph ./docs              # Show graph summary
+intenttext graph ./docs --mermaid    # Export Mermaid diagram
+```
+
+**Reference Types:**
+
+- `ref:` blocks — explicit cross-document references
+- `link:` to .it files — implicit references
+- `[[Wiki Links]]` — document mentions in content
+- `#hashtags` — shared tags create clusters
+
+**Graph Operations:**
+
+- Find related documents by references, tags, and content similarity
+- Generate "Related Documents" sections automatically
+- Find paths between documents
+- Export Mermaid diagrams for visualization
+
+#### AI-Native Features
+
+Built-in support for LLM workflows.
+
+```it
+# AI instructions (invisible in rendered output)
+ai: Summarize the following section for executives | model: gpt-4
+
+# Uncertain information flag
+note: ?Revenue projections need verification from Finance
+
+# Synthesis tasks (AI generates content)
+synthesize: Key takeaways | scope: section | output: key-points
+```
+
+**Features:**
+
+- `ai:` blocks — instructions for LLMs, filtered from render
+- `?` prefix — marks uncertain content for verification
+- `synthesize:` — triggers AI synthesis of preceding content
+
+#### Collaboration
+
+Team features for shared documents.
+
+```it
+# @mentions in content
+task: Review proposal | owner: @sarah
+note: @#engineering-team please review by Friday
+
+# Comments on blocks
+comment: Is this timeline realistic? | author: john | on: block-123
+comment-reply: We can adjust | author: sarah
+```
+
+**Features:**
+
+- `@username` — user mentions
+- `@#group-name` — group mentions
+- `@[[Doc Name]]` — document references in mentions
+- `comment:` — block-level comments with threading
+- Change tracking between document versions
+
 ---
 
 _Breaking changes require a major version bump. Additive features (new keywords, new standard properties) increment the minor version._

@@ -35,11 +35,16 @@ export const KEYWORDS = [
   "image",
   "link",
   "ref",
+  "embed",
   "code",
   "end",
   "template",
   "use",
   "include",
+  "ai",
+  "synthesize",
+  "comment",
+  "comment-reply",
 ];
 
 export type BlockType =
@@ -47,6 +52,7 @@ export type BlockType =
   | "summary"
   | "section"
   | "sub"
+  | "sub2"
   | "divider"
   | "note"
   | "headers"
@@ -59,12 +65,17 @@ export type BlockType =
   | "image"
   | "link"
   | "ref"
+  | "embed"
   | "code"
   | "end"
   | "template"
   | "use"
   | "template-use"
   | "include"
+  | "ai"
+  | "synthesize"
+  | "comment"
+  | "comment-reply"
   | "list-item"
   | "step-item"
   | "body-text";
@@ -239,4 +250,111 @@ export interface ExportResult {
   files: string[];
   errors: string[];
   warnings: string[];
+}
+
+// Knowledge Graph types (v1.2)
+export interface DocumentNode {
+  id: string;
+  path: string;
+  title: string;
+  summary?: string;
+  tags: string[];
+  outgoingRefs: string[];
+  incomingRefs: string[];
+  blocks: IntentBlock[];
+  metadata?: {
+    author?: string;
+    created?: string;
+    updated?: string;
+  };
+}
+
+export interface KnowledgeGraph {
+  nodes: Map<string, DocumentNode>;
+  edges: Array<{
+    from: string;
+    to: string;
+    type: "ref" | "link" | "mention" | "similar";
+    strength: number;
+  }>;
+  clusters: Map<string, string[]>;
+}
+
+export interface GraphBuildOptions {
+  dir: string;
+  includePatterns?: string[];
+  excludePatterns?: string[];
+  calculateSimilarity?: boolean;
+  similarityThreshold?: number;
+}
+
+// AI types (v1.2)
+export interface AIBlock extends IntentBlock {
+  type: "ai";
+  instruction: string;
+  target?: string;
+  model?: string;
+  temperature?: number;
+  maxTokens?: number;
+}
+
+export interface UncertainBlock extends IntentBlock {
+  type: BlockType;
+  confidence: number;
+  needsVerification: boolean;
+}
+
+export interface SynthesizeBlock extends IntentBlock {
+  type: "synthesize";
+  scope: "section" | "document" | "custom";
+  customRange?: string;
+  outputType: "summary" | "qa" | "key-points" | "action-items" | "custom";
+  customPrompt?: string;
+}
+
+export interface AIProcessingResult {
+  document: IntentDocument;
+  instructions: AIBlock[];
+  synthesisTasks: SynthesizeBlock[];
+  uncertainBlocks: UncertainBlock[];
+  metadata: {
+    aiBlockCount: number;
+    uncertainCount: number;
+    synthesisCount: number;
+  };
+}
+
+// Collaboration types (v1.2)
+export interface Mention {
+  type: "user" | "group" | "ref";
+  target: string;
+  blockId: string;
+  blockType: string;
+}
+
+export interface Comment {
+  id: string;
+  author: string;
+  content: string;
+  timestamp: string;
+  blockId: string;
+  resolved?: boolean;
+  thread?: Comment[];
+}
+
+export interface ChangeRecord {
+  id: string;
+  timestamp: string;
+  author: string;
+  action: "create" | "update" | "delete";
+  blockId: string;
+  before?: IntentBlock;
+  after?: IntentBlock;
+}
+
+export interface CollaborationData {
+  mentions: Mention[];
+  comments: Comment[];
+  changes: ChangeRecord[];
+  contributors: Set<string>;
 }

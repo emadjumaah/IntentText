@@ -1,0 +1,73 @@
+title: Meeting Notes - Sprint Planning
+summary: Weekly sprint planning meeting with action items and decisions
+
+template: meeting-note | params: date, facilitator, attendees
+section: Meta
+date: {{date}}
+facilitator: {{facilitator}}
+attendees: {{attendees}}
+
+section: Agenda
+- Review last sprint
+- Plan next sprint
+- Discuss blockers
+- Assign tasks
+
+section: Notes
+end:
+
+use: meeting-note | date: 2026-03-01 | facilitator: Sarah | attendees: Ahmed, Mike, John, Lisa
+
+sub: Review Last Sprint (Sprint 42)
+- Completed: 23/25 story points (92%)
+- Velocity trending up
+- Blockers resolved: Database migration
+
+done: Sprint 42 retrospective | time: 2026-02-28
+
+sub2: Key Wins
+task: Query language shipped | owner: Ahmed
+task: Schema validation live | owner: Sarah
+task: Docs site launched | owner: Mike
+
+sub2: Blockers
+question: Should we prioritize performance or features for Q2?
+comment: Performance is becoming critical | author: john | on: block-question-1
+comment-reply: Agreed, let's do perf sprint next | author: sarah
+
+section: Sprint 43 Planning
+sub: Goals
+- Complete v1.2 features
+- Performance optimization
+- Documentation improvements
+
+sub2: Story Points
+note: @#engineering-team voting on complexity
+task: Knowledge graph implementation | owner: Ahmed | points: 5
+task: AI features integration | owner: Sarah | points: 8
+task: Collaboration tools | owner: Mike | points: 5
+task: Performance audit | owner: Lisa | points: 3
+
+sub: Assigned Tasks
+- Ahmed: Knowledge graph + Query optimizations
+- Sarah: AI features + Schema updates
+- Mike: Collaboration + Templates
+- Lisa: Performance + Testing
+
+section: Action Items
+sub: Before Next Meeting
+task: Update sprint board | owner: Sarah | due: 2026-03-02
+task: Schedule architecture review | owner: Ahmed | due: 2026-03-03
+task: Prepare performance benchmarks | owner: Lisa | due: 2026-03-04
+
+divider: Next Steps
+
+section: Upcoming Events
+- Sprint 43 Kickoff: March 4
+- Architecture Review: March 6
+- Demo Day: March 15
+
+ai: Generate follow-up email based on these notes | target: action-items
+
+ref: Sprint 42 Retrospective | to: ./retro-42.it
+ref: Performance Benchmarks | to: ./perf-benchmarks.it
