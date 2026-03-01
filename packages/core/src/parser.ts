@@ -186,70 +186,6 @@ function parseInlineNodes(text: string): {
   return { content, inline };
 }
 
-function processInlineFormatting(text: string): {
-  content: string;
-  inline: InlineNode[];
-} {
-  const inline: InlineNode[] = [];
-  let content = "";
-  let currentText = "";
-
-  const flushText = () => {
-    if (currentText) {
-      inline.push({ type: "text", value: currentText });
-      content += currentText;
-      currentText = "";
-    }
-  };
-
-  const addNode = (node: InlineNode) => {
-    flushText();
-    inline.push(node);
-    content += node.value;
-  };
-
-  let i = 0;
-  while (i < text.length) {
-    // Check for code span ```text```
-    if (text.startsWith("```", i)) {
-      const end = text.indexOf("```", i + 3);
-      if (end === -1) {
-        currentText += "```";
-        i += 3;
-        continue;
-      }
-      const codeText = text.slice(i + 3, end);
-      addNode({ type: "code", value: codeText });
-      i = end + 3;
-      continue;
-    }
-
-    // Check for bold/italic/strike with */_/~
-    const ch = text[i];
-    if (ch === "*" || ch === "_" || ch === "~") {
-      const end = text.indexOf(ch, i + 1);
-      if (end === -1) {
-        currentText += ch;
-        i++;
-        continue;
-      }
-      const innerText = text.slice(i + 1, end);
-      const type = ch === "*" ? "bold" : ch === "_" ? "italic" : "strike";
-      addNode({ type, value: innerText });
-      i = end + 1;
-      continue;
-    }
-
-    // Regular character
-    currentText += text[i];
-    i++;
-  }
-
-  // Flush any remaining text
-  flushText();
-
-  return { content, inline };
-}
 
 function expandPropertyShortcuts(content: string): {
   content: string;
@@ -276,7 +212,7 @@ function expandPropertyShortcuts(content: string): {
   });
 
   // Owner shortcuts: @username
-  content = content.replace(/@(\w+)/g, (match, username) => {
+  content = content.replace(/@(\w+)/g, (_match, username) => {
     shortcuts.owner = username;
     return "";
   });
@@ -287,7 +223,7 @@ function expandPropertyShortcuts(content: string): {
     shortcuts.priority = "urgent";
     return "";
   });
-  content = content.replace(/📅\s*(\S.*)/g, (match, dateText) => {
+  content = content.replace(/📅\s*(\S.*)/g, (_match, dateText) => {
     shortcuts.due = dateText.trim();
     return "";
   });
@@ -295,7 +231,7 @@ function expandPropertyShortcuts(content: string): {
     shortcuts.status = "completed";
     return "";
   });
-  content = content.replace(/⏰\s*(\S.*)/g, (match, timeText) => {
+  content = content.replace(/⏰\s*(\S.*)/g, (_match, timeText) => {
     shortcuts.time = timeText.trim();
     return "";
   });

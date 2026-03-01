@@ -119,4 +119,118 @@ row: Ahmed | 30 | Dubai`;
 
     expect(html).toContain('href="#"');
   });
+
+  it("should sanitize unsafe URLs in inline links", () => {
+    const input = "note: See [click here](javascript:alert(1)) for details";
+    const parsed = parseIntentText(input);
+    const html = renderHTML(parsed);
+
+    expect(html).toContain('href="#"');
+    expect(html).not.toContain("javascript:");
+  });
+
+  it("should render section children (tasks, notes) inside the section", () => {
+    const input = `section: Work
+task: Fix bug | owner: Ali | due: Monday
+note: Remember to test`;
+
+    const parsed = parseIntentText(input);
+    const html = renderHTML(parsed);
+
+    expect(html).toContain('<h2 class="intent-section"');
+    expect(html).toContain("Fix bug");
+    expect(html).toContain("Ali");
+    expect(html).toContain("Remember to test");
+  });
+
+  it("should render sub-section content (not just the heading)", () => {
+    const input = `section: Overview
+sub: Details
+task: Sub task | owner: Bob`;
+
+    const parsed = parseIntentText(input);
+    const html = renderHTML(parsed);
+
+    expect(html).toContain('<h3 class="intent-sub"');
+    expect(html).toContain("Sub task");
+    expect(html).toContain("Bob");
+  });
+
+  it("should wrap list items in <ul>, not place them as naked <li>", () => {
+    const input = `- First item
+- Second item`;
+
+    const parsed = parseIntentText(input);
+    const html = renderHTML(parsed);
+
+    expect(html).toContain("<ul");
+    expect(html).toContain("First item");
+    expect(html).toContain("Second item");
+    // <li> must be inside <ul>, not at root level
+    const ulStart = html.indexOf("<ul");
+    const ulEnd = html.indexOf("</ul>");
+    const liPos = html.indexOf("<li");
+    expect(liPos).toBeGreaterThan(ulStart);
+    expect(liPos).toBeLessThan(ulEnd);
+  });
+
+  it("should not wrap task/note blocks in <ul> when mixed with list items", () => {
+    const input = `section: Tasks
+- List item one
+task: A real task | owner: Sara`;
+
+    const parsed = parseIntentText(input);
+    const html = renderHTML(parsed);
+
+    // The task div must NOT be inside a <ul>
+    const ulStart = html.indexOf("<ul");
+    const ulEnd = html.lastIndexOf("</ul>");
+    const taskPos = html.indexOf('class="intent-task"');
+    // If no <ul> at all OR the task appears after the </ul>, that's correct
+    if (ulStart !== -1) {
+      expect(taskPos).toBeGreaterThan(ulEnd);
+    }
+    expect(html).toContain("List item one");
+    expect(html).toContain("A real task");
+  });
+
+  it("should wrap ordered list items in <ol>", () => {
+    const input = `1. Step one
+2. Step two
+3. Step three`;
+
+    const parsed = parseIntentText(input);
+    const html = renderHTML(parsed);
+
+    expect(html).toContain("<ol");
+    expect(html).toContain("Step one");
+    expect(html).toContain("Step three");
+  });
+
+  it("should render a realistic multi-section document without losing content", () => {
+    const input = `title: *Project* Plan
+summary: Launch overview
+
+section: Logistics
+headers: Item | Status
+row: Server | Delivered
+
+section: Team
+- Set up environment
+task: Deploy | owner: Ahmed | due: Sunday
+done: Domain secured`;
+
+    const parsed = parseIntentText(input);
+    const html = renderHTML(parsed);
+
+    expect(html).toContain("<h1");
+    expect(html).toContain("Project");
+    expect(html).toContain("Logistics");
+    expect(html).toContain("Server");
+    expect(html).toContain("Delivered");
+    expect(html).toContain("Set up environment");
+    expect(html).toContain("Deploy");
+    expect(html).toContain("Ahmed");
+    expect(html).toContain("Domain secured");
+  });
 });

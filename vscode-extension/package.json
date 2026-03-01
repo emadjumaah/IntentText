@@ -40,14 +40,37 @@
     ],
     "commands": [
       {
+        "command": "intenttext.preview",
+        "title": "Open Live Preview",
+        "category": "IntentText",
+        "icon": "$(open-preview)"
+      },
+      {
         "command": "intenttext.renderHTML",
         "title": "Render to HTML",
         "category": "IntentText"
       },
       {
         "command": "intenttext.query",
-        "title": "Query Documents",
+        "title": "Query Blocks",
         "category": "IntentText"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "intenttext.preview",
+          "when": "resourceLangId == intenttext",
+          "group": "navigation"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "intenttext.preview",
+        "key": "ctrl+shift+v",
+        "mac": "cmd+shift+v",
+        "when": "resourceLangId == intenttext"
       }
     ]
   },

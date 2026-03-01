@@ -1,4 +1,4 @@
-import { IntentBlock, IntentDocument, InlineNode, InlineMark } from "./types";
+import { IntentBlock, IntentDocument, InlineNode } from "./types";
 
 function escapeHtml(text: string): string {
   return text
@@ -42,33 +42,13 @@ function sanitizeUrl(url: string): string {
   return "#";
 }
 
-// Helper function to convert original formatted text to HTML
-function convertFormattedTextToHTML(text: string): string {
-  let result = escapeHtml(text);
-
-  // Convert *text* to <strong>text</strong>
-  result = result.replace(/\*([^*]+)\*/g, "<strong>$1</strong>");
-
-  // Convert _text_ to <em>text</em>
-  result = result.replace(/_([^_]+)_/g, "<em>$1</em>");
-
-  // Convert ~text~ to <del>text</del>
-  result = result.replace(/~([^~]+)~/g, "<del>$1</del>");
-
-  // Convert ```text``` to <code>text</code>
-  result = result.replace(/```([\s\S]+?)```/g, "<code>$1</code>");
-
-  return result;
-}
-
-// Helper function to apply inline formatting
+// Apply inline AST nodes to produce safe HTML.
+// Falls back to escaping plain content when no inline nodes are present.
 function applyInlineFormatting(
   content: string,
   inline?: InlineNode[],
-  marks?: InlineMark[],
   originalContent?: string,
 ): string {
-  // If inline nodes provided, use them
   if (inline && inline.length > 0) {
     return inline
       .map((node) => {
@@ -84,7 +64,7 @@ function applyInlineFormatting(
           case "code":
             return `<code>${escapeHtml(node.value)}</code>`;
           case "link":
-            return `<a href="${escapeHtml(node.href)}" class="intent-inline-link">${escapeHtml(node.value)}</a>`;
+            return `<a href="${escapeHtml(sanitizeUrl(node.href))}" class="intent-inline-link">${escapeHtml(node.value)}</a>`;
           default:
             return escapeHtml((node as { value: string }).value);
         }
@@ -92,25 +72,6 @@ function applyInlineFormatting(
       .join("");
   }
 
-  // If no inline nodes but marks exist, use legacy mark-based rendering
-  if (marks && marks.length > 0) {
-    let result = escapeHtml(content);
-    if (marks.some((m) => m.type === "bold")) {
-      result = `<strong>${result}</strong>`;
-    }
-    if (marks.some((m) => m.type === "italic")) {
-      result = `<em>${result}</em>`;
-    }
-    if (marks.some((m) => m.type === "strike")) {
-      result = `<del>${result}</del>`;
-    }
-    if (marks.some((m) => m.type === "code")) {
-      result = `<code>${result}</code>`;
-    }
-    return result;
-  }
-
-  // Default: just escape the original content or content
   return escapeHtml(originalContent || content);
 }
 
@@ -119,7 +80,6 @@ function renderBlock(block: IntentBlock): string {
   const content = applyInlineFormatting(
     block.content,
     block.inline,
-    block.marks,
     block.originalContent,
   );
   const props = block.properties || {};
@@ -257,8 +217,18 @@ function renderBlock(block: IntentBlock): string {
       return `<table class="intent-table">${thead}${tbody}</table>`;
     }
 
-    case "list-item":
-      return `<li class="intent-list-item">${content}</li>`;
+    case "list-item": {
+      const listItemProps = block.properties || {};
+      const listItemMeta = [
+        listItemProps.owner &&
+          `<span class="intent-task-owner">${escapeHtml(String(listItemProps.owner))}</span>`,
+        listItemProps.due &&
+          `<span class="intent-task-due">${escapeHtml(String(listItemProps.due))}</span>`,
+      ]
+        .filter(Boolean)
+        .join(" ");
+      return `<li class="intent-list-item">${content}${listItemMeta ? ` <span class="intent-task-meta">${listItemMeta}</span>` : ""}</li>`;
+    }
 
     case "step-item":
       return `<li class="intent-step-item">${content}</li>`;
@@ -270,51 +240,62 @@ function renderBlock(block: IntentBlock): string {
   }
 }
 
-// Main HTML renderer function
-export function renderHTML(document: IntentDocument): string {
-  const blocks = document.blocks;
+// Render a list of blocks, properly grouping consecutive list/step items
+// and recursing into section/sub/sub2 children.
+function renderBlocks(blocks: IntentBlock[]): string {
   let html = "";
+  let i = 0;
 
-  for (let i = 0; i < blocks.length; i++) {
+  while (i < blocks.length) {
     const block = blocks[i];
 
-    // Handle sections with children
-    if (block.children && block.children.length > 0) {
-      html += renderBlock(block);
-
-      // Render children
-      if (
-        block.type === "section" ||
-        block.type === "sub" ||
-        block.type === "sub2"
-      ) {
-        // Check if children are list items
-        const hasListItems = block.children.some(
-          (child) => child.type === "list-item" || child.type === "step-item",
-        );
-
-        if (hasListItems) {
-          const isOrdered = block.children.some(
-            (child) => child.type === "step-item",
-          );
-          html += isOrdered ? "<ol>" : "<ul>";
-
-          for (const child of block.children) {
-            html += renderBlock(child);
-          }
-
-          html += isOrdered ? "</ol>" : "</ul>";
-        } else {
-          // Render as regular blocks
-          for (const child of block.children) {
-            html += renderBlock(child);
-          }
-        }
+    // Collect consecutive list-item blocks into a single <ul>
+    if (block.type === "list-item") {
+      html += '<ul class="intent-list">';
+      while (i < blocks.length && blocks[i].type === "list-item") {
+        html += renderBlock(blocks[i]);
+        i++;
       }
-    } else {
-      html += renderBlock(block);
+      html += "</ul>";
+      continue;
     }
+
+    // Collect consecutive step-item blocks into a single <ol>
+    if (block.type === "step-item") {
+      html += '<ol class="intent-list">';
+      while (i < blocks.length && blocks[i].type === "step-item") {
+        html += renderBlock(blocks[i]);
+        i++;
+      }
+      html += "</ol>";
+      continue;
+    }
+
+    // Render the block itself
+    html += renderBlock(block);
+
+    // Recurse into children only for structural containers.
+    // list-item children hold the original embedded keyword block (content
+    // already copied to the list-item), so we do NOT recurse into those.
+    if (
+      (block.type === "section" ||
+        block.type === "sub" ||
+        block.type === "sub2") &&
+      block.children &&
+      block.children.length > 0
+    ) {
+      html += renderBlocks(block.children);
+    }
+
+    i++;
   }
+
+  return html;
+}
+
+// Main HTML renderer function
+export function renderHTML(document: IntentDocument): string {
+  const html = renderBlocks(document.blocks);
 
   // Wrap in a container
   const direction =
