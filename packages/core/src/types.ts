@@ -1,6 +1,6 @@
 export interface IntentBlock {
   id: string; // auto-generated UUID or sequential ID
-  type: BlockType; // title | section | sub | task | done | question
+  type: BlockType; // title | section | sub | task | done | ask | quote
   // note | headers | row | image | link | code
   // divider | summary | list-item | step-item | body-text
   content: string; // primary text value (inline marks already parsed)
@@ -31,7 +31,9 @@ export const KEYWORDS = [
   "row",
   "task",
   "done",
-  "question",
+  "ask",
+  "question", // alias → ask
+  "quote",
   "image",
   "link",
   "ref",
@@ -52,7 +54,6 @@ export type BlockType =
   | "summary"
   | "section"
   | "sub"
-  | "sub2"
   | "divider"
   | "note"
   | "info"
@@ -65,7 +66,8 @@ export type BlockType =
   | "extension"
   | "task"
   | "done"
-  | "question"
+  | "ask"
+  | "quote"
   | "image"
   | "link"
   | "ref"

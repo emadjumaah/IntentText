@@ -15,7 +15,6 @@ const KEYWORDS = [
   "summary",
   "section",
   "sub",
-  "sub2",
   "divider",
   "note",
   "info",
@@ -26,7 +25,9 @@ const KEYWORDS = [
   "row",
   "task",
   "done",
-  "question",
+  "ask",
+  "question", // alias → ask
+  "quote",
   "image",
   "link",
   "ref",
@@ -34,6 +35,11 @@ const KEYWORDS = [
   "code",
   "end",
 ];
+
+// Keyword aliases: maps a written keyword to its canonical block type
+const KEYWORD_ALIASES: Record<string, string> = {
+  question: "ask",
+};
 
 // Helper function to detect Arabic text (RTL)
 function detectArabic(text: string): boolean {
@@ -402,11 +408,14 @@ function parseLine(
       };
     }
 
+    // Apply keyword aliases (e.g. question → ask)
+    const resolvedType = (KEYWORD_ALIASES[keyword] ?? keyword) as BlockType;
+
     return {
       id: uuidv4(),
-      type: keyword as BlockType,
+      type: resolvedType,
       content: cleanContent,
-      originalContent: content, // Store original content with formatting
+      originalContent: content,
       properties: Object.keys(properties).length > 0 ? properties : undefined,
       inline,
     };
@@ -510,6 +519,7 @@ export function parseIntentText(
   const diagnostics: Diagnostic[] = [];
   let currentSection: IntentBlock | null = null;
   let codeCaptureMode = false;
+  let codeCaptureType: "keyword" | "fence" = "keyword";
   let codeContent: string[] = [];
   let codeStartLine = 0;
 
@@ -579,32 +589,60 @@ export function parseIntentText(
     const line = lines[i];
     const trimmed = line.trim();
 
-    // If we have a pending table and current line is not a row, flush it.
-    if (pendingTable && !/^row:\s*/i.test(trimmed)) {
+    // If we have a pending table and current line is not a row (keyword or MD pipe), flush it.
+    const isMdPipeRow = /^\|.+\|$/.test(trimmed);
+    if (pendingTable && !/^row:\s*/i.test(trimmed) && !isMdPipeRow) {
       flushPendingTable();
     }
 
-    // Handle multi-line code blocks
+    // Handle multi-line code blocks (both keyword and fence modes)
     if (codeCaptureMode) {
-      if (trimmed.toLowerCase() === "end:") {
-        // End code block
+      const isEndKeyword =
+        codeCaptureType === "keyword" && trimmed.toLowerCase() === "end:";
+      const isEndFence =
+        codeCaptureType === "fence" && trimmed.startsWith("```");
+
+      if (isEndKeyword || isEndFence) {
         const codeBlock: IntentBlock = {
           id: uuidv4(),
           type: "code",
           content: codeContent.join("\n"),
         };
-
         if (currentSection && currentSection.children) {
           currentSection.children.push(codeBlock);
         } else {
           blocks.push(codeBlock);
         }
-
         codeCaptureMode = false;
+        codeCaptureType = "keyword";
         codeContent = [];
         codeStartLine = 0;
       } else {
         codeContent.push(line);
+      }
+      continue;
+    }
+
+    // ``` fence — start a fenced code block
+    if (trimmed.startsWith("```")) {
+      codeCaptureMode = true;
+      codeCaptureType = "fence";
+      codeStartLine = i + 1;
+      continue;
+    }
+
+    // --- horizontal rule / divider
+    if (trimmed === "---") {
+      const dividerBlock: IntentBlock = {
+        id: uuidv4(),
+        type: "divider",
+        content: "",
+      };
+      if (currentSection && currentSection.children) {
+        currentSection.children.push(dividerBlock);
+      } else {
+        blocks.push(dividerBlock);
+        currentSection = null;
       }
       continue;
     }
@@ -621,22 +659,20 @@ export function parseIntentText(
       continue;
     }
 
-    // Check for code block start
+    // Check for code block start via keyword
     const codeMatch = trimmed.match(/^code:\s*(.*)$/);
     if (codeMatch) {
-      const codeContent = codeMatch[1];
-      if (codeContent === "") {
-        // Start multi-line code capture
+      const inlineCode = codeMatch[1];
+      if (inlineCode === "") {
         codeCaptureMode = true;
+        codeCaptureType = "keyword";
         codeStartLine = i + 1;
       } else {
-        // Single line code
         const codeBlock: IntentBlock = {
           id: uuidv4(),
           type: "code",
-          content: codeContent,
+          content: inlineCode,
         };
-
         if (currentSection && currentSection.children) {
           currentSection.children.push(codeBlock);
         } else {
@@ -733,24 +769,6 @@ export function parseIntentText(
         // No parent section, add to root
         blocks.push(block);
       }
-    } else if (block.type === "sub2") {
-      // Find parent sub within current section
-      if (currentSection) {
-        const lastSub =
-          currentSection.children?.[currentSection.children.length - 1];
-        if (lastSub?.type === "sub") {
-          block.children = [];
-          lastSub.children = lastSub.children || [];
-          lastSub.children.push(block);
-        } else {
-          // No sub parent, add directly to section
-          block.children = [];
-          currentSection.children!.push(block);
-        }
-      } else {
-        // No parent section, add to root
-        blocks.push(block);
-      }
     } else if (block.type === "title" || block.type === "summary") {
       // These can appear anywhere, don't affect current section
       blocks.push(block);
@@ -781,12 +799,7 @@ export function parseIntentText(
       if (target) {
         const lastSub = target.children?.[target.children.length - 1];
         if (lastSub?.type === "sub") {
-          const lastSub2 = lastSub.children?.[lastSub.children.length - 1];
-          if (lastSub2?.type === "sub2") {
-            target = lastSub2;
-          } else {
-            target = lastSub;
-          }
+          target = lastSub;
         }
         if (!target.children) target.children = [];
         target.children.push(block);

@@ -97,9 +97,6 @@ function renderBlock(block: IntentBlock): string {
     case "sub":
       return `<h3 class="intent-sub">${content}</h3>`;
 
-    case "sub2":
-      return `<h4 class="intent-sub2">${content}</h4>`;
-
     case "divider":
       const label = content
         ? `<span class="intent-divider-label">${content}</span>`
@@ -114,16 +111,16 @@ function renderBlock(block: IntentBlock): string {
       return `<p class="intent-note">${content}</p>`;
 
     case "info":
-      return `<div class="intent-callout intent-info"><span class="intent-callout-icon">ℹ️</span><div class="intent-callout-content">${content}</div></div>`;
+      return `<div class="intent-callout intent-info"><span class="intent-callout-label">Note</span><div class="intent-callout-content">${content}</div></div>`;
 
     case "warning":
-      return `<div class="intent-callout intent-warning"><span class="intent-callout-icon">⚠️</span><div class="intent-callout-content">${content}</div></div>`;
+      return `<div class="intent-callout intent-warning"><span class="intent-callout-label">Caution</span><div class="intent-callout-content">${content}</div></div>`;
 
     case "tip":
-      return `<div class="intent-callout intent-tip"><span class="intent-callout-icon">💡</span><div class="intent-callout-content">${content}</div></div>`;
+      return `<div class="intent-callout intent-tip"><span class="intent-callout-label">Tip</span><div class="intent-callout-content">${content}</div></div>`;
 
     case "success":
-      return `<div class="intent-callout intent-success"><span class="intent-callout-icon">✅</span><div class="intent-callout-content">${content}</div></div>`;
+      return `<div class="intent-callout intent-success"><span class="intent-callout-label">Done</span><div class="intent-callout-content">${content}</div></div>`;
 
     case "task":
       return `<div class="intent-task">
@@ -144,10 +141,15 @@ function renderBlock(block: IntentBlock): string {
         </span>
       </div>`;
 
-    case "question":
-      return `<div class="intent-question">
-        <strong>Question:</strong> ${content}
-      </div>`;
+    case "ask":
+      return `<div class="intent-ask"><span class="intent-ask-label">Query</span><div class="intent-ask-content">${content}</div></div>`;
+
+    case "quote": {
+      const attribution = props.by
+        ? `<cite class="intent-quote-cite">— ${escapeHtml(String(props.by))}</cite>`
+        : "";
+      return `<blockquote class="intent-quote"><p>${content}</p>${attribution}</blockquote>`;
+    }
 
     case "image":
       const imgSrc = escapeHtml(
@@ -279,8 +281,7 @@ function renderBlocks(blocks: IntentBlock[]): string {
     // already copied to the list-item), so we do NOT recurse into those.
     if (
       (block.type === "section" ||
-        block.type === "sub" ||
-        block.type === "sub2") &&
+        block.type === "sub") &&
       block.children &&
       block.children.length > 0
     ) {
@@ -303,48 +304,62 @@ export function renderHTML(document: IntentDocument): string {
 
   return `<div class="intent-document" ${direction}>
 <style>
-.intent-document{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.65;color:#111827;max-width:760px;margin:0 auto;padding:40px 24px;}
-.intent-title{font-size:2rem;line-height:1.2;margin:0 0 16px;text-align:center;letter-spacing:-0.01em;}
-.intent-summary{margin:16px 0 24px;padding:12px 14px;border:1px solid #e5e7eb;border-radius:10px;background:#fafafa;color:#374151;}
-.intent-section{margin:28px 0 10px;font-size:1.25rem;line-height:1.3;}
-.intent-sub{margin:20px 0 8px;font-size:1.05rem;line-height:1.3;color:#374151;}
-.intent-note{margin:8px 0;}
-.intent-divider{margin:24px 0;position:relative;text-align:center;}
-.intent-divider-line{border:none;border-top:1px solid #e5e7eb;margin:0;}
-.intent-divider-label{display:inline-block;margin-top:-10px;padding:0 10px;background:white;color:#6b7280;font-size:0.875rem;position:relative;top:-10px;}
-.intent-task{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;margin:8px 0;}
-.intent-task-checkbox{margin-top:3px;}
+.intent-document{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.65;color:#1e293b;max-width:760px;margin:0 auto;padding:32px 24px;}
+.intent-title{font-size:1.9rem;line-height:1.2;margin:0 0 14px;letter-spacing:-0.02em;font-weight:700;}
+.intent-summary{margin:12px 0 24px;padding:10px 0 10px 14px;border-left:3px solid #e2e8f0;color:#475569;font-style:italic;}
+.intent-section{margin:28px 0 8px;font-size:1.15rem;line-height:1.3;font-weight:600;padding-bottom:5px;border-bottom:1px solid #e2e8f0;}
+.intent-sub{margin:18px 0 6px;font-size:1rem;line-height:1.3;color:#374151;font-weight:600;}
+.intent-note{margin:8px 0;color:#374151;}
+.intent-divider{margin:22px 0;text-align:center;}
+.intent-divider-line{border:none;border-top:1px solid #e2e8f0;margin:0;}
+.intent-divider-label{display:inline-block;padding:0 12px;background:white;color:#94a3b8;font-size:0.8rem;position:relative;top:-10px;}
+.intent-task{display:flex;align-items:flex-start;gap:10px;padding:9px 12px;border:1px solid #e2e8f0;border-radius:6px;margin:6px 0;}
+.intent-task-checkbox{margin-top:3px;flex-shrink:0;}
 .intent-task-text{flex:1;}
-.intent-task-meta{display:flex;gap:10px;color:#6b7280;font-size:0.85rem;white-space:nowrap;}
-.intent-task-text-done{text-decoration:line-through;color:#6b7280;}
-.intent-question{margin:12px 0;padding:12px 14px;border-left:3px solid #e5e7eb;background:#fafafa;border-radius:10px;}
-.intent-code{margin:12px 0;padding:12px 14px;border:1px solid #e5e7eb;border-radius:10px;background:#0b1020;color:#e5e7eb;overflow-x:auto;}
-.intent-code code{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono',monospace;font-size:0.9rem;}
-.intent-table{width:100%;border-collapse:collapse;margin:14px 0;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;}
-.intent-table th,.intent-table td{padding:10px 12px;border-top:1px solid #e5e7eb;text-align:left;vertical-align:top;}
-.intent-table thead th{background:#fafafa;border-top:none;font-weight:600;color:#374151;}
+.intent-task-meta{display:flex;gap:8px;color:#94a3b8;font-size:0.8rem;white-space:nowrap;}
+.intent-task-owner::before{content:'@ ';opacity:0.6;}
+.intent-task-due::before{content:'due ';}
+.intent-task-time::before{content:'at ';}
+.intent-task-text-done{text-decoration:line-through;color:#94a3b8;}
+.intent-ask{display:flex;gap:12px;margin:12px 0;padding:8px 0 8px 14px;border-left:2px solid #94a3b8;align-items:baseline;}
+.intent-ask-label{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#64748b;flex-shrink:0;line-height:1.65;}
+.intent-ask-content{flex:1;color:#374151;font-style:italic;}
+.intent-quote{margin:16px 0;padding:2px 0 2px 18px;border-left:3px solid #cbd5e1;font-style:italic;color:#475569;}
+.intent-quote p{margin:0;line-height:1.7;}
+.intent-quote-cite{display:block;margin-top:6px;font-style:normal;color:#94a3b8;font-size:0.82rem;}
+.intent-code{margin:12px 0;padding:12px 14px;border-radius:6px;background:#0d1117;color:#e2e8f0;overflow-x:auto;}
+.intent-code code{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono',monospace;font-size:0.875rem;}
+.intent-table{width:100%;border-collapse:collapse;margin:14px 0;font-size:0.9em;}
+.intent-table th,.intent-table-th{padding:7px 12px;text-align:left;font-weight:600;color:#475569;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.05em;border-bottom:2px solid #e2e8f0;}
+.intent-table td,.intent-table-td{padding:8px 12px;text-align:left;border-bottom:1px solid #f1f5f9;color:#374151;vertical-align:top;}
+.intent-row:last-child .intent-table-td,.intent-row:last-child td{border-bottom:none;}
 .intent-image{margin:14px 0;}
-.intent-image-img{max-width:100%;height:auto;border-radius:12px;border:1px solid #e5e7eb;}
-.intent-image-caption{margin-top:8px;color:#6b7280;font-size:0.875rem;text-align:center;}
-.intent-link{margin:8px 0;}
+.intent-image-img{max-width:100%;height:auto;border-radius:6px;border:1px solid #e2e8f0;}
+.intent-image-caption{margin-top:6px;color:#64748b;font-size:0.82rem;text-align:center;}
+.intent-link{margin:6px 0;}
 .intent-link a{color:#2563eb;text-decoration:none;}
 .intent-link a:hover{text-decoration:underline;}
-.intent-ref{margin:8px 0;}
+.intent-ref{margin:6px 0;}
 .intent-ref a{color:#2563eb;text-decoration:none;font-style:italic;}
 .intent-ref a:hover{text-decoration:underline;}
-.intent-unknown{margin:10px 0;padding:10px 12px;border:1px dashed #e5e7eb;border-radius:10px;color:#6b7280;}
-.intent-sub2{margin:16px 0 6px;font-size:1rem;line-height:1.3;color:#4b5563;}
+.intent-unknown{margin:8px 0;padding:8px 12px;border:1px dashed #e2e8f0;border-radius:6px;color:#94a3b8;}
 .intent-embed{margin:16px 0;}
-.intent-embed iframe,.intent-embed video,.intent-embed audio{display:block;width:100%;border-radius:8px;border:1px solid #e5e7eb;}
-.intent-callout{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-radius:10px;margin:12px 0;border-left:4px solid;}
-.intent-callout-icon{font-size:1.2rem;flex-shrink:0;}
-.intent-callout-content{flex:1;}
-.intent-info{background:#eff6ff;border-color:#3b82f6;}
-.intent-warning{background:#fffbeb;border-color:#f59e0b;}
-.intent-tip{background:#f0fdf4;border-color:#22c55e;}
-.intent-success{background:#f0fdf4;border-color:#22c55e;}
-ul,ol{margin:10px 0 10px 22px;padding:0;}
-li{margin:6px 0;}
+.intent-embed iframe,.intent-embed video,.intent-embed audio{display:block;width:100%;border-radius:6px;border:1px solid #e2e8f0;}
+.intent-callout{display:flex;gap:12px;margin:12px 0;padding:8px 0 8px 14px;border-left:2px solid;align-items:baseline;}
+.intent-callout-label{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;flex-shrink:0;white-space:nowrap;line-height:1.65;}
+.intent-callout-content{flex:1;color:#374151;}
+.intent-info{border-color:#93c5fd;}
+.intent-info .intent-callout-label{color:#2563eb;}
+.intent-warning{border-color:#fcd34d;}
+.intent-warning .intent-callout-label{color:#b45309;}
+.intent-tip{border-color:#6ee7b7;}
+.intent-tip .intent-callout-label{color:#047857;}
+.intent-success{border-color:#6ee7b7;}
+.intent-success .intent-callout-label{color:#047857;}
+.intent-inline-link{color:#2563eb;text-decoration:none;}
+.intent-inline-link:hover{text-decoration:underline;}
+ul,ol{margin:8px 0 8px 20px;padding:0;}
+li{margin:4px 0;color:#374151;}
 </style>
 ${html}
 </div>`;

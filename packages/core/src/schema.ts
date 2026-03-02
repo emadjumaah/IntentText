@@ -80,8 +80,8 @@ export const PREDEFINED_SCHEMAS: Record<string, DocumentSchema> = {
         type: "note",
         content: { required: true },
       },
-      question: {
-        type: "question",
+      ask: {
+        type: "ask",
         content: { required: true },
       },
       task: {

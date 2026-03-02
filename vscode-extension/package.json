@@ -85,6 +85,6 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@intenttext/core": "file:../packages/core"
+    "@intenttext/core": "^1.0.0"
   }
 }

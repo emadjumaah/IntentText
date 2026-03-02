@@ -67,13 +67,22 @@ row: Ahmed | 30 | Dubai`;
     expect(html).toContain("<code>console.log(&quot;Hello&quot;)</code>");
   });
 
-  it("should render questions", () => {
-    const input = "question: Who has the key?";
+  it("should render ask blocks (question: is an alias for ask:)", () => {
+    const input = "ask: Who has the key?";
     const parsed = parseIntentText(input);
     const html = renderHTML(parsed);
 
-    expect(html).toContain("Question:");
-    expect(html).toContain('class="intent-question"');
+    expect(html).toContain('class="intent-ask"');
+    expect(html).toContain("Who has the key?");
+  });
+
+  it("should render question: as an alias for ask:", () => {
+    const input = "question: Who owns this?";
+    const parsed = parseIntentText(input);
+    const html = renderHTML(parsed);
+
+    expect(html).toContain('class="intent-ask"');
+    expect(html).toContain("Who owns this?");
   });
 
   it("should render images with captions", () => {

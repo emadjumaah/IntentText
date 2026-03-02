@@ -1,10 +1,10 @@
-# IntentText (.it) - v1.0 Parser & HTML Renderer
+# IntentText (.it)
 
 The Semantic Document Language for the Agentic Age.
 
-IntentText is a human-friendly, AI-ready document language that turns plain text into structured data. Unlike Markdown, which focuses on how text looks, IntentText focuses on what text means.
+IntentText is a human-friendly, AI-ready document language that turns plain text into structured data. Unlike Markdown, which focuses on how text *looks*, IntentText focuses on what text *means*.
 
-## 🎯 What is IntentText?
+## What is IntentText?
 
 IntentText combines:
 
@@ -13,11 +13,13 @@ IntentText combines:
 - **Pipe metadata** (`| owner: John | due: Friday`)
 - **AI-ready JSON output** with semantic structure
 
-## 🚀 Quick Start
+Every block parses to a typed JSON object — making documents machine-readable without sacrificing human readability.
+
+## Quick Start
 
 ### 1. Create an .it file
 
-```it
+```
 title: *Project Dalil* Launch Plan
 summary: Finalizing deployment in _Doha_.
 
@@ -25,27 +27,34 @@ section: Team Tasks
 task: Database migration | owner: Ahmed | due: Sunday
 done: Setup repository | time: Monday
 
+---
+
 section: Resources
 link: *Documentation* | to: https://dalil.ai/docs
 image: Launch Banner | at: banner.png | caption: Project artwork
+
+quote: The best documentation is the kind you actually read.
+  | by: Someone Wise
 ```
 
 ### 2. Parse it to JSON & HTML
 
 ```bash
-# Using the CLI tools
-npm run demo                    # See complete demo
-npm run parse:html             # Parse sample to HTML
-npm run parse:output           # Generate HTML file
+# See complete demo
+npm run demo
 
-# Interactive preview
-open preview.html              # Live editor in browser
+# Interactive live editor (browser)
+npm run preview
+
+# CLI: parse to JSON or HTML
+node cli.js document.it
+node cli.js document.it --html
 ```
 
 ### 3. Use in Your Code
 
 ```javascript
-const { parseIntentText, renderHTML } = require("./packages/core/dist");
+const { parseIntentText, renderHTML } = require("@intenttext/core");
 
 const content = fs.readFileSync("document.it", "utf-8");
 const document = parseIntentText(content);
@@ -54,7 +63,7 @@ const html = renderHTML(document);
 console.log(JSON.stringify(document, null, 2));
 ```
 
-## 📊 Output Examples
+## Output Examples
 
 ### JSON Structure
 
@@ -66,7 +75,10 @@ console.log(JSON.stringify(document, null, 2));
       "type": "title",
       "content": "Project Dalil Launch Plan",
       "originalContent": "*Project Dalil* Launch Plan",
-      "marks": [{ "type": "bold", "start": 0, "end": 12 }]
+      "inline": [
+        { "type": "bold", "value": "Project Dalil" },
+        { "type": "text", "value": " Launch Plan" }
+      ]
     },
     {
       "id": "uuid-456",
@@ -90,45 +102,89 @@ console.log(JSON.stringify(document, null, 2));
 
 Beautifully rendered document with:
 
-- ✅ Semantic HTML structure
-- ✅ Interactive task checkboxes
-- ✅ Styled tables and lists
-- ✅ Formatted text (bold, italic, strikethrough, code)
-- ✅ Responsive design
-- ✅ RTL/LTR support
+- Semantic HTML structure
+- Interactive task checkboxes
+- Styled tables and lists
+- Formatted text (bold, italic, strikethrough, code)
+- Responsive design
+- RTL/LTR support
 
-## 📚 Complete Syntax Reference
+## Syntax Reference
 
-| Feature                | Syntax                                  | Example                                                      |
-| ---------------------- | --------------------------------------- | ------------------------------------------------------------ |
-| **Document Structure** |                                         |                                                              |
-| Title                  | `title: Text`                           | `title: *My Document*`                                       |
-| Summary                | `summary: Text`                         | `summary: Project overview`                                  |
-| Section                | `section: Text`                         | `section: Action Items`                                      |
-| **Content Blocks**     |                                         |                                                              |
-| Task                   | `task: Text \| owner: X \| due: Y`      | `task: Write docs \| owner: John \| due: Friday`             |
-| Done                   | `done: Text \| time: X`                 | `done: Setup repo \| time: Monday`                           |
-| Question               | `question: Text`                        | `question: Who has access?`                                  |
-| Note                   | `note: Text`                            | `note: Remember to backup`                                   |
-| **Data & Media**       |                                         |                                                              |
-| Headers                | `headers: Col1 \| Col2 \| Col3`         | `headers: Name \| Age \| City`                               |
-| Row                    | `row: Val1 \| Val2 \| Val3`             | `row: John \| 30 \| Dubai`                                   |
-| Image                  | `image: Text \| at: path \| caption: X` | `image: Logo \| at: logo.png \| caption: Company logo`       |
-| Link                   | `link: Text \| to: url \| title: X`     | `link: Docs \| to: https://docs.com \| title: Documentation` |
-| **Code**               |                                         |                                                              |
-| Code Block             | `code:` ... `end:`                      | Multi-line code blocks                                       |
-| **Lists**              |                                         |                                                              |
-| Unordered              | `- Item` or `* Item`                    | `- First item`                                               |
-| Ordered                | `1. Item`                               | `1. First step`                                              |
-| **Formatting**         |                                         |                                                              |
-| Bold                   | `*text*`                                | `*important*`                                                |
-| Italic                 | `_text_`                                | `_emphasized_`                                               |
-| Strikethrough          | `~text~`                                | `~deleted~`                                                  |
-| Inline Code            | ` ```code``` `                          | ` ```console.log()``` `                                      |
-| **Structure**          |                                         |                                                              |
-| Divider                | `divider: Text`                         | `divider: End of section`                                    |
+### Document Structure
 
-## 🏗️ Project Structure
+| Keyword | Syntax | Example |
+| --- | --- | --- |
+| Title | `title: Text` | `title: *My Document*` |
+| Summary | `summary: Text` | `summary: Project overview` |
+| Section | `section: Text` | `section: Action Items` |
+| Sub-section | `sub: Text` | `sub: Details` |
+| Divider | `---` | `---` |
+
+### Content Blocks
+
+| Keyword | Syntax | Example |
+| --- | --- | --- |
+| Note / paragraph | `note: Text` | `note: Remember to backup` |
+| Task | `task: Text \| owner: X \| due: Y` | `task: Write docs \| owner: John \| due: Friday` |
+| Done | `done: Text \| time: X` | `done: Setup repo \| time: Monday` |
+| Ask | `ask: Text` | `ask: Who has the access key?` |
+| Quote | `quote: Text \| by: Author` | `quote: Be concise. \| by: Strunk` |
+
+### Callouts
+
+| Keyword | Syntax |
+| --- | --- |
+| Info | `info: Text` |
+| Warning | `warning: Text` |
+| Tip | `tip: Text` |
+| Success | `success: Text` |
+
+### Data & Media
+
+| Keyword | Syntax | Example |
+| --- | --- | --- |
+| Table (preferred) | `\| Col1 \| Col2 \|` | `\| Name \| Role \|` then `\| Ahmed \| Lead \|` |
+| Table (keyword) | `headers:` + `row:` | `headers: Name \| Role` then `row: Ahmed \| Lead` |
+| Image | `image: Alt \| at: path \| caption: X` | `image: Logo \| at: logo.png` |
+| Link | `link: Text \| to: url` | `link: Docs \| to: https://docs.com` |
+| Ref | `ref: Text \| to: target` | `ref: See section 2 \| to: #s2` |
+
+### Lists
+
+| Type | Syntax | Example |
+| --- | --- | --- |
+| Unordered | `- Item` or `* Item` | `- First item` |
+| Ordered | `1. Item` | `1. First step` |
+
+### Code
+
+````
+```
+const x = 1;
+const y = 2;
+```
+````
+
+Or with the keyword form (less preferred):
+
+```
+code:
+const x = 1;
+end:
+```
+
+### Inline Formatting
+
+| Style | Syntax | Example |
+| --- | --- | --- |
+| Bold | `*text*` | `*important*` |
+| Italic | `_text_` | `_emphasized_` |
+| Strikethrough | `~text~` | `~deleted~` |
+| Inline code | `` `code` `` | `` `console.log()` `` |
+| Link | `[label](url)` | `[Docs](https://docs.com)` |
+
+## Project Structure
 
 ```
 IntentText/
@@ -137,18 +193,21 @@ IntentText/
 │   │   ├── types.ts        # IntentBlock interfaces
 │   │   ├── parser.ts       # Core parsing logic
 │   │   ├── renderer.ts     # HTML rendering engine
-│   │   └── index.ts        # Public API
-│   ├── tests/              # 18 comprehensive tests
+│   │   ├── browser.ts      # Browser entry point
+│   │   └── index.ts        # Public API (Node.js)
+│   ├── tests/              # 143 tests across 11 files
 │   ├── examples/           # Sample .it files
 │   └── dist/               # Compiled TypeScript
-├── docs/                   # Specification docs
+├── vscode-extension/        # VS Code extension (syntax, preview)
+├── docs/                   # Specification
 ├── demo.js                 # Demo script
 ├── cli.js                  # Command line tool
 ├── preview.html            # Interactive live editor
-└── README.md              # This file
+├── intenttext.browser.js   # Pre-built browser bundle
+└── README.md
 ```
 
-## 🛠️ Development
+## Development
 
 ### Setup & Build
 
@@ -159,7 +218,10 @@ npm install
 # Build the library
 npm run build
 
-# Run all tests (18/18 passing)
+# Build browser bundle
+npm run browser:build
+
+# Run all tests (143/143 passing)
 npm run test
 
 # See demo output
@@ -168,150 +230,57 @@ npm run demo
 
 ### Available Scripts
 
-| Script                 | Description              |
-| ---------------------- | ------------------------ |
-| `npm run build`        | Build TypeScript library |
-| `npm run test`         | Run all unit tests       |
-| `npm run demo`         | Show complete demo       |
-| `npm run preview`      | Open interactive editor  |
-| `npm run parse`        | CLI tool usage           |
-| `npm run parse:html`   | Parse sample to HTML     |
-| `npm run parse:output` | Generate HTML file       |
+| Script | Description |
+| --- | --- |
+| `npm run build` | Build TypeScript library |
+| `npm run browser:build` | Build browser bundle |
+| `npm run test` | Run all unit tests |
+| `npm run demo` | Show complete demo |
+| `npm run preview` | Open interactive editor |
 
 ### Testing
 
 ```bash
-# Run test suite (18 tests, 100% passing)
+# Run test suite
 cd packages/core
 npm test
-
-# Test with custom content
-node cli.js your-file.it --html
 ```
 
-## 🌐 Interactive Demo
+## Interactive Demo
 
-Open `preview.html` in your browser for:
+Open `preview.html` in your browser for a live editor with real-time preview. It uses the actual parser — no mocks.
 
-- **Live IntentText editor** (left panel)
-- **Real-time HTML preview** (right panel)
-- **Instant rendering** as you type
-- **Test all features** interactively
+Or use the VS Code extension for live preview inside your editor (`Cmd+Shift+V` / `Ctrl+Shift+V`).
 
-You can also try the **live Playground** (GitHub Pages) once enabled for this repository:
+## Browser Integration
 
-- `https://<your-github-username>.github.io/<repo-name>/`
+```html
+<script src="intenttext.browser.js"></script>
+<script>
+  const { parseIntentText, renderHTML } = IntentText;
 
-## 📖 Specification
-
-See `docs/SPEC.md` for the complete IntentText v1.0 specification including:
-
-- Design philosophy
-- Complete keyword reference
-- Advanced features
-- Internationalization support
-
-## ✨ Features Implemented
-
-✅ **Full v1.0 Spec Compliance**
-
-- All 15+ keywords supported
-- Pipe metadata parsing
-- Inline formatting (bold, italic, strikethrough, code)
-- Tables, lists, code blocks
-- RTL/Arabic language detection
-
-✅ **Beautiful HTML Output**
-
-- Semantic HTML structure
-- Interactive task checkboxes
-- Styled components with CSS
-- Responsive design
-- RTL/LTR direction support
-
-✅ **Developer Friendly**
-
-- TypeScript with full type definitions
-- Unit tests via Vitest (see `packages/core/tests`)
-- CLI tools and interactive demo
-- Clean API design
-
-✅ **Pragmatic & Lightweight**
-
-- Small, readable TypeScript core
-- Safe-by-default HTML rendering
-- Easy integration
-
-## 🚀 Usage Examples
-
-### Command Line
-
-```bash
-# Parse to JSON
-node cli.js document.it
-
-# Generate HTML
-node cli.js document.it --html
-
-# Save to file
-node cli.js document.it --output
+  const doc = parseIntentText("title: Hello\nnote: World");
+  document.getElementById("preview").innerHTML = renderHTML(doc);
+</script>
 ```
 
-### Node.js Application
+## Node.js / npm
 
 ```javascript
 const { parseIntentText, renderHTML } = require("@intenttext/core");
 
-// Parse IntentText file
 const content = fs.readFileSync("meeting.it", "utf-8");
-const document = parseIntentText(content);
+const doc = parseIntentText(content);
 
 // Access specific blocks
-const tasks = document.blocks.filter((b) => b.type === "task");
-const sections = document.blocks.filter((b) => b.type === "section");
-
-// Generate HTML for web display
-const html = renderHTML(document);
-fs.writeFileSync("meeting.html", html);
+const tasks = doc.blocks.filter(b => b.type === "task");
+const html = renderHTML(doc);
 ```
 
-### Browser Integration
+## Specification
 
-```html
-<script src="node_modules/@intenttext/core/dist/index.js"></script>
-<script>
-  const { parseIntentText, renderHTML } = IntentText;
-  // Use in browser...
-</script>
-```
+See `docs/SPEC.md` for the full IntentText specification including design philosophy, advanced features, and extension API.
 
-## 🤝 Contributing
+## License
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature-name`
-3. Add tests for new functionality
-4. Ensure all tests pass: `npm test`
-5. Submit a pull request
-
-### Development Guidelines
-
-- Follow TypeScript best practices
-- Add comprehensive tests
-- Update documentation
-- Maintain 100% test coverage
-
-## 📄 License
-
-MIT License - see LICENSE file for details.
-
-## 🔗 Links
-
-- **Specification**: `docs/SPEC.md`
-- **Live Demo**: Open `preview.html`
-- **Playground (GitHub Pages)**: `https://<your-github-username>.github.io/<repo-name>/`
-- **Package**: `@intenttext/core`
-- **Issues**: GitHub Issues
-
----
-
-**IntentText v1.0** - Making semantic documents accessible to everyone, readable by AI. 🚀
+MIT
