@@ -1,7 +1,7 @@
-// Browser entry point — only exports what runs in the browser.
-// Excludes Node.js-only modules (export, knowledge-graph, templates).
+// Browser entry point — exports what runs in the browser.
 export { parseIntentText } from "./parser";
 export { renderHTML } from "./renderer";
+export { convertMarkdownToIntentText } from "./markdown";
 export type {
   IntentDocument,
   IntentBlock,

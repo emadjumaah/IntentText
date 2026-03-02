@@ -7,35 +7,8 @@ import {
   InlineNode,
   ParseOptions,
   IntentExtension,
+  KEYWORDS,
 } from "./types";
-
-// Reserved keywords (case-insensitive)
-const KEYWORDS = [
-  "title",
-  "summary",
-  "section",
-  "sub",
-  "subsection", // alias → sub
-  "divider",
-  "note",
-  "info",
-  "warning",
-  "tip",
-  "success",
-  "headers",
-  "row",
-  "task",
-  "done",
-  "ask",
-  "question", // alias → ask
-  "quote",
-  "image",
-  "link",
-  "ref",
-  "embed",
-  "code",
-  "end",
-];
 
 // Keyword aliases: maps a written keyword to its canonical block type
 const KEYWORD_ALIASES: Record<string, string> = {

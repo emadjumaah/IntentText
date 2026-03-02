@@ -1,4 +1,5 @@
 import { IntentBlock, IntentDocument, BlockType } from "./types";
+import { flattenBlocks } from "./utils";
 
 export interface PropertySchema {
   type: "string" | "number" | "boolean" | "date" | "enum" | "url" | "email";
@@ -389,7 +390,7 @@ function validateBlock(
     }
 
     // Check for unknown properties
-    if (!schema.allowUnknownProperties && block.properties) {
+    if (schema.allowUnknownProperties === false && block.properties) {
       const knownProps = Object.keys(schema.properties);
       for (const propName of Object.keys(block.properties)) {
         if (!knownProps.includes(propName)) {
@@ -406,17 +407,6 @@ function validateBlock(
   }
 
   return errors;
-}
-
-function flattenBlocks(blocks: IntentBlock[]): IntentBlock[] {
-  const result: IntentBlock[] = [];
-  for (const block of blocks) {
-    result.push(block);
-    if (block.children) {
-      result.push(...flattenBlocks(block.children));
-    }
-  }
-  return result;
 }
 
 /**

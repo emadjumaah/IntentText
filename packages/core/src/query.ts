@@ -1,4 +1,5 @@
 import { IntentDocument, IntentBlock } from "./types";
+import { flattenBlocks } from "./utils";
 
 export interface QueryClause {
   field: string;
@@ -269,20 +270,9 @@ export function queryBlocks(
 
   return {
     blocks,
-    total: document.blocks.length,
+    total: flattenBlocks(document.blocks).length,
     matched,
   };
-}
-
-function flattenBlocks(blocks: IntentBlock[]): IntentBlock[] {
-  const result: IntentBlock[] = [];
-  for (const block of blocks) {
-    result.push(block);
-    if (block.children) {
-      result.push(...flattenBlocks(block.children));
-    }
-  }
-  return result;
 }
 
 /**

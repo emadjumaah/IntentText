@@ -44,4 +44,37 @@ console.log("hi")
     expect(itText).toContain("link: Docs | to: https://example.com");
     expect(itText).toContain("image: Alt | at: logo.png");
   });
+
+  it("should handle multiple bold segments correctly", () => {
+    const md = "**first** and **second**";
+    const itText = convertMarkdownToIntentText(md);
+    expect(itText).toBe("note: *first* and *second*");
+  });
+
+  it("should handle bold at various string positions", () => {
+    const md = "start **bold** middle **also bold** end";
+    const itText = convertMarkdownToIntentText(md);
+    expect(itText).toBe("note: start *bold* middle *also bold* end");
+  });
+
+  it("should convert blockquotes to quote:", () => {
+    const md = "> Wise words";
+    const itText = convertMarkdownToIntentText(md);
+    expect(itText).toBe("quote: Wise words");
+  });
+
+  it("should convert horizontal rules to ---", () => {
+    const md = "---";
+    const itText = convertMarkdownToIntentText(md);
+    expect(itText).toBe("---");
+  });
+
+  it("should convert markdown tables", () => {
+    const md = `| Name | Age |
+| --- | --- |
+| Ahmed | 30 |`;
+    const itText = convertMarkdownToIntentText(md);
+    expect(itText).toContain("headers: Name | Age");
+    expect(itText).toContain("row: Ahmed | 30");
+  });
 });

@@ -238,7 +238,7 @@ function renderBlock(block: IntentBlock): string {
 }
 
 // Render a list of blocks, properly grouping consecutive list/step items
-// and recursing into section/sub/sub2 children.
+// and recursing into section/sub children.
 function renderBlocks(blocks: IntentBlock[]): string {
   let html = "";
   let i = 0;

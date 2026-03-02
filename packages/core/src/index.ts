@@ -1,6 +1,7 @@
 export { parseIntentText } from "./parser";
 export { renderHTML } from "./renderer";
 export { convertMarkdownToIntentText } from "./markdown";
+export { convertHtmlToIntentText } from "./html-to-it";
 export { queryBlocks, parseQuery, formatQueryResult } from "./query";
 export {
   validateDocument,

@@ -10,23 +10,32 @@ The format is based on Keep a Changelog.
 
 ### Added
 
-- `//` comment syntax — lines starting with `//` are silently ignored by the parser
+- **`convertHtmlToIntentText(html)`** — new HTML-to-IntentText converter. Maps semantic HTML elements (`<h1>` → `title:`, `<h2>` → `section:`, `<ul>` → list items, `<table>` → pipe tables, `<blockquote>` → `quote:`, etc.) with full inline formatting support
+- **`convertMarkdownToIntentText`** now exported from browser bundle
+- Blockquote (`>`) → `quote:` conversion in markdown converter
+- Horizontal rule (`---`, `***`) → `---` divider in markdown converter
+- Markdown table support in markdown converter
 - `subsection:` keyword alias for `sub:`
-- `version` field on parsed `IntentDocument` (now emits `"1.2"`)
-- `info:`, `warning:`, `tip:`, `success:` callout keywords in types.ts KEYWORDS export
-- Pipe escaping with `\|` inside content
+- `version` field on parsed `IntentDocument` (emits `"1.2"`)
+- `info:`, `warning:`, `tip:`, `success:` added to exported KEYWORDS array
+- `//` comment syntax — lines starting with `//` are silently ignored
 
 ### Changed
 
-- `done:` now normalizes to `{type: "task", properties: {status: "done"}}` instead of `{type: "done"}`
+- **Breaking**: Removed stub modules `ai-features`, `knowledge-graph`, `collaboration`, `export`, `templates`, `dates` — these were never production-ready
+- **Breaking**: `done:` normalizes to `{type: "task", properties: {status: "done"}}` instead of `{type: "done"}`
 - Checkbox `[x]` also normalizes to `type: "task"` with `status: "done"`
-- Removed unused modules: ai-features, knowledge-graph, collaboration, export, templates, dates
 - Removed deprecated `InlineMark` type and `marks` field from `IntentBlock`
-- Browser bundle reduced from ~60KB to ~19KB
+- `flattenBlocks()` extracted to shared `utils.ts` (internal refactor)
+- KEYWORDS array is now the single source of truth in `types.ts`
+- Browser bundle reduced from ~60KB to ~21KB
 
 ### Fixed
 
-- `//` comment lines inside code blocks are now preserved as code content (previously swallowed as comments)
+- `//` comment lines inside code blocks are now preserved (previously swallowed)
+- `**multiple** bold **segments**` in markdown converter now converts correctly
+- `query.ts`: `total` field now counts all blocks including nested children
+- `schema.ts`: `allowUnknownProperties` now only warns when explicitly set to `false`
 
 ## [1.2.0] - 2026-03-01
 

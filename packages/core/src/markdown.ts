@@ -23,8 +23,9 @@ export function convertMarkdownToIntentText(markdown: string): string {
     // Protect bold markers during italic conversion
     const BOLD_START = "\x00BS\x00";
     const BOLD_END = "\x00BE\x00";
-    result = result.replace(/\*\*/g, (match, offset) =>
-      offset % 2 === 0 ? BOLD_START : BOLD_END,
+    let boldIndex = 0;
+    result = result.replace(/\*\*/g, () =>
+      boldIndex++ % 2 === 0 ? BOLD_START : BOLD_END,
     );
 
     // Italic: *text* -> _text_
@@ -63,6 +64,12 @@ export function convertMarkdownToIntentText(markdown: string): string {
 
     if (!trimmed) {
       out.push("");
+      continue;
+    }
+
+    // Horizontal rule
+    if (/^(-{3,}|\*{3,}|_{3,})$/.test(trimmed)) {
+      out.push("---");
       continue;
     }
 
@@ -106,6 +113,34 @@ export function convertMarkdownToIntentText(markdown: string): string {
     const ol = trimmed.match(/^(\d+)\.\s+(.+)$/);
     if (ol) {
       out.push(`${ol[1]}. ${convertInline(ol[2].trim())}`);
+      continue;
+    }
+
+    // Blockquote: > text -> quote: text
+    const bq = trimmed.match(/^>\s*(.*)$/);
+    if (bq) {
+      out.push(`quote: ${convertInline(bq[1].trim())}`);
+      continue;
+    }
+
+    // Markdown table: | col1 | col2 | col3 |
+    if (/^\|.+\|$/.test(trimmed)) {
+      // Skip separator rows (| --- | --- |)
+      if (/^\|[\s\-:|]+\|$/.test(trimmed)) {
+        continue;
+      }
+      const cells = trimmed
+        .slice(1, -1)
+        .split("|")
+        .map((c) => convertInline(c.trim()));
+      // Check if previous line was empty or this is first table row
+      const isHeader =
+        i + 1 < lines.length && /^\|[\s\-:|]+\|$/.test(lines[i + 1].trim());
+      if (isHeader) {
+        out.push(`headers: ${cells.join(" | ")}`);
+      } else {
+        out.push(`row: ${cells.join(" | ")}`);
+      }
       continue;
     }
 
