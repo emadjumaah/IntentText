@@ -159,10 +159,10 @@ image: *Launch Banner* | at: assets/banner.png | caption: Project Dalil launch a
     expect(taskBlock?.properties?.owner).toBe("Ahmed");
 
     const doneBlock =
-      result.blocks.find((b) => b.type === "done") ||
+      result.blocks.find((b) => b.type === "task" && b.properties?.status === "done") ||
       result.blocks
         .flatMap((b) => b.children || [])
-        .find((b) => b.type === "done");
+        .find((b) => b.type === "task" && b.properties?.status === "done");
     expect(doneBlock?.properties?.time).toBe("09:00 AM");
 
     const codeBlock =

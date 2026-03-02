@@ -25,6 +25,7 @@ export const KEYWORDS = [
   "summary",
   "section",
   "sub",
+  "subsection", // alias → sub
   "divider",
   "note",
   "headers",
@@ -140,6 +141,7 @@ export interface Diagnostic {
 }
 
 export interface IntentDocument {
+  version?: string;
   blocks: IntentBlock[];
   metadata?: {
     title?: string;

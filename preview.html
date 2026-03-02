@@ -202,11 +202,16 @@
         <textarea id="editor" spellcheck="false">title: IntentText *Keyword* Showcase
 summary: A complete reference document demonstrating every block type in the .it format.
 
+// This is a comment — ignored by the parser, useful for notes to yourself.
+
 section: Document Structure
 note: title: sets the document heading. summary: appears as a lead paragraph below it.
 note: section: is a major heading. sub: is a sub-heading within a section.
 
 sub: This is a sub: block
+note: subsection: is an alias for sub: — both produce the same block, sub: is preferred.
+
+subsection: This is a subsection: block (alias for sub:)
 note: Content nested under a sub heading. Use sub: to group related content within a section.
 
 ---
@@ -217,6 +222,7 @@ note: Links inline too: see [IntentText](https://example.com) for more.
 body-text: Both note: and body-text: render as a plain paragraph — they are identical.
 
 section: Tasks
+note: done: normalizes to {type:"task", status:"done"} in JSON — same block, completed state.
 task: Migrate the database | owner: Ahmed | due: Sunday
 task: Write integration tests | owner: Sara | due: Monday
 done: Secure the domain name | time: 09:00 AM

@@ -123,23 +123,18 @@ function renderBlock(block: IntentBlock): string {
       return `<div class="intent-callout intent-success"><span class="intent-callout-label">Done</span><div class="intent-callout-content">${content}</div></div>`;
 
     case "task":
-      return `<div class="intent-task">
-        <input class="intent-task-checkbox" type="checkbox" />
-        <span class="intent-task-text">${content}</span>
+    case "done": { // "done" kept as legacy fallback for pre-1.1 JSON
+      const isDone = props.status === "done" || block.type === "done";
+      return `<div class="intent-task${isDone ? " intent-task-done" : ""}">
+        <input class="intent-task-checkbox" type="checkbox"${isDone ? " checked" : ""} />
+        <span class="intent-task-text${isDone ? " intent-task-text-done" : ""}">${content}</span>
         <span class="intent-task-meta">
           ${props.owner ? `<span class="intent-task-owner">${escapeHtml(String(props.owner))}</span>` : ""}
           ${props.due ? `<span class="intent-task-due">${escapeHtml(String(props.due))}</span>` : ""}
-        </span>
-      </div>`;
-
-    case "done":
-      return `<div class="intent-task intent-task-done">
-        <input class="intent-task-checkbox" type="checkbox" checked />
-        <span class="intent-task-text intent-task-text-done">${content}</span>
-        <span class="intent-task-meta">
           ${props.time ? `<span class="intent-task-time">${escapeHtml(String(props.time))}</span>` : ""}
         </span>
       </div>`;
+    }
 
     case "ask":
       return `<div class="intent-ask"><span class="intent-ask-label">Query</span><div class="intent-ask-content">${content}</div></div>`;

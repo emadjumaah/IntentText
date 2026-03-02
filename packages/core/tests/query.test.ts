@@ -36,9 +36,9 @@ describe("Query Language (v1.2)", () => {
       },
       {
         id: "5",
-        type: "done",
+        type: "task",
         content: "Initial commit",
-        properties: { time: "2026-02-20" },
+        properties: { time: "2026-02-20", status: "done" },
       },
       {
         id: "6",
@@ -140,7 +140,7 @@ describe("Query Language (v1.2)", () => {
   describe("queryBlocks", () => {
     it("should filter by type", () => {
       const result = queryBlocks(sampleDoc, "type=task");
-      expect(result.matched).toBe(4); // 3 top-level + 1 nested
+      expect(result.matched).toBe(5); // 4 top-level (including former done) + 1 nested
       expect(result.blocks.every((b) => b.type === "task")).toBe(true);
     });
 
@@ -180,7 +180,7 @@ describe("Query Language (v1.2)", () => {
     it("should apply limit", () => {
       const result = queryBlocks(sampleDoc, "type=task limit:2");
       expect(result.blocks.length).toBe(2);
-      expect(result.matched).toBe(4); // Total matched is 4
+      expect(result.matched).toBe(5); // Total matched is 5 (former done is now task)
     });
 
     it("should apply offset", () => {

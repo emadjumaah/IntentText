@@ -15,6 +15,7 @@ const KEYWORDS = [
   "summary",
   "section",
   "sub",
+  "subsection", // alias → sub
   "divider",
   "note",
   "info",
@@ -39,6 +40,8 @@ const KEYWORDS = [
 // Keyword aliases: maps a written keyword to its canonical block type
 const KEYWORD_ALIASES: Record<string, string> = {
   question: "ask",
+  subsection: "sub",
+  done: "task",
 };
 
 // Helper function to detect Arabic text (RTL)
@@ -408,8 +411,13 @@ function parseLine(
       };
     }
 
-    // Apply keyword aliases (e.g. question → ask)
+    // Apply keyword aliases (e.g. question → ask, subsection → sub, done → task)
     const resolvedType = (KEYWORD_ALIASES[keyword] ?? keyword) as BlockType;
+
+    // done: always carries status: "done" on the normalized task block
+    if (keyword === "done") {
+      properties.status = "done";
+    }
 
     return {
       id: uuidv4(),
@@ -434,9 +442,11 @@ function parseLine(
 
     const { content: finalContent, inline } = ctx.parseInline(content);
 
+    if (isDone) shortcuts.status = "done";
+
     return {
       id: uuidv4(),
-      type: isDone ? "done" : "task",
+      type: "task",
       content: finalContent,
       originalContent: content,
       properties: Object.keys(shortcuts).length > 0 ? shortcuts : undefined,
@@ -588,6 +598,9 @@ export function parseIntentText(
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const trimmed = line.trim();
+
+    // Comment lines (// ...) are silently ignored
+    if (trimmed.startsWith("//")) continue;
 
     // If we have a pending table and current line is not a row (keyword or MD pipe), flush it.
     const isMdPipeRow = /^\|.+\|$/.test(trimmed);
@@ -842,6 +855,7 @@ export function parseIntentText(
   const hasArabic = blocks.some((b) => detectArabic(b.content));
 
   const document: IntentDocument = {
+    version: "1.1",
     blocks,
     metadata: {
       title: titleBlock?.content,

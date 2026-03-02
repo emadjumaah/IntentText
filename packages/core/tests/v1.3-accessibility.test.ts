@@ -64,12 +64,13 @@ note: This is a note`;
       expect(doc.blocks[0].content).toBe("Review this document");
     });
 
-    it("should parse [x] as done block", () => {
+    it("should parse [x] as a completed task (type:task, status:done)", () => {
       const input = `[x] Review this document`;
 
       const doc = parseIntentText(input);
 
-      expect(doc.blocks[0].type).toBe("done");
+      expect(doc.blocks[0].type).toBe("task");
+      expect(doc.blocks[0].properties?.status).toBe("done");
       expect(doc.blocks[0].content).toBe("Review this document");
     });
 
@@ -81,7 +82,8 @@ note: This is a note`;
       const doc = parseIntentText(input);
 
       expect(doc.blocks[0].type).toBe("task");
-      expect(doc.blocks[1].type).toBe("done");
+      expect(doc.blocks[1].type).toBe("task");
+      expect(doc.blocks[1].properties?.status).toBe("done");
       expect(doc.blocks[2].type).toBe("task");
     });
   });

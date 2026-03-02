@@ -20,6 +20,8 @@ Every block parses to a typed JSON object — making documents machine-readable 
 ### 1. Create an .it file
 
 ```
+// Comments start with // and are ignored by the parser.
+
 title: *Project Dalil* Launch Plan
 summary: Finalizing deployment in _Doha_.
 
@@ -33,8 +35,7 @@ section: Resources
 link: *Documentation* | to: https://dalil.ai/docs
 image: Launch Banner | at: banner.png | caption: Project artwork
 
-quote: The best documentation is the kind you actually read.
-  | by: Someone Wise
+quote: The best documentation is the kind you actually read. | by: Someone Wise
 ```
 
 ### 2. Parse it to JSON & HTML
@@ -69,6 +70,7 @@ console.log(JSON.stringify(document, null, 2));
 
 ```json
 {
+  "version": "1.1",
   "blocks": [
     {
       "id": "uuid-123",
@@ -87,6 +89,15 @@ console.log(JSON.stringify(document, null, 2));
       "properties": {
         "owner": "Ahmed",
         "due": "Sunday"
+      }
+    },
+    {
+      "id": "uuid-789",
+      "type": "task",
+      "content": "Setup repository",
+      "properties": {
+        "time": "Monday",
+        "status": "done"
       }
     }
   ],
@@ -119,7 +130,9 @@ Beautifully rendered document with:
 | Summary | `summary: Text` | `summary: Project overview` |
 | Section | `section: Text` | `section: Action Items` |
 | Sub-section | `sub: Text` | `sub: Details` |
+| Sub-section (alias) | `subsection: Text` | `subsection: Details` |
 | Divider | `---` | `---` |
+| Comment | `// Text` | `// ignored by parser` |
 
 ### Content Blocks
 
@@ -127,9 +140,11 @@ Beautifully rendered document with:
 | --- | --- | --- |
 | Note / paragraph | `note: Text` | `note: Remember to backup` |
 | Task | `task: Text \| owner: X \| due: Y` | `task: Write docs \| owner: John \| due: Friday` |
-| Done | `done: Text \| time: X` | `done: Setup repo \| time: Monday` |
+| Done (completed task) | `done: Text \| time: X` | `done: Setup repo \| time: Monday` |
 | Ask | `ask: Text` | `ask: Who has the access key?` |
 | Quote | `quote: Text \| by: Author` | `quote: Be concise. \| by: Strunk` |
+
+> **Note on `done:`:** In JSON output, `done:` normalizes to `{type: "task", status: "done"}`. Both open and completed tasks share the same type — the `status` property distinguishes them. This makes filtering straightforward: `blocks.filter(b => b.type === "task" && b.properties?.status === "done")`.
 
 ### Callouts
 
@@ -272,8 +287,14 @@ const { parseIntentText, renderHTML } = require("@intenttext/core");
 const content = fs.readFileSync("meeting.it", "utf-8");
 const doc = parseIntentText(content);
 
-// Access specific blocks
-const tasks = doc.blocks.filter(b => b.type === "task");
+console.log(doc.version); // "1.1"
+
+// Filter open tasks
+const openTasks = doc.blocks.filter(b => b.type === "task" && b.properties?.status !== "done");
+
+// Filter completed tasks
+const doneTasks = doc.blocks.filter(b => b.type === "task" && b.properties?.status === "done");
+
 const html = renderHTML(doc);
 ```
 
