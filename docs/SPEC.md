@@ -416,7 +416,7 @@ Parsers should preserve unknown extension blocks as `body-text` (or optionally e
 | -------- | --------- | ---------------------------------------- |
 | **v1.0** | ✅ Stable | Core format                              |
 | **v1.3** | ✅ Stable | Query, Schema, Converters, Accessibility |
-| **v1.4** | ✅ Stable | Cleanup, fixture accuracy, spec overhaul  |
+| **v1.4** | ✅ Stable | Cleanup, fixture accuracy, spec overhaul |
 
 ### 12.1 Implemented Features (v1.0 – v1.3)
 
