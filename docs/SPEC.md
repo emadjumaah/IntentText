@@ -395,9 +395,9 @@ image: *Launch Banner* | at: assets/banner.png | caption: Project Dalil launch a
 
 All keywords are **case-insensitive** (`Title:` = `title:`). User content is always preserved as written.
 
-**Implemented:** `ref` (cross-document references) — see §3.7 below.
+**Implemented:** `ref` (cross-document references) — see §3.7.
 
-**Reserved for v1.1:** `sub2` (deeper hierarchy), `embed` (rich embeds).
+**Reserved for future versions:** `sub2` (deeper hierarchy), `embed` (rich embeds).
 
 ### 11.1 Extension Keywords
 
@@ -412,24 +412,20 @@ Parsers should preserve unknown extension blocks as `body-text` (or optionally e
 
 ## 12. Versioning
 
-| Version  | Status     | Notes                            |
-| -------- | ---------- | -------------------------------- |
-| **v1.0** | ✅ Stable  | Core format                      |
-| **v1.1** | 🗓 Planned | See detailed specification below |
-| **v1.2** | ✅ Stable  | Query, Schema, Templates, Export |
+| Version  | Status    | Notes                                    |
+| -------- | --------- | ---------------------------------------- |
+| **v1.0** | ✅ Stable | Core format                              |
+| **v1.3** | ✅ Stable | Query, Schema, Converters, Accessibility |
 
-### 12.1 v1.2 Specification (Implemented)
+### 12.1 Implemented Features (v1.0 – v1.3)
 
-#### Query Language
+#### Query Language (v1.2+)
 
 Query IntentText documents using a SQL-like syntax.
 
 ```bash
-# CLI usage
-intenttext query "type=task owner=Ahmed due<2026-03-01 sort:due:asc limit:10"
+node cli.js document.it --query "type=task owner=Ahmed due<2026-03-01 sort:due:asc limit:10"
 ```
-
-**Query Syntax:**
 
 | Operator             | Description     | Example                   |
 | -------------------- | --------------- | ------------------------- |
@@ -443,17 +439,14 @@ intenttext query "type=task owner=Ahmed due<2026-03-01 sort:due:asc limit:10"
 | `limit:N`            | Limit results   | `limit:10`                |
 | `offset:N`           | Pagination      | `offset:5`                |
 
-#### Schema Validation
+#### Schema Validation (v1.2+)
 
 Validate documents against predefined or custom schemas.
 
 ```bash
-# CLI usage
-intenttext validate project    # Validate against project schema
-intenttext validate article    # Validate against article schema
+node cli.js project.it --validate project
+node cli.js article.it --validate article
 ```
-
-**Predefined Schemas:**
 
 | Schema      | Required Blocks    | Block Schemas                              |
 | ----------- | ------------------ | ------------------------------------------ |
@@ -462,261 +455,33 @@ intenttext validate article    # Validate against article schema
 | `article`   | `title`, `summary` | image (at required), link, section         |
 | `checklist` | `title`            | task, done                                 |
 
-#### Templates & Includes
-
-Reusable templates and file composition.
-
-```it
-# Define a template
-template: meeting-note | params: date, attendees
-section: Meeting | {{date}}
-note: Attendees: {{attendees}}
-end:
-
-# Use the template
-use: meeting-note | date: 2026-03-01 | attendees: Ahmed, Sarah
-
-# Include another file
-include: ./common-header.it
-```
-
-**Template Syntax:**
-
-- `template:` — Define template with optional params
-- `use:` — Instantiate template with parameter values
-- `include:` — Inline content from another .it file
-- Variable substitution: `{{paramName}}`
-
-#### Export Pipeline (Static Site Generator)
-
-Build static HTML sites from .it files.
-
-```bash
-# CLI usage
-intenttext build ./docs --out ./dist --theme docs
-```
-
-**Themes:**
-
-| Theme     | Description                                     |
-| --------- | ----------------------------------------------- |
-| `default` | Clean, modern styling with task/done indicators |
-| `minimal` | Bare minimal styling                            |
-| `docs`    | Documentation-style with sidebar navigation     |
-
-### 12.2 v1.1 Specification (Draft)
-
-#### `sub2:` — Deeper Hierarchy
-
-Extends `section:` → `sub:` with a third level for complex documents.
-
-```it
-section: Engineering
-sub: Backend
-sub2: Database Layer
-task: Optimize queries
-```
-
-**Scoping Rule:** `sub2:` belongs to its parent `sub:`, which belongs to its parent `section:`. All three levels must be explicitly declared in order (no skipping).
-
-#### `embed:` — Rich Embeds
-
-For external content that should be rendered inline.
-
-```it
-embed: Dashboard Metrics | type: iframe | src: https://metrics.internal/engineering
-embed: Architecture Diagram | type: mermaid | content: graph TD; A-->B;
-```
-
-**Standard Properties:**
-
-- `type:` — `iframe`, `mermaid`, `svg`, `video`, `audio`
-- `src:` — External URL (for iframe, video, audio)
-- `content:` — Inline content (for mermaid, svg)
-
-#### Deeper List Nesting
-
-v1.0 lists are flat. v1.1 allows indentation-based nesting:
-
-```it
-section: Project Plan
-- Phase 1: Discovery
-  - Interview stakeholders
-  - Review existing docs
-  - task: Schedule interviews | owner: Ahmed
-- Phase 2: Design
-  - Wireframes
-  - Technical architecture
-```
-
-**Rules:**
-
-- 2-space or 4-space indentation denotes nesting
-- Any block type can appear inside a nested list item
-- Maximum nesting depth: 3 levels (to preserve readability)
-
-#### Knowledge Graph
-
-Parse folders of .it files and build document relationships.
-
-```bash
-# CLI usage
-intenttext graph ./docs              # Show graph summary
-intenttext graph ./docs --mermaid    # Export Mermaid diagram
-```
-
-**Reference Types:**
-
-- `ref:` blocks — explicit cross-document references
-- `link:` to .it files — implicit references
-- `[[Wiki Links]]` — document mentions in content
-- `#hashtags` — shared tags create clusters
-
-**Graph Operations:**
-
-- Find related documents by references, tags, and content similarity
-- Generate "Related Documents" sections automatically
-- Find paths between documents
-- Export Mermaid diagrams for visualization
-
-#### AI-Native Features
-
-Built-in support for LLM workflows.
-
-```it
-# AI instructions (invisible in rendered output)
-ai: Summarize the following section for executives | model: gpt-4
-
-# Uncertain information flag
-note: ?Revenue projections need verification from Finance
-
-# Synthesis tasks (AI generates content)
-synthesize: Key takeaways | scope: section | output: key-points
-```
-
-**Features:**
-
-- `ai:` blocks — instructions for LLMs, filtered from render
-- `?` prefix — marks uncertain content for verification
-- `synthesize:` — triggers AI synthesis of preceding content
-
-#### Collaboration
-
-Team features for shared documents.
-
-```it
-# @mentions in content
-task: Review proposal | owner: @sarah
-note: @#engineering-team please review by Friday
-
-# Comments on blocks
-comment: Is this timeline realistic? | author: john | on: block-123
-comment-reply: We can adjust | author: sarah
-```
-
-**Features:**
-
-- `@username` — user mentions
-- `@#group-name` — group mentions
-- `@[[Doc Name]]` — document references in mentions
-- `comment:` — block-level comments with threading
-- Change tracking between document versions
-
-#### v1.3 Accessibility Features
-
-Making IntentText accessible to non-technical users.
-
-**Implicit Paragraphs**
-
-Lines without keywords automatically become body text:
-
-```it
-title: My Document
-
-This is a paragraph without a keyword.
-It continues naturally. Very intuitive!
-
-note: This still uses a keyword
-```
-
-**Checkbox Tasks**
-
-Familiar checkbox syntax for tasks:
-
-```it
-[ ] Unchecked task — still to do
-[x] Completed task — already done
-[ ] Another pending task @ahmed !high
-```
-
-**Inline Links**
-
-Markdown-style links in any content:
-
-```it
-note: Visit [our website](https://example.com) for more info.
-task: Review [the proposal](https://docs.com/proposal) @sarah
-```
-
-**Property Shortcuts**
-
-Quick shorthand for common properties:
-
-```it
-[ ] Urgent task !critical          # priority: critical
-[ ] Normal work !high              # priority: high
-[ ] Low priority !low              # priority: low
-[ ] Review doc @john               # owner: john
-[ ] Complex task @sarah !high      # owner: sarah, priority: high
-```
-
-**Visual Callouts**
-
-Color-coded information blocks:
-
-```it
-info: ℹ️ This is informational
-warning: ⚠️ This needs attention
-tip: 💡 Here's a helpful suggestion
-success: ✅ This was completed successfully
-```
-
-**Emoji Properties**
-
-Visual emoji shortcuts for task metadata:
-
-```it
-[ ] Launch feature 🚨              # priority: urgent
-[ ] Meeting tomorrow 📅 2026-03-15  # due: 2026-03-15
-[x] Task finished ✅               # status: completed
-[ ] Reminder ⏰ 9:00 AM             # time: 9:00 AM
-```
-
-**Markdown-Style Tables**
-
-Familiar pipe-delimited table syntax:
-
-```it
-| Feature | Status | Owner |
-| Inline links | Done | Ahmed |
-| Checkboxes | Done | Sarah |
-| Callouts | Done | Mike |
-```
-
-**Natural Language Dates (API)**
-
-Parse natural phrases to ISO dates:
-
-```typescript
-import { parseNaturalDate } from "intenttext";
-
-parseNaturalDate("tomorrow"); // "2026-03-01"
-parseNaturalDate("next Friday"); // "2026-03-06"
-parseNaturalDate("in 3 days"); // "2026-03-03"
-parseNaturalDate("next week"); // "2026-03-08"
-```
-
----
+#### Converters (v1.3+)
+
+- **Markdown → IntentText**: `convertMarkdownToIntentText(md)`
+- **HTML → IntentText**: `convertHtmlToIntentText(html)` (Node.js only)
+
+#### Accessibility Features (v1.3+)
+
+- **Implicit paragraphs**: Lines without keywords become `body-text` blocks
+- **Checkbox tasks**: `[ ] todo` and `[x] done` syntax
+- **Inline links**: `[text](url)` inside any content
+- **Property shortcuts**: `@owner`, `!high`, `!critical`
+- **Callouts**: `info:`, `warning:`, `tip:`, `success:` blocks
+- **Markdown-style tables**: `| col1 | col2 |` syntax
+- **Emoji shortcuts**: 🚨 (priority), 📅 (due), ✅ (completed), ⏰ (time)
+
+### 12.2 Roadmap (Not Yet Implemented)
+
+The following features are under consideration for future versions. They are **not implemented** in the current release.
+
+- **`sub2:`** — Deeper hierarchy (H4+ level nesting)
+- **Nested lists** — Indentation-based list nesting
+- **Templates** — `template:` / `use:` / `include:` for reusable content
+- **Static site builder** — Build HTML sites from `.it` files
+- **Knowledge graph** — Parse folders of `.it` files and build document relationships
+- **AI-native features** — `ai:` and `synthesize:` blocks for LLM workflows
+- **Collaboration** — `comment:`, `@mentions`, change tracking
+- **Natural language dates** — Parse "tomorrow", "next Friday" to ISO dates
 
 _Breaking changes require a major version bump. Additive features (new keywords, new standard properties) increment the minor version._
 

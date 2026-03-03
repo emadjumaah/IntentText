@@ -168,7 +168,6 @@ function parseInlineNodes(text: string): {
   return { content, inline };
 }
 
-
 function expandPropertyShortcuts(content: string): {
   content: string;
   shortcuts: Record<string, string>;
@@ -822,7 +821,7 @@ export function parseIntentText(
   const hasArabic = blocks.some((b) => detectArabic(b.content));
 
   const document: IntentDocument = {
-    version: "1.2",
+    version: "1.3",
     blocks,
     metadata: {
       title: titleBlock?.content,

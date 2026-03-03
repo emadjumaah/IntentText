@@ -1,5 +1,5 @@
 {
-  "version": "1.2",
+  "version": "1.3",
   "blocks": [
     {
       "id": "id",
@@ -7,11 +7,26 @@
       "content": "Bold and italic and code",
       "originalContent": "*Bold* and _italic_ and ```code```",
       "inline": [
-        { "type": "bold", "value": "Bold" },
-        { "type": "text", "value": " and " },
-        { "type": "italic", "value": "italic" },
-        { "type": "text", "value": " and " },
-        { "type": "code", "value": "code" }
+        {
+          "type": "bold",
+          "value": "Bold"
+        },
+        {
+          "type": "text",
+          "value": " and "
+        },
+        {
+          "type": "italic",
+          "value": "italic"
+        },
+        {
+          "type": "text",
+          "value": " and "
+        },
+        {
+          "type": "code",
+          "value": "code"
+        }
       ]
     }
   ],

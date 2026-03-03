@@ -1,15 +1,27 @@
 {
-  "version": "1.2",
+  "version": "1.3",
   "blocks": [
     {
       "id": "id",
       "type": "table",
       "content": "Name | Age | City",
       "table": {
-        "headers": ["Name", "Age", "City"],
+        "headers": [
+          "Name",
+          "Age",
+          "City"
+        ],
         "rows": [
-          ["Ahmed", "30", "Dubai"],
-          ["Sara", "25", "Abu Dhabi"]
+          [
+            "Ahmed",
+            "30",
+            "Dubai"
+          ],
+          [
+            "Sara",
+            "25",
+            "Abu Dhabi"
+          ]
         ]
       }
     }

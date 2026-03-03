@@ -1,9 +1,9 @@
 /**
- * HTML-to-IntentText converter.
- * Converts HTML to IntentText (.it) format with semantic mapping.
+ * HTML-to-IntentText converter (Node.js only).
+ * Uses node-html-parser for server-side HTML parsing.
+ * For browser usage, see the web-to-it app which uses native DOMParser.
  *
  * Node.js: uses node-html-parser
- * Browser: uses native DOMParser
  */
 
 // Tags to strip entirely (including children)

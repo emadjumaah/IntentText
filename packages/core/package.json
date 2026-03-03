@@ -22,6 +22,18 @@
   ],
   "author": "IntentText Team",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/emadjumaah/IntentText.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/emadjumaah/IntentText#readme",
+  "bugs": {
+    "url": "https://github.com/emadjumaah/IntentText/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/uuid": "^9.0.0",

@@ -8,6 +8,7 @@ function normalize(value: any): any {
   if (value && typeof value === "object") {
     const out: any = {};
     for (const [k, v] of Object.entries(value)) {
+      if (v === undefined) continue;
       if (k === "id") {
         out[k] = "id";
       } else {
@@ -31,7 +32,10 @@ describe("IntentText Fixtures", () => {
 
     it(`${base}`, () => {
       const input = readFileSync(join(fixturesDir, itFile), "utf-8");
-      const expectedRaw = readFileSync(join(fixturesDir, `${base}.json`), "utf-8");
+      const expectedRaw = readFileSync(
+        join(fixturesDir, `${base}.json`),
+        "utf-8",
+      );
 
       const parsed = parseIntentText(input);
       const normalizedParsed = normalize(parsed);
