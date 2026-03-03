@@ -821,7 +821,7 @@ export function parseIntentText(
   const hasArabic = blocks.some((b) => detectArabic(b.content));
 
   const document: IntentDocument = {
-    version: "1.3",
+    version: "1.4",
     blocks,
     metadata: {
       title: titleBlock?.content,

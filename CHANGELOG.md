@@ -6,6 +6,24 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-03-03
+
+### Changed
+
+- Parser now emits `version: "1.4"` on parsed documents
+- SPEC.md section 12 rewritten — separates implemented features from roadmap
+- `html-to-it.ts` JSDoc updated to clarify Node.js-only requirement
+- Fixture JSON files updated to match parser version output
+- `fixtures.test.ts` normalize function now strips `undefined` values
+
+### Removed
+
+- Removed `vscode-extension/` directory (will be a separate repo)
+
+### Fixed
+
+- Fixture tests were asserting `version: "1.2"` while parser emitted `"1.3"` — now aligned
+
 ## [1.3.0] - 2026-03-02
 
 ### Added
