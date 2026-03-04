@@ -14,7 +14,9 @@ export interface IntentBlock {
   };
 }
 
+/** All recognized keywords for the IntentText parser (v1 + v2 agentic). */
 export const KEYWORDS = [
+  // v1 core keywords
   "title",
   "summary",
   "section",
@@ -39,9 +41,33 @@ export const KEYWORDS = [
   "embed",
   "code",
   "end",
+  // v2 agentic workflow keywords
+  "step",
+  "decision",
+  "trigger",
+  "loop",
+  "checkpoint",
+  "audit",
+  "error",
+  "import",
+  "export",
+  "schema",
+  "progress",
+  "context",
+  "agent",
+  "model",
+  // v2.1 agentic workflow keywords
+  "status",
+  "result",
+  "handoff",
+  "wait",
+  "parallel",
+  "retry",
 ];
 
+/** All valid block types for IntentText (v1 + v2 agentic). */
 export type BlockType =
+  // v1 core block types
   | "title"
   | "summary"
   | "section"
@@ -68,7 +94,27 @@ export type BlockType =
   | "end"
   | "list-item"
   | "step-item"
-  | "body-text";
+  | "body-text"
+  // v2 agentic workflow block types
+  | "step"
+  | "decision"
+  | "trigger"
+  | "loop"
+  | "checkpoint"
+  | "audit"
+  | "error"
+  | "import"
+  | "export"
+  | "schema"
+  | "progress"
+  | "context"
+  // v2.1 agentic workflow block types
+  | "status"
+  | "result"
+  | "handoff"
+  | "wait"
+  | "parallel"
+  | "retry";
 
 export type InlineNode =
   | { type: "text"; value: string }
@@ -117,14 +163,35 @@ export interface Diagnostic {
     | "EXTENSION_VALIDATION";
 }
 
+/** Execution status values for agentic workflow blocks. */
+export type AgenticStatus =
+  | "pending"
+  | "running"
+  | "blocked"
+  | "failed"
+  | "skipped"
+  | "cancelled"
+  | "done";
+
+/** Document-level metadata including v2 agentic fields. */
+export interface IntentDocumentMetadata {
+  title?: string;
+  summary?: string;
+  language?: "ltr" | "rtl";
+  /** Agent name or identifier for this document. */
+  agent?: string;
+  /** Default AI model for this document. */
+  model?: string;
+  /** Scoped context variables defined via `context:` blocks. */
+  context?: Record<string, string>;
+  /** Document version string. */
+  version?: string;
+}
+
 export interface IntentDocument {
   version?: string;
   blocks: IntentBlock[];
-  metadata?: {
-    title?: string;
-    summary?: string;
-    language?: "ltr" | "rtl";
-  };
+  metadata?: IntentDocumentMetadata;
   diagnostics?: Diagnostic[];
 }
 

@@ -1,6 +1,6 @@
-# IntentText v1.0 - Usage Guide
+# IntentText v2.0 - Usage Guide
 
-This guide covers how to use the IntentText parser and renderer in different scenarios.
+This guide covers how to use the IntentText parser and renderer in different scenarios — including v2 agentic workflow blocks.
 
 ## 📦 Installation
 
@@ -47,6 +47,46 @@ const html = renderHTML(document);
 
 console.log(html);
 // <div class="intent-document">...</div>
+```
+
+### 3. Parse Agentic Workflows (v2)
+
+```javascript
+const { parseIntentText } = require("@intenttext/core");
+
+const content = `title: User Onboarding Flow
+agent: onboard-agent | model: claude-sonnet-4
+context: userId = "u_123" | plan = "pro"
+
+section: Verification
+step: Verify email | tool: email.verify | input: userId | output: emailStatus
+step: Create workspace | tool: ws.create | depends: step-1
+decision: Check plan | if: plan == "pro" | then: step-3 | else: step-4
+step: Enable pro features | id: step-3 | tool: features.enable
+step: Send welcome email | id: step-4 | tool: email.send
+
+checkpoint: onboarding-complete
+audit: Workflow initialized | by: {{agent}} | at: {{timestamp}}`;
+
+const doc = parseIntentText(content);
+
+// Document version is auto-detected
+console.log(doc.version); // "2.0"
+
+// Access agentic metadata
+console.log(doc.metadata?.agent); // "onboard-agent"
+console.log(doc.metadata?.model); // "claude-sonnet-4"
+console.log(doc.metadata?.context); // { userId: "u_123", plan: "pro" }
+
+// Get all pending steps
+const pending = doc.blocks
+  .flatMap((b) => b.children || [b])
+  .filter((b) => b.type === "step" && b.properties?.status === "pending");
+
+// Get decision branches
+const decisions = doc.blocks
+  .flatMap((b) => b.children || [b])
+  .filter((b) => b.type === "decision");
 ```
 
 ## 🛠️ Command Line Tools
@@ -171,13 +211,27 @@ const tasks = document.blocks.filter((b) => b.type === "task");
 // Get all sections
 const sections = document.blocks.filter((b) => b.type === "section");
 
-// Get nested blocks
+// Get nested blocks (children of sections)
 const sectionChildren = sections.flatMap((s) => s.children || []);
 
 // Find specific block
 const specificTask = document.blocks.find(
   (b) => b.type === "task" && b.content.includes("urgent"),
 );
+
+// v2: Get all workflow steps
+const steps = sectionChildren.filter((b) => b.type === "step");
+
+// v2: Get steps by status
+const running = sectionChildren.filter(
+  (b) => b.type === "step" && b.properties?.status === "running",
+);
+
+// v2: Get decisions
+const decisions = sectionChildren.filter((b) => b.type === "decision");
+
+// v2: Get audit trail
+const auditLog = sectionChildren.filter((b) => b.type === "audit");
 ```
 
 ### Working with Properties
@@ -190,6 +244,20 @@ tasks.forEach((task) => {
   console.log("Owner:", task.properties?.owner);
   console.log("Due:", task.properties?.due);
   console.log("Priority:", task.properties?.priority);
+});
+
+// v2: Working with step properties
+const steps = document.blocks
+  .flatMap((b) => b.children || [b])
+  .filter((b) => b.type === "step");
+
+steps.forEach((step) => {
+  console.log("Step:", step.id, step.content);
+  console.log("Tool:", step.properties?.tool);
+  console.log("Status:", step.properties?.status);
+  console.log("Depends:", step.properties?.depends);
+  console.log("Input:", step.properties?.input);
+  console.log("Output:", step.properties?.output);
 });
 ```
 
@@ -221,6 +289,14 @@ function customRenderer(document) {
           return `<task-item owner="${block.properties?.owner}">
           ${block.content}
         </task-item>`;
+        case "step":
+          return `<step-item id="${block.id}" tool="${block.properties?.tool}" status="${block.properties?.status}">
+          ${block.content}
+        </step-item>`;
+        case "decision":
+          return `<decision if="${block.properties?.if}" then="${block.properties?.then}" else="${block.properties?.else}">
+          ${block.content}
+        </decision>`;
         case "section":
           return `<section>${block.content}</section>`;
         default:

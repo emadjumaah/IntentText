@@ -1,19 +1,28 @@
 # IntentText (.it)
 
-The Semantic Document Language for the Agentic Age.
+**The Structured Interchange Format Between AI Agents and Humans.**
 
-IntentText is a human-friendly, AI-ready document language that turns plain text into structured data. Unlike Markdown, which focuses on how text _looks_, IntentText focuses on what text _means_.
+IntentText is a lightweight document language that is simultaneously readable by humans and deterministically parseable by AI agents. It bridges the gap between natural prose and machine-executable workflows — no YAML boilerplate, no JSON syntax noise, no ambiguity.
 
 ## What is IntentText?
 
 IntentText combines:
 
-- **Plain-language keywords** (`title:`, `task:`, `section:`)
+- **Plain-language keywords** (`title:`, `task:`, `step:`, `decision:`)
 - **WhatsApp-style formatting** (`*bold*`, `_italic_`, `~strike~`)
-- **Pipe metadata** (`| owner: John | due: Friday`)
-- **AI-ready JSON output** with semantic structure
+- **Pipe metadata** (`| owner: John | due: Friday | tool: email.send`)
+- **Agentic workflow blocks** (`step:`, `decision:`, `trigger:`, `audit:`)
+- **Deterministic JSON output** with semantic structure
 
-Every block parses to a typed JSON object — making documents machine-readable without sacrificing human readability.
+Every block parses to a typed JSON object — making documents both human-readable plans and agent-executable specifications.
+
+### The Problem
+
+- **Plain text / Markdown** is great for humans, but AI agents have to _guess_ at structure.
+- **JSON / YAML** is great for machines, but humans can't write or review it naturally.
+- **No existing format** is designed to be both the _human-authored plan_ and the _agent-executable specification_ at the same time.
+
+IntentText solves this.
 
 ## Quick Start
 
@@ -78,7 +87,7 @@ console.log(JSON.stringify(document, null, 2));
 
 ```json
 {
-  "version": "1.1",
+  "version": "1.4",
   "blocks": [
     {
       "id": "uuid-123",
@@ -98,15 +107,6 @@ console.log(JSON.stringify(document, null, 2));
         "owner": "Ahmed",
         "due": "Sunday"
       }
-    },
-    {
-      "id": "uuid-789",
-      "type": "task",
-      "content": "Setup repository",
-      "properties": {
-        "time": "Monday",
-        "status": "done"
-      }
     }
   ],
   "metadata": {
@@ -114,6 +114,52 @@ console.log(JSON.stringify(document, null, 2));
     "summary": "Finalizing deployment in Doha.",
     "language": "ltr"
   }
+}
+```
+
+### Agentic Workflow JSON (v2)
+
+```
+title: User Onboarding Flow
+agent: onboard-agent | model: claude-sonnet-4
+context: userId = "u_123" | plan = "pro"
+
+section: Verification
+step: Verify email | tool: email.verify | input: userId | output: emailStatus
+step: Create workspace | tool: ws.create | depends: step-1
+decision: Check plan | if: plan == "pro" | then: step-3 | else: step-4
+step: Enable pro features | id: step-3 | tool: features.enable
+step: Send welcome email | id: step-4 | tool: email.send
+
+checkpoint: onboarding-complete
+audit: Workflow initialized | by: {{agent}} | at: {{timestamp}}
+```
+
+Produces a v2 document with:
+
+```json
+{
+  "version": "2.0",
+  "metadata": {
+    "title": "User Onboarding Flow",
+    "agent": "onboard-agent",
+    "model": "claude-sonnet-4",
+    "context": { "userId": "u_123", "plan": "pro" }
+  },
+  "blocks": [
+    {
+      "id": "step-1",
+      "type": "step",
+      "content": "Verify email",
+      "properties": {
+        "id": "step-1",
+        "tool": "email.verify",
+        "input": "userId",
+        "output": "emailStatus",
+        "status": "pending"
+      }
+    }
+  ]
 }
 ```
 
@@ -207,22 +253,42 @@ end:
 | Inline code   | `` `code` ``   | `` `console.log()` ``      |
 | Link          | `[label](url)` | `[Docs](https://docs.com)` |
 
+### Agentic Workflow Blocks (v2)
+
+| Keyword       | Purpose                      | Example                                                           |
+| ------------- | ---------------------------- | ----------------------------------------------------------------- |
+| `step:`       | Workflow step with tool call | `step: Send email \| tool: email.send \| input: userId`           |
+| `decision:`   | Conditional branch           | `decision: Check \| if: x == "y" \| then: step-2 \| else: step-3` |
+| `trigger:`    | What starts the workflow     | `trigger: webhook \| event: user.signup`                          |
+| `loop:`       | Iterate over a collection    | `loop: Process \| over: items \| do: step-3`                      |
+| `checkpoint:` | Resume point                 | `checkpoint: post-setup`                                          |
+| `audit:`      | Immutable execution log      | `audit: Done \| by: {{agent}} \| at: {{timestamp}}`               |
+| `error:`      | Error handler                | `error: Fail \| fallback: step-2 \| notify: admin`                |
+| `context:`    | Scoped variables             | `context: userId = "u_123" \| plan = "pro"`                       |
+| `progress:`   | Progress indicator           | `progress: 3/5 tasks completed`                                   |
+| `import:`     | Import another `.it` file    | `import: ./auth.it \| as: auth`                                   |
+| `export:`     | Export data                  | `export: userRecord \| format: json`                              |
+| `schema:`     | Define custom block type     | `schema: custom \| extends: step`                                 |
+
+**Step auto-IDs:** Steps without explicit `| id:` get sequential IDs (`step-1`, `step-2`, ...). Status defaults to `pending`.
+
+**Document metadata:** `agent:` and `model:` lines before any section populate document-level metadata.
+
 ## Project Structure
 
 ```
 IntentText/
-├── packages/core/           # Main parser library
+├── packages/core/           # Main parser library (@intenttext/core)
 │   ├── src/
-│   │   ├── types.ts        # IntentBlock interfaces
+│   │   ├── types.ts        # IntentBlock interfaces (v1 + v2 agentic)
 │   │   ├── parser.ts       # Core parsing logic
 │   │   ├── renderer.ts     # HTML rendering engine
 │   │   ├── browser.ts      # Browser entry point
 │   │   └── index.ts        # Public API (Node.js)
-│   ├── tests/              # 143 tests across 11 files
+│   ├── tests/              # 187 tests across 9 files
 │   ├── examples/           # Sample .it files
 │   └── dist/               # Compiled TypeScript
-├── vscode-extension/        # VS Code extension (syntax, preview)
-├── docs/                   # Specification
+├── docs/                   # Specification (SPEC.md)
 ├── demo.js                 # Demo script
 ├── cli.js                  # Command line tool
 ├── preview.html            # Interactive live editor
@@ -244,7 +310,7 @@ npm run build
 # Build browser bundle
 npm run browser:build
 
-# Run all tests (143/143 passing)
+# Run all tests (187/187 passing)
 npm run test
 
 # See demo output
@@ -295,17 +361,21 @@ const { parseIntentText, renderHTML } = require("@intenttext/core");
 const content = fs.readFileSync("meeting.it", "utf-8");
 const doc = parseIntentText(content);
 
-console.log(doc.version); // "1.1"
+console.log(doc.version); // "1.4" or "2.0" for agentic docs
 
 // Filter open tasks
 const openTasks = doc.blocks.filter(
   (b) => b.type === "task" && b.properties?.status !== "done",
 );
 
-// Filter completed tasks
-const doneTasks = doc.blocks.filter(
-  (b) => b.type === "task" && b.properties?.status === "done",
+// Filter pending workflow steps (v2)
+const pendingSteps = doc.blocks.filter(
+  (b) => b.type === "step" && b.properties?.status === "pending",
 );
+
+// Access agentic metadata (v2)
+console.log(doc.metadata?.agent); // "onboard-agent"
+console.log(doc.metadata?.context); // { userId: "u_123" }
 
 const html = renderHTML(doc);
 ```

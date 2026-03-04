@@ -3,6 +3,7 @@ import {
   IntentBlock,
   BlockType,
   IntentDocument,
+  IntentDocumentMetadata,
   Diagnostic,
   InlineNode,
   ParseOptions,
@@ -16,6 +17,53 @@ const KEYWORD_ALIASES: Record<string, string> = {
   subsection: "sub",
   done: "task",
 };
+
+// v2 agentic block types that are treated as content blocks within sections
+const AGENTIC_BLOCK_TYPES = new Set<string>([
+  "step",
+  "decision",
+  "trigger",
+  "loop",
+  "checkpoint",
+  "audit",
+  "error",
+  "import",
+  "export",
+  "schema",
+  "progress",
+  "context",
+  // v2.1
+  "status",
+  "result",
+  "handoff",
+  "wait",
+  "parallel",
+  "retry",
+]);
+
+// v2 metadata-only keywords: when these appear before any section block,
+// they populate document metadata instead of emitting a block.
+const METADATA_KEYWORDS = new Set<string>(["agent", "model"]);
+
+/**
+ * Parse context key=value pairs from raw content.
+ * Input: 'userId = "u_123" | plan = "pro"'
+ * Output: { userId: 'u_123', plan: 'pro' }
+ */
+function parseContextKeyValuePairs(rawContent: string): Record<string, string> {
+  const result: Record<string, string> = {};
+  // Split on " | " for multiple pairs
+  const pairs = splitPipeMetadata(rawContent);
+  for (const pair of pairs) {
+    const kvMatch =
+      pair.trim().match(/^([\w]+)\s*=\s*"([^"]*)"/) ||
+      pair.trim().match(/^([\w]+)\s*=\s*(\S+)/);
+    if (kvMatch) {
+      result[kvMatch[1]] = kvMatch[2];
+    }
+  }
+  return result;
+}
 
 // Helper function to detect Arabic text (RTL)
 function detectArabic(text: string): boolean {
@@ -391,6 +439,51 @@ function parseLine(
       properties.status = "done";
     }
 
+    // v2: context blocks parse key=value pairs into properties
+    if (keyword === "context") {
+      const kvPairs = parseContextKeyValuePairs(rest);
+      for (const [k, v] of Object.entries(kvPairs)) {
+        properties[k] = v;
+      }
+    }
+
+    // v2: step blocks auto-default status to "pending" if not set
+    if (keyword === "step" && !properties.status) {
+      properties.status = "pending";
+    }
+
+    // v2.1: retry blocks coerce numeric properties
+    if (keyword === "retry") {
+      if (properties.max) properties.max = Number(properties.max);
+      if (properties.delay) properties.delay = Number(properties.delay);
+      if (properties.retries) properties.retries = Number(properties.retries);
+    }
+
+    // v2.1: wait blocks coerce timeout to string (preserve unit suffix)
+    // and default status to "waiting"
+    if (keyword === "wait" && !properties.status) {
+      properties.status = "waiting";
+    }
+
+    // v2.1: result blocks default status to "success" if not set
+    if (keyword === "result" && !properties.status) {
+      properties.status = "success";
+    }
+
+    // v2.1: coerce numeric properties for any block that uses them
+    if (properties.timeout && !isNaN(Number(properties.timeout))) {
+      properties.timeout = Number(properties.timeout);
+    }
+    if (properties.priority && !isNaN(Number(properties.priority))) {
+      properties.priority = Number(properties.priority);
+    }
+    if (properties.retries && !isNaN(Number(properties.retries))) {
+      properties.retries = Number(properties.retries);
+    }
+    if (properties.delay && !isNaN(Number(properties.delay))) {
+      properties.delay = Number(properties.delay);
+    }
+
     return {
       id: uuidv4(),
       type: resolvedType,
@@ -504,6 +597,17 @@ export function parseIntentText(
   let codeCaptureType: "keyword" | "fence" = "keyword";
   let codeContent: string[] = [];
   let codeStartLine = 0;
+
+  // v2: auto-ID counter for step blocks without explicit id
+  let stepAutoIdCounter = 0;
+  // v2: track whether we've seen a section block yet (for metadata detection)
+  let seenSectionBlock = false;
+  // v2: document-level metadata accumulator
+  const agenticMetadata: {
+    agent?: string;
+    model?: string;
+    context?: Record<string, string>;
+  } = {};
 
   const extensions = options?.extensions || [];
   const keywords = new Set(KEYWORDS);
@@ -742,6 +846,50 @@ export function parseIntentText(
       continue;
     }
 
+    // v2: Track section appearance for metadata detection
+    if (block.type === "section") {
+      seenSectionBlock = true;
+    }
+
+    // v2: agent: and model: at the top of the document (before any section)
+    // are treated as document-level metadata, not blocks.
+    if (METADATA_KEYWORDS.has(block.type) && !seenSectionBlock) {
+      // Parse pipe metadata from the block for model extraction
+      if (block.type === ("agent" as BlockType)) {
+        agenticMetadata.agent = block.content;
+        // If model: was a pipe property on the agent line, capture it
+        if (block.properties?.model) {
+          agenticMetadata.model = String(block.properties.model);
+        }
+      } else if (block.type === ("model" as BlockType)) {
+        agenticMetadata.model = block.content;
+      }
+      continue;
+    }
+
+    // v2: context: blocks before any section populate document metadata
+    if (block.type === "context" && !seenSectionBlock) {
+      const ctxProps = block.properties || {};
+      if (!agenticMetadata.context) agenticMetadata.context = {};
+      for (const [k, v] of Object.entries(ctxProps)) {
+        agenticMetadata.context[k] = String(v);
+      }
+      // Still emit the context block for rendering
+    }
+
+    // v2: auto-ID for step blocks
+    if (block.type === "step") {
+      stepAutoIdCounter++;
+      if (block.properties?.id) {
+        // Explicit id overrides auto-numbering
+        block.id = String(block.properties.id);
+      } else {
+        block.id = `step-${stepAutoIdCounter}`;
+        if (!block.properties) block.properties = {};
+        block.properties.id = `step-${stepAutoIdCounter}`;
+      }
+    }
+
     // Handle section hierarchy (section -> sub -> sub2, max 3 levels)
     if (block.type === "section") {
       currentSection = block;
@@ -772,7 +920,7 @@ export function parseIntentText(
       blocks.push(block);
       currentSection = null;
     } else {
-      // Content blocks (task, note, question, list-item, etc.)
+      // Content blocks (task, note, question, list-item, agentic blocks, etc.)
       // Find target section (deepest nested)
       let target = currentSection;
       if (target) {
@@ -820,14 +968,28 @@ export function parseIntentText(
   const summaryBlock = blocks.find((b) => b.type === "summary");
   const hasArabic = blocks.some((b) => detectArabic(b.content));
 
+  // v2: determine version based on presence of agentic blocks/metadata
+  const hasAgenticContent =
+    blocks.some((b) => AGENTIC_BLOCK_TYPES.has(b.type)) ||
+    agenticMetadata.agent != null ||
+    agenticMetadata.model != null ||
+    agenticMetadata.context != null;
+
+  const metadata: IntentDocumentMetadata = {
+    title: titleBlock?.content,
+    summary: summaryBlock?.content,
+    language: hasArabic ? "rtl" : "ltr",
+    ...(agenticMetadata.agent != null && { agent: agenticMetadata.agent }),
+    ...(agenticMetadata.model != null && { model: agenticMetadata.model }),
+    ...(agenticMetadata.context != null && {
+      context: agenticMetadata.context,
+    }),
+  };
+
   const document: IntentDocument = {
-    version: "1.4",
+    version: hasAgenticContent ? "2.0" : "1.4",
     blocks,
-    metadata: {
-      title: titleBlock?.content,
-      summary: summaryBlock?.content,
-      language: hasArabic ? "rtl" : "ltr",
-    },
+    metadata,
     diagnostics: diagnostics.length > 0 ? diagnostics : undefined,
   };
 

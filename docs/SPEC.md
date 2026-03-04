@@ -1,8 +1,8 @@
-# IntentText (`.it`) v1.0 — Official Specification
+# IntentText (`.it`) v2.0 — Official Specification
 
-> **Status:** Stable · **Version:** 1.0 · **Source of Truth**
+> **Status:** Stable · **Version:** 2.0 · **Source of Truth**
 
-IntentText is a human-friendly, AI-semantic document language. It combines plain-language keywords, WhatsApp-style inline formatting, and agentic metadata — so that any writer can produce machine-readable documents without learning technical markup.
+IntentText is a human-friendly, AI-semantic document language — and the structured interchange format between AI agents and humans. It combines plain-language keywords, WhatsApp-style inline formatting, and agentic metadata — so that any writer can produce machine-readable documents without learning technical markup. Agents can execute `.it` documents deterministically.
 
 ---
 
@@ -412,11 +412,12 @@ Parsers should preserve unknown extension blocks as `body-text` (or optionally e
 
 ## 12. Versioning
 
-| Version  | Status    | Notes                                    |
-| -------- | --------- | ---------------------------------------- |
-| **v1.0** | ✅ Stable | Core format                              |
-| **v1.3** | ✅ Stable | Query, Schema, Converters, Accessibility |
-| **v1.4** | ✅ Stable | Cleanup, fixture accuracy, spec overhaul |
+| Version  | Status    | Notes                                                          |
+| -------- | --------- | -------------------------------------------------------------- |
+| **v1.0** | ✅ Stable | Core format                                                    |
+| **v1.3** | ✅ Stable | Query, Schema, Converters, Accessibility                       |
+| **v1.4** | ✅ Stable | Cleanup, fixture accuracy, spec overhaul                       |
+| **v2.0** | ✅ Stable | Agentic workflow blocks, document metadata, interchange format |
 
 ### 12.1 Implemented Features (v1.0 – v1.3)
 
@@ -471,7 +472,390 @@ node cli.js article.it --validate article
 - **Markdown-style tables**: `| col1 | col2 |` syntax
 - **Emoji shortcuts**: 🚨 (priority), 📅 (due), ✅ (completed), ⏰ (time)
 
-### 12.2 Roadmap (Not Yet Implemented)
+### 12.2 Agentic Workflow Blocks (v2.0)
+
+IntentText v2 adds a new layer of **agentic workflow blocks** on top of the v1 core. These blocks enable AI agents to write, read, and execute `.it` documents as structured workflow specifications. All v1 syntax is fully backward compatible.
+
+#### Document Header Metadata
+
+v2 introduces document-level metadata for agent identification:
+
+```
+title: User Onboarding Flow
+agent: onboard-agent | model: claude-sonnet-4
+context: userId = "u_123" | plan = "pro"
+```
+
+- **`agent:`** — When appearing before any `section:`, populates `metadata.agent` (not emitted as a block). Pipe properties like `model:` also populate metadata.
+- **`model:`** — When appearing before any `section:`, populates `metadata.model`.
+- **`context:`** — Parses `key = "value"` pairs into both block properties and `metadata.context`.
+
+#### Workflow Block Reference
+
+| Keyword       | Purpose                         | Example                                                                  |
+| ------------- | ------------------------------- | ------------------------------------------------------------------------ |
+| `step:`       | A workflow step with tool call  | `step: Send email \| tool: email.send \| input: userId`                  |
+| `decision:`   | Conditional branch              | `decision: Check status \| if: x == "y" \| then: step-2 \| else: step-3` |
+| `trigger:`    | What starts this workflow       | `trigger: webhook \| event: user.signup`                                 |
+| `loop:`       | Iterate over a collection       | `loop: Process items \| over: itemList \| do: step-3`                    |
+| `checkpoint:` | Resume point after interruption | `checkpoint: post-verification`                                          |
+| `audit:`      | Immutable execution log         | `audit: Step completed \| by: agent \| at: {{timestamp}}`                |
+| `error:`      | Error handler                   | `error: On failure \| fallback: step-2 \| notify: admin`                 |
+| `import:`     | Import another `.it` file       | `import: ./auth-flow.it \| as: auth`                                     |
+| `export:`     | Export data from document       | `export: userRecord \| format: json`                                     |
+| `schema:`     | Define custom block type        | `schema: custom-type \| extends: step`                                   |
+| `progress:`   | Progress bar indicator          | `progress: 3/5 tasks completed`                                          |
+| `context:`    | Scoped variable definitions     | `context: userId = "u_123" \| plan = "pro"`                              |
+| `status:`     | Workflow-level status           | `status: In Progress \| phase: onboarding`                                |
+| `result:`     | Execution output                | `result: User created \| code: 200 \| data: {"id":"u_123"}`              |
+| `handoff:`    | Multi-agent transfer            | `handoff: Transfer \| from: agent-a \| to: agent-b`                       |
+| `wait:`       | Async pause point               | `wait: User confirmation \| timeout: 30s \| fallback: step-3`             |
+| `parallel:`   | Concurrent execution group      | `parallel: Run checks \| steps: validate,lint,test`                       |
+| `retry:`      | Retry policy                    | `retry: API call \| max: 3 \| delay: 1000 \| backoff: exponential`        |
+
+#### Pipe Properties for v2 Blocks
+
+| Property      | Purpose                                                                 |
+| ------------- | ----------------------------------------------------------------------- |
+| `id:`         | Unique block identifier for cross-references                            |
+| `depends:`    | Dependency on another block by id                                       |
+| `input:`      | Input variable name                                                     |
+| `output:`     | Output variable name                                                    |
+| `tool:`       | Tool or function to invoke                                              |
+| `model:`      | AI model for this step                                                  |
+| `status:`     | Execution state (pending/running/blocked/failed/skipped/cancelled/done) |
+| `confidence:` | Agent certainty (0.0–1.0)                                               |
+| `source:`     | `human` or `ai` — who authored this block                               |
+| `if:`         | Condition expression (decision blocks)                                  |
+| `then:`       | Branch target if condition true                                         |
+| `else:`       | Branch target if condition false                                        |
+| `event:`      | Trigger event name                                                      |
+| `over:`       | Loop collection variable                                                |
+| `do:`         | Loop step target                                                        |
+| `fallback:`   | Error fallback step id                                                  |
+| `notify:`     | Error notification target                                               |
+| `as:`         | Import alias                                                            |
+| `format:`     | Export format (json/yaml/csv)                                           |
+| `extends:`    | Schema extension base type                                              |
+| `timeout:`    | Maximum execution time (numeric ms or string with unit, e.g. `30s`)     |
+| `priority:`   | Step execution priority (numeric, lower = higher priority)              |
+| `data:`       | Structured data payload (preserved as string)                           |
+| `retries:`    | Maximum retry count (numeric)                                           |
+| `delay:`      | Wait before executing (numeric ms or string with unit)                  |
+| `level:`      | Log/status severity level (e.g. `info`, `warning`, `critical`)          |
+| `phase:`      | Current workflow phase                                                  |
+| `from:`       | Source agent for handoff                                                |
+| `to:`         | Target agent for handoff                                                |
+| `steps:`      | Comma-separated step IDs for parallel execution                         |
+| `max:`        | Maximum retry attempts (numeric)                                        |
+| `backoff:`    | Retry backoff strategy (`linear`, `exponential`)                        |
+| `code:`       | HTTP status code or result code                                         |
+
+#### `step:` block
+
+Steps are the primary workflow unit. If no explicit `| id:` is provided, the parser auto-generates sequential IDs: `step-1`, `step-2`, etc. Status defaults to `pending`.
+
+**Syntax:**
+
+```
+step: Verify email | tool: email.verify | input: userId | output: emailStatus
+step: Create workspace | tool: ws.create | depends: step-1
+```
+
+**JSON output:**
+
+```json
+{
+  "id": "step-1",
+  "type": "step",
+  "content": "Verify email",
+  "properties": {
+    "id": "step-1",
+    "tool": "email.verify",
+    "input": "userId",
+    "output": "emailStatus",
+    "status": "pending"
+  }
+}
+```
+
+#### `decision:` block
+
+Conditional branches that reference other steps.
+
+**Syntax:**
+
+```
+decision: Check plan | if: plan == "pro" | then: step-3 | else: step-4
+```
+
+**JSON output:**
+
+```json
+{
+  "type": "decision",
+  "content": "Check plan",
+  "properties": {
+    "if": "plan == \"pro\"",
+    "then": "step-3",
+    "else": "step-4"
+  }
+}
+```
+
+#### `audit:` block
+
+Immutable execution log entries. Template variables `{{timestamp}}` and `{{agent}}` pass through unparsed — the runtime is responsible for substitution.
+
+**Syntax:**
+
+```
+audit: Workflow initialized | by: {{agent}} | at: {{timestamp}}
+```
+
+**JSON output:**
+
+```json
+{
+  "type": "audit",
+  "content": "Workflow initialized",
+  "properties": {
+    "by": "{{agent}}",
+    "at": "{{timestamp}}"
+  }
+}
+```
+
+#### `context:` block
+
+Defines scoped variables using `key = "value"` syntax (note: equals sign, not colon). Values populate both block properties and `metadata.context` when appearing before any section.
+
+**Syntax:**
+
+```
+context: userId = "u_123" | plan = "pro"
+```
+
+**JSON output:**
+
+```json
+{
+  "type": "context",
+  "content": "userId = \"u_123\" | plan = \"pro\"",
+  "properties": {
+    "userId": "u_123",
+    "plan": "pro"
+  }
+}
+```
+
+#### `checkpoint:` block
+
+A named resume point in the workflow. Content only, no required properties.
+
+**Syntax:**
+
+```
+checkpoint: onboarding-complete
+```
+
+#### `error:` block
+
+Defines error handling with fallback steps and notification targets.
+
+**Syntax:**
+
+```
+error: On failure | fallback: step-2 | notify: admin
+```
+
+#### `trigger:` block
+
+Declares what starts the workflow.
+
+**Syntax:**
+
+```
+trigger: webhook | event: user.signup
+```
+
+#### `loop:` block
+
+Iterates over a collection.
+
+**Syntax:**
+
+```
+loop: Process items | over: itemList | do: step-3
+```
+
+#### `import:` / `export:` blocks
+
+Define document composition and data interfaces.
+
+**Syntax:**
+
+```
+import: ./auth-flow.it | as: auth
+export: userRecord | format: json
+```
+
+#### `progress:` block
+
+Renders a progress indicator. Parses `value/total` from content or from explicit properties.
+
+**Syntax:**
+
+```
+progress: 3/5 tasks completed
+progress: Upload | value: 75 | total: 100
+```
+
+#### `status:` block _(v2.1)_
+
+Declares workflow-level status. Useful for agents to communicate current execution state.
+
+**Syntax:**
+
+```
+status: In Progress | phase: onboarding
+status: Warning state | level: critical | updated: 2025-01-15T10:00Z
+```
+
+**JSON output:**
+
+```json
+{
+  "type": "status",
+  "content": "In Progress",
+  "properties": {
+    "phase": "onboarding"
+  }
+}
+```
+
+#### `result:` block _(v2.1)_
+
+Captures execution output. Status defaults to `"success"` if not provided.
+
+**Syntax:**
+
+```
+result: User created successfully | code: 200 | data: {"id":"u_123"}
+result: Request failed | status: error | code: 500
+```
+
+**JSON output:**
+
+```json
+{
+  "type": "result",
+  "content": "User created successfully",
+  "properties": {
+    "status": "success",
+    "code": "200",
+    "data": "{\"id\":\"u_123\"}"
+  }
+}
+```
+
+#### `handoff:` block _(v2.1)_
+
+Declares multi-agent control transfer.
+
+**Syntax:**
+
+```
+handoff: Transfer to billing | from: onboarding-agent | to: billing-agent
+```
+
+**JSON output:**
+
+```json
+{
+  "type": "handoff",
+  "content": "Transfer to billing",
+  "properties": {
+    "from": "onboarding-agent",
+    "to": "billing-agent"
+  }
+}
+```
+
+#### `wait:` block _(v2.1)_
+
+Async pause point. Status defaults to `"waiting"`. Supports timeout (with optional unit suffix) and fallback.
+
+**Syntax:**
+
+```
+wait: User confirmation | timeout: 30s | fallback: step-3
+wait: External signal | timeout: 5000
+```
+
+**JSON output:**
+
+```json
+{
+  "type": "wait",
+  "content": "User confirmation",
+  "properties": {
+    "status": "waiting",
+    "timeout": "30s",
+    "fallback": "step-3"
+  }
+}
+```
+
+#### `parallel:` block _(v2.1)_
+
+Concurrent execution group. Lists step IDs as comma-separated values in the `steps:` property.
+
+**Syntax:**
+
+```
+parallel: Run checks | steps: validate,lint,test
+parallel: Batch jobs | timeout: 60000
+```
+
+**JSON output:**
+
+```json
+{
+  "type": "parallel",
+  "content": "Run checks",
+  "properties": {
+    "steps": "validate,lint,test"
+  }
+}
+```
+
+#### `retry:` block _(v2.1)_
+
+Defines retry policy. Numeric properties (`max`, `delay`, `retries`) are auto-coerced to numbers.
+
+**Syntax:**
+
+```
+retry: API call | max: 3 | delay: 1000 | backoff: exponential
+retry: Send email | retries: 5
+```
+
+**JSON output:**
+
+```json
+{
+  "type": "retry",
+  "content": "API call",
+  "properties": {
+    "max": 3,
+    "delay": 1000,
+    "backoff": "exponential"
+  }
+}
+```
+
+### 12.3 Roadmap (Not Yet Implemented)
 
 The following features are under consideration for future versions. They are **not implemented** in the current release.
 
