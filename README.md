@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/icon.png" alt="IntentText icon" width="96" />
+</p>
+
 # IntentText (.it)
 
 **A structured interchange format for AI agents and humans.**
