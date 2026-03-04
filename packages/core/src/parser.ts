@@ -16,6 +16,7 @@ const KEYWORD_ALIASES: Record<string, string> = {
   question: "ask",
   subsection: "sub",
   done: "task",
+  status: "emit", // v2.2: standalone status: renamed to emit:
 };
 
 // v2 agentic block types that are treated as content blocks within sections
@@ -29,11 +30,22 @@ const AGENTIC_BLOCK_TYPES = new Set<string>([
   "error",
   "import",
   "export",
-  "schema",
   "progress",
   "context",
   // v2.1
-  "status",
+  "result",
+  "handoff",
+  "wait",
+  "parallel",
+  "retry",
+  // v2.2
+  "gate",
+  "call",
+  "emit",
+]);
+
+// v2.1+ inter-agent block types (subset of AGENTIC_BLOCK_TYPES)
+const V21_BLOCK_TYPES = new Set<string>([
   "result",
   "handoff",
   "wait",
@@ -41,15 +53,8 @@ const AGENTIC_BLOCK_TYPES = new Set<string>([
   "retry",
 ]);
 
-// v2.1 inter-agent block types (subset of AGENTIC_BLOCK_TYPES)
-const V21_BLOCK_TYPES = new Set<string>([
-  "status",
-  "result",
-  "handoff",
-  "wait",
-  "parallel",
-  "retry",
-]);
+// v2.2 block types
+const V22_BLOCK_TYPES = new Set<string>(["gate", "call", "emit"]);
 
 // v2 metadata-only keywords: when these appear before any section block,
 // they populate document metadata instead of emitting a block.
@@ -57,22 +62,53 @@ const METADATA_KEYWORDS = new Set<string>(["agent", "model"]);
 
 /**
  * Parse context key=value pairs from raw content.
+ * Supports both legacy syntax: key = "value" | key2 = "value2"
+ * and pipe syntax: | key: value | key2: value2
  * Input: 'userId = "u_123" | plan = "pro"'
  * Output: { userId: 'u_123', plan: 'pro' }
  */
 function parseContextKeyValuePairs(rawContent: string): Record<string, string> {
   const result: Record<string, string> = {};
+  // Strip leading pipe if present (for pipe-first syntax: | key: value | key2: value2)
+  let content = rawContent.trim();
+  if (content.startsWith("|")) {
+    content = content.substring(1).trim();
+  }
   // Split on " | " for multiple pairs
-  const pairs = splitPipeMetadata(rawContent);
+  const pairs = splitPipeMetadata(content);
   for (const pair of pairs) {
+    const trimmed = pair.trim();
+    // Strip leading pipe from individual pairs too
+    const cleaned = trimmed.startsWith("|")
+      ? trimmed.substring(1).trim()
+      : trimmed;
+    // Try legacy syntax: key = "value" or key = value
     const kvMatch =
-      pair.trim().match(/^([\w]+)\s*=\s*"([^"]*)"/) ||
-      pair.trim().match(/^([\w]+)\s*=\s*(\S+)/);
+      cleaned.match(/^([\w]+)\s*=\s*"([^"]*)"/) ||
+      cleaned.match(/^([\w]+)\s*=\s*(\S+)/);
     if (kvMatch) {
       result[kvMatch[1]] = kvMatch[2];
+      continue;
+    }
+    // Try pipe property syntax: key: value
+    const pipeMatch = cleaned.match(/^([\w][\w-]*):\s*(.*)$/);
+    if (pipeMatch) {
+      result[pipeMatch[1].trim()] = pipeMatch[2].trim();
     }
   }
   return result;
+}
+
+/**
+ * Interpolate {{variable}} references in a property value.
+ * Returns the original string if no {{}} found.
+ * Returns a $ref object descriptor if the entire value is a single {{ref}}.
+ * For mixed content, returns the string as-is (runtime handles interpolation).
+ */
+function interpolateVariables(value: string): string {
+  // Just return the value as-is — the parser preserves {{variable}} syntax.
+  // The JSON output will contain the {{variable}} markers for runtime resolution.
+  return value;
 }
 
 // Helper function to detect Arabic text (RTL)
@@ -476,8 +512,32 @@ function parseLine(
     }
 
     // v2.1: result blocks default status to "success" if not set
+    // result: is terminal-only — ends the workflow
     if (keyword === "result" && !properties.status) {
       properties.status = "success";
+    }
+
+    // v2.2: gate blocks default status to "blocked"
+    if (keyword === "gate" && !properties.status) {
+      properties.status = "blocked";
+    }
+
+    // v2.2: parallel blocks default join to "all"
+    if (keyword === "parallel" && !properties.join) {
+      properties.join = "all";
+    }
+
+    // v2.2: call blocks default status to "pending"
+    if (keyword === "call" && !properties.status) {
+      properties.status = "pending";
+    }
+
+    // v2.2: emit blocks (formerly standalone status:) keep content as event name
+    if (keyword === "status" || keyword === "emit") {
+      // Ensure emit blocks have a level default
+      if (!properties.level) {
+        properties.level = "info";
+      }
     }
 
     // v2.1: coerce numeric properties for any block that uses them
@@ -984,6 +1044,7 @@ export function parseIntentText(
   ): IntentBlock[] {
     return [b, ...(b.children ?? []).flatMap(collect)];
   });
+  const hasV22Content = allBlocks.some((b) => V22_BLOCK_TYPES.has(b.type));
   const hasV21Content = allBlocks.some((b) => V21_BLOCK_TYPES.has(b.type));
   const hasAgenticContent =
     allBlocks.some((b) => AGENTIC_BLOCK_TYPES.has(b.type)) ||
@@ -1003,7 +1064,13 @@ export function parseIntentText(
   };
 
   const document: IntentDocument = {
-    version: hasV21Content ? "2.1" : hasAgenticContent ? "2.0" : "1.4",
+    version: hasV22Content
+      ? "2.2"
+      : hasV21Content
+        ? "2.1"
+        : hasAgenticContent
+          ? "2.0"
+          : "1.4",
     blocks,
     metadata,
     diagnostics: diagnostics.length > 0 ? diagnostics : undefined,

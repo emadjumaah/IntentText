@@ -17,6 +17,8 @@ export type {
   IntentExtension,
   ParseOptions,
   Diagnostic,
+  AgenticStatus,
+  VariableRef,
   QueryOptions,
   QueryResult,
   QueryClause,

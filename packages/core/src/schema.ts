@@ -162,7 +162,7 @@ export const PREDEFINED_SCHEMAS: Record<string, DocumentSchema> = {
               "cancelled",
               "done",
             ],
-          },
+          } as PropertySchema,
           id: { type: "string" },
           depends: { type: "string" },
           timeout: { type: "number" },
@@ -251,8 +251,8 @@ export const PREDEFINED_SCHEMAS: Record<string, DocumentSchema> = {
         },
         allowUnknownProperties: true,
       },
-      status: {
-        type: "status",
+      emit: {
+        type: "emit",
         content: { required: true },
         properties: {
           phase: { type: "string" },

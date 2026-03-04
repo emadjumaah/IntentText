@@ -255,18 +255,46 @@ describe("import: / export: blocks", () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 9. Schema blocks
+// 9. Gate blocks (v2.2)
 // ═══════════════════════════════════════════════════════════════════════════
 
-describe("schema: blocks", () => {
-  it("parses schema with extends", () => {
+describe("gate: blocks", () => {
+  it("parses gate with approver and timeout", () => {
     const { block } = findBlock(
-      "schema: custom-block-type | extends: step",
-      "schema",
+      "gate: Approve deploy | approver: lead-engineer | timeout: 24h",
+      "gate",
     );
     expect(block).toBeDefined();
-    expect(block.content).toBe("custom-block-type");
-    expect(block.properties?.extends).toBe("step");
+    expect(block.content).toBe("Approve deploy");
+    expect(block.properties?.approver).toBe("lead-engineer");
+    expect(block.properties?.timeout).toBe("24h");
+  });
+
+  it("defaults status to blocked", () => {
+    const { block } = findBlock(
+      "gate: Review copy | approver: content-team",
+      "gate",
+    );
+    expect(block.properties?.status).toBe("blocked");
+  });
+
+  it("parses fallback property", () => {
+    const { block } = findBlock(
+      "gate: Confirm deletion | approver: admin | fallback: exit",
+      "gate",
+    );
+    expect(block.properties?.fallback).toBe("exit");
+  });
+
+  it("renders gate block HTML", () => {
+    const doc = parseIntentText(
+      "gate: Approve production deploy | approver: lead-engineer | timeout: 24h",
+    );
+    const html = renderHTML(doc);
+    expect(html).toContain("intent-gate");
+    expect(html).toContain("🛑");
+    expect(html).toContain("Approve production deploy");
+    expect(html).toContain("lead-engineer");
   });
 });
 
@@ -386,12 +414,12 @@ task: Legacy task`;
     expect(doc.version).toBe("2.0");
   });
 
-  it("documents with v2.1 inter-agent blocks get version 2.1", () => {
+  it("documents with v2.2 emit/gate/call blocks get version 2.2", () => {
     const input = `title: Inter-Agent Flow
-status: Running | phase: init
+emit: Running | phase: init
 result: Done | code: 200`;
     const doc = parseIntentText(input);
-    expect(doc.version).toBe("2.1");
+    expect(doc.version).toBe("2.2");
   });
 
   it("handoff block triggers version 2.1", () => {
@@ -418,13 +446,13 @@ handoff: Transfer to billing`;
     expect(doc.version).toBe("2.1");
   });
 
-  it("v2.1 blocks inside sections detected correctly", () => {
+  it("v2.2 blocks inside sections detected correctly", () => {
     const input = `title: Nested
 section: Workflow
-status: Active | phase: deploy
+emit: Active | phase: deploy
 result: Success`;
     const doc = parseIntentText(input);
-    expect(doc.version).toBe("2.1");
+    expect(doc.version).toBe("2.2");
   });
 });
 
@@ -734,12 +762,14 @@ step: Second`;
     expect(section.children![2].type).toBe("step");
   });
 
-  it("schema block with extends", () => {
+  it("call block with input/output", () => {
     const { block } = findBlock(
-      "schema: custom-type | extends: step",
-      "schema",
+      "call: ./verify.it | input: {{userId}} | output: verified",
+      "call",
     );
-    expect(block.properties?.extends).toBe("step");
+    expect(block.content).toBe("./verify.it");
+    expect(block.properties?.input).toBe("{{userId}}");
+    expect(block.properties?.output).toBe("verified");
   });
 
   it("trigger with no properties", () => {
@@ -752,36 +782,40 @@ step: Second`;
 // v2.1 New block types
 // ═══════════════════════════════════════════════════════════════════════════
 
-// ─── status: blocks ────────────────────────────────────────────────────────
+// ─── emit: blocks (formerly status:) ───────────────────────────────────────
 
-describe("status: blocks", () => {
-  it("basic status block", () => {
-    const { block } = findBlock("status: In Progress", "status");
-    expect(block.type).toBe("status");
+describe("emit: blocks", () => {
+  it("basic emit block (via status: keyword alias)", () => {
+    const { block } = findBlock("status: In Progress", "emit");
+    expect(block.type).toBe("emit");
     expect(block.content).toBe("In Progress");
   });
 
-  it("status with phase property", () => {
-    const { block } = findBlock("status: Active | phase: onboarding", "status");
+  it("emit with phase property", () => {
+    const { block } = findBlock("emit: Active | phase: onboarding", "emit");
     expect(block.content).toBe("Active");
     expect(block.properties?.phase).toBe("onboarding");
   });
 
-  it("status with level property", () => {
-    const { block } = findBlock(
-      "status: Warning state | level: warning",
-      "status",
-    );
+  it("emit with level property", () => {
+    const { block } = findBlock("emit: Warning state | level: warning", "emit");
     expect(block.properties?.level).toBe("warning");
   });
 
-  it("renders status block HTML", () => {
-    const doc = parseIntentText("status: Deploying | phase: release");
+  it("renders emit block HTML", () => {
+    const doc = parseIntentText("emit: deploy.running | phase: staging");
     const html = renderHTML(doc);
-    expect(html).toContain("intent-status-block");
-    expect(html).toContain("📊");
-    expect(html).toContain("Deploying");
-    expect(html).toContain("release");
+    expect(html).toContain("intent-emit-block");
+    expect(html).toContain("📡");
+    expect(html).toContain("deploy.running");
+    expect(html).toContain("staging");
+  });
+
+  it("status: keyword aliases to emit type", () => {
+    const { block } = findBlock("status: Deploying | phase: release", "emit");
+    expect(block.type).toBe("emit");
+    expect(block.content).toBe("Deploying");
+    expect(block.properties?.phase).toBe("release");
   });
 });
 
@@ -998,7 +1032,7 @@ describe("v2.1 pipe properties", () => {
   });
 
   it("level property stays as string", () => {
-    const { block } = findBlock("status: Warning | level: critical", "status");
+    const { block } = findBlock("emit: Warning | level: critical", "emit");
     expect(block.properties?.level).toBe("critical");
   });
 
@@ -1016,16 +1050,16 @@ describe("v2.1 pipe properties", () => {
 // ─── v2.1 blocks inside sections ──────────────────────────────────────────
 
 describe("v2.1 blocks nest inside sections", () => {
-  it("status, result, handoff nest as section children", () => {
+  it("emit, result, handoff nest as section children", () => {
     const input = `section: Workflow
-status: Running | phase: init
+emit: Running | phase: init
 result: Step 1 done | code: 200
 handoff: Transfer | to: next-agent`;
     const doc = parseIntentText(input);
     const section = doc.blocks.find((b) => b.type === "section");
     expect(section).toBeDefined();
     expect(section!.children).toHaveLength(3);
-    expect(section!.children![0].type).toBe("status");
+    expect(section!.children![0].type).toBe("emit");
     expect(section!.children![1].type).toBe("result");
     expect(section!.children![2].type).toBe("handoff");
   });
@@ -1042,5 +1076,221 @@ retry: API call | max: 3`;
     expect(section!.children![0].type).toBe("wait");
     expect(section!.children![1].type).toBe("parallel");
     expect(section!.children![2].type).toBe("retry");
+  });
+
+  it("gate, call, emit nest as section children", () => {
+    const input = `section: Deployment
+gate: Approve deploy | approver: lead
+call: ./verify.it | input: {{userId}}
+emit: deploy.started | phase: init`;
+    const doc = parseIntentText(input);
+    const section = doc.blocks.find((b) => b.type === "section");
+    expect(section).toBeDefined();
+    expect(section!.children).toHaveLength(3);
+    expect(section!.children![0].type).toBe("gate");
+    expect(section!.children![1].type).toBe("call");
+    expect(section!.children![2].type).toBe("emit");
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// v2.2 Features
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe("call: blocks", () => {
+  it("parses basic call with input and output", () => {
+    const { block } = findBlock(
+      "call: ./verify-email.it | input: {{userData.email}} | output: verified",
+      "call",
+    );
+    expect(block).toBeDefined();
+    expect(block.type).toBe("call");
+    expect(block.content).toBe("./verify-email.it");
+    expect(block.properties?.input).toBe("{{userData.email}}");
+    expect(block.properties?.output).toBe("verified");
+  });
+
+  it("defaults status to pending", () => {
+    const { block } = findBlock("call: ./sub-workflow.it", "call");
+    expect(block.properties?.status).toBe("pending");
+  });
+
+  it("call without input/output", () => {
+    const { block } = findBlock("call: ./notify-team.it", "call");
+    expect(block.content).toBe("./notify-team.it");
+    expect(block.properties?.input).toBeUndefined();
+    expect(block.properties?.output).toBeUndefined();
+  });
+
+  it("renders call block HTML", () => {
+    const doc = parseIntentText(
+      "call: ./verify.it | input: {{userId}} | output: verified",
+    );
+    const html = renderHTML(doc);
+    expect(html).toContain("intent-call");
+    expect(html).toContain("📞");
+    expect(html).toContain("./verify.it");
+    expect(html).toContain("{{userId}}");
+  });
+});
+
+describe("{{variable}} interpolation", () => {
+  it("preserves {{variable}} in step input", () => {
+    const { block } = findBlock(
+      "step: Send email | tool: email.send | to: {{userData.email}}",
+      "step",
+    );
+    expect(block.properties?.to).toBe("{{userData.email}}");
+  });
+
+  it("preserves {{variable}} in decision conditions", () => {
+    const { block } = findBlock(
+      'decision: Plan type? | if: {{plan}} == "pro" | then: step-3 | else: step-4',
+      "decision",
+    );
+    expect(block.properties?.if).toBe('{{plan}} == "pro"');
+  });
+
+  it("preserves {{variable}} in gate approver", () => {
+    const { block } = findBlock(
+      "gate: Confirm deletion | approver: {{requester}}",
+      "gate",
+    );
+    expect(block.properties?.approver).toBe("{{requester}}");
+  });
+
+  it("preserves {{variable}} in audit template fields", () => {
+    const { block } = findBlock(
+      "audit: Complete | by: {{agent}} | at: {{timestamp}}",
+      "audit",
+    );
+    expect(block.properties?.by).toBe("{{agent}}");
+    expect(block.properties?.at).toBe("{{timestamp}}");
+  });
+
+  it("preserves {{variable}} in result data", () => {
+    const { block } = findBlock(
+      "result: Done | code: 200 | data: {{workspace}}",
+      "result",
+    );
+    expect(block.properties?.data).toBe("{{workspace}}");
+  });
+});
+
+describe("context: pipe syntax", () => {
+  it("parses context with pipe key:value syntax", () => {
+    const input = "context: | userId: u_123 | plan: pro";
+    const doc = parseIntentText(input);
+    expect(doc.metadata?.context?.userId).toBe("u_123");
+    expect(doc.metadata?.context?.plan).toBe("pro");
+  });
+
+  it("still supports legacy key=value syntax", () => {
+    const input = 'context: userId = "u_123" | plan = "pro"';
+    const doc = parseIntentText(input);
+    expect(doc.metadata?.context?.userId).toBe("u_123");
+    expect(doc.metadata?.context?.plan).toBe("pro");
+  });
+});
+
+describe("parallel: join property", () => {
+  it("defaults join to all", () => {
+    const { block } = findBlock(
+      "parallel: Run checks | steps: lint,test,build",
+      "parallel",
+    );
+    expect(block.properties?.join).toBe("all");
+  });
+
+  it("parses explicit join value", () => {
+    const { block } = findBlock(
+      "parallel: Fire and forget | steps: a,b | join: none",
+      "parallel",
+    );
+    expect(block.properties?.join).toBe("none");
+  });
+
+  it("renders join badge in HTML", () => {
+    const doc = parseIntentText(
+      "parallel: Run checks | steps: lint,test | join: any",
+    );
+    const html = renderHTML(doc);
+    expect(html).toContain("intent-badge-join");
+    expect(html).toContain("join: any");
+  });
+});
+
+describe("wait: on property", () => {
+  it("parses on property", () => {
+    const { block } = findBlock(
+      "wait: Smoke tests | on: smoketest.complete | timeout: 60s | fallback: rollback",
+      "wait",
+    );
+    expect(block.properties?.on).toBe("smoketest.complete");
+    expect(block.properties?.timeout).toBe("60s");
+    expect(block.properties?.fallback).toBe("rollback");
+  });
+
+  it("renders on event in HTML", () => {
+    const doc = parseIntentText(
+      "wait: Approval | on: human.approved | timeout: 24h",
+    );
+    const html = renderHTML(doc);
+    expect(html).toContain("human.approved");
+    expect(html).toContain("intent-badge-event");
+  });
+});
+
+describe("v2.2 version detection", () => {
+  it("gate block triggers version 2.2", () => {
+    const doc = parseIntentText("gate: Approve | approver: admin");
+    expect(doc.version).toBe("2.2");
+  });
+
+  it("call block triggers version 2.2", () => {
+    const doc = parseIntentText("call: ./sub.it | input: {{data}}");
+    expect(doc.version).toBe("2.2");
+  });
+
+  it("emit block triggers version 2.2", () => {
+    const doc = parseIntentText("emit: deploy.started | phase: init");
+    expect(doc.version).toBe("2.2");
+  });
+
+  it("complete v2.2 workflow parses correctly", () => {
+    const input = `title: User Onboarding
+agent: onboard-agent | model: claude-sonnet-4
+context: | userId: u_123 | plan: pro
+
+step: Verify email | tool: email.verify | input: {{userId}} | output: emailStatus
+step: Create workspace | tool: ws.create | depends: step-1 | input: {{userId}} | output: workspace
+decision: Plan type? | if: {{plan}} == "pro" | then: step-3 | else: step-4
+step: Enable pro | id: step-3 | tool: features.enable | input: {{workspace.id}}
+step: Send welcome | tool: email.send | to: {{emailStatus.email}}
+
+gate: Confirm account active | approver: {{emailStatus.email}} | timeout: 24h | fallback: rollback
+
+call: ./log-signup.it | input: {{workspace}}
+
+handoff: Transfer to success | from: onboard-agent | to: success-agent
+audit: Onboarding complete | by: {{agent}} | at: {{timestamp}} | user: {{emailStatus.email}}
+result: Done | code: 200 | data: {{workspace}}`;
+
+    const doc = parseIntentText(input);
+    expect(doc.version).toBe("2.2");
+    expect(doc.metadata?.agent).toBe("onboard-agent");
+    expect(doc.metadata?.model).toBe("claude-sonnet-4");
+    expect(doc.metadata?.context?.userId).toBe("u_123");
+    expect(doc.metadata?.context?.plan).toBe("pro");
+
+    const { flat } = flatBlocks(input);
+    const gate = flat.find((b) => b.type === "gate");
+    expect(gate).toBeDefined();
+    expect(gate!.properties?.approver).toBe("{{emailStatus.email}}");
+
+    const call = flat.find((b) => b.type === "call");
+    expect(call).toBeDefined();
+    expect(call!.content).toBe("./log-signup.it");
+    expect(call!.properties?.input).toBe("{{workspace}}");
   });
 });

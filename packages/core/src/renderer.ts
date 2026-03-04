@@ -356,29 +356,19 @@ function renderBlock(block: IntentBlock): string {
       return `<div class="intent-file-ref intent-export"><span class="intent-file-ref-icon">📤</span> export: ${content}${fmt}</div>`;
     }
 
-    case "schema": {
-      const extendsBase = props.extends
-        ? ` extends ${escapeHtml(String(props.extends))}`
-        : "";
-      return `<div class="intent-file-ref intent-schema"><span class="intent-file-ref-icon">📐</span> schema: ${content}${extendsBase}</div>`;
-    }
-
     // ─── v2.1 Agentic Workflow Blocks ──────────────────────────────────
 
-    case "status": {
+    case "emit": {
       const phase = props.phase
-        ? `<span class="intent-status-phase">${escapeHtml(String(props.phase))}</span>`
-        : "";
-      const updated = props.updated
-        ? `<span class="intent-status-updated">${escapeHtml(String(props.updated))}</span>`
+        ? `<span class="intent-emit-phase">${escapeHtml(String(props.phase))}</span>`
         : "";
       const levelBadge = props.level
         ? `<span class="intent-badge intent-badge-level">${escapeHtml(String(props.level))}</span>`
         : "";
-      return `<div class="intent-status-block">
-        <span class="intent-status-icon">📊</span>
-        <span class="intent-status-content">${content}</span>
-        <span class="intent-status-meta">${phase}${levelBadge}${updated}</span>
+      return `<div class="intent-emit-block">
+        <span class="intent-emit-icon">📡</span>
+        <span class="intent-emit-content">${content}</span>
+        <span class="intent-emit-meta">${phase}${levelBadge}</span>
       </div>`;
     }
 
@@ -418,6 +408,9 @@ function renderBlock(block: IntentBlock): string {
     }
 
     case "wait": {
+      const onVal = props.on
+        ? `<span class="intent-badge intent-badge-event">${escapeHtml(String(props.on))}</span>`
+        : "";
       const timeoutVal = props.timeout
         ? `<span class="intent-badge intent-badge-timeout">${escapeHtml(String(props.timeout))}</span>`
         : "";
@@ -427,7 +420,7 @@ function renderBlock(block: IntentBlock): string {
       return `<div class="intent-wait">
         <span class="intent-wait-icon">⏳</span>
         <span class="intent-wait-content">${content}</span>
-        <span class="intent-wait-meta">${timeoutVal}${fallbackVal}</span>
+        <span class="intent-wait-meta">${onVal}${timeoutVal}${fallbackVal}</span>
       </div>`;
     }
 
@@ -446,10 +439,13 @@ function renderBlock(block: IntentBlock): string {
               )
               .join("")
           : "";
+      const joinBadge = props.join
+        ? `<span class="intent-badge intent-badge-join">join: ${escapeHtml(String(props.join))}</span>`
+        : "";
       return `<div class="intent-parallel">
         <span class="intent-parallel-icon">⏩</span>
         <span class="intent-parallel-content">${content}</span>
-        <span class="intent-parallel-steps">${stepBadges}</span>
+        <span class="intent-parallel-steps">${stepBadges}${joinBadge}</span>
       </div>`;
     }
 
@@ -467,6 +463,41 @@ function renderBlock(block: IntentBlock): string {
         <span class="intent-retry-icon">🔄</span>
         <span class="intent-retry-content">${content}</span>
         <span class="intent-retry-meta">${maxVal}${delayVal}${backoffVal}</span>
+      </div>`;
+    }
+
+    // ─── v2.2 Agentic Workflow Blocks ──────────────────────────────────
+
+    case "gate": {
+      const approverBadge = props.approver
+        ? `<span class="intent-badge intent-badge-approver">${escapeHtml(String(props.approver))}</span>`
+        : "";
+      const timeoutBadge = props.timeout
+        ? `<span class="intent-badge intent-badge-timeout">${escapeHtml(String(props.timeout))}</span>`
+        : "";
+      const fallbackInfo = props.fallback
+        ? `<span class="intent-gate-fallback">fallback → ${escapeHtml(String(props.fallback))}</span>`
+        : "";
+      return `<div class="intent-gate">
+        <div class="intent-gate-icon">🛑</div>
+        <div class="intent-gate-body">
+          <div class="intent-gate-label">${content}</div>
+          <div class="intent-gate-meta">${approverBadge}${timeoutBadge}${fallbackInfo}</div>
+        </div>
+      </div>`;
+    }
+
+    case "call": {
+      const inputVal = props.input
+        ? `<span class="intent-call-input">input: ${escapeHtml(String(props.input))}</span>`
+        : "";
+      const outputVal = props.output
+        ? `<span class="intent-call-output">output: ${escapeHtml(String(props.output))}</span>`
+        : "";
+      return `<div class="intent-call">
+        <span class="intent-call-icon">📞</span>
+        <span class="intent-call-content">${content}</span>
+        <span class="intent-call-meta">${inputVal}${outputVal}</span>
       </div>`;
     }
 
@@ -648,12 +679,11 @@ li{margin:4px 0;color:#374151;}
 .intent-file-ref{display:flex;align-items:center;gap:8px;margin:4px 0;padding:6px 10px;border:1px dashed #e2e8f0;border-radius:6px;font-size:0.82rem;color:#64748b;font-family:monospace;}
 .intent-file-ref-icon{font-size:0.9rem;}
 /* v2.1 Agentic Workflow Blocks */
-.intent-status-block{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid #c4b5fd;border-radius:6px;margin:6px 0;background:#f5f3ff;}
-.intent-status-icon{font-size:1rem;}
-.intent-status-content{flex:1;font-weight:500;color:#5b21b6;}
-.intent-status-meta{display:flex;gap:6px;align-items:center;}
-.intent-status-phase{font-size:0.78rem;color:#7c3aed;font-weight:600;}
-.intent-status-updated{font-size:0.72rem;color:#94a3b8;font-style:italic;}
+.intent-emit-block{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid #c4b5fd;border-radius:6px;margin:6px 0;background:#f5f3ff;}
+.intent-emit-icon{font-size:1rem;}
+.intent-emit-content{flex:1;font-weight:500;color:#5b21b6;}
+.intent-emit-meta{display:flex;gap:6px;align-items:center;}
+.intent-emit-phase{font-size:0.78rem;color:#7c3aed;font-weight:600;}
 .intent-badge-level{background:#ede9fe;color:#6d28d9;}
 .intent-result{display:flex;align-items:flex-start;gap:10px;padding:9px 12px;border-radius:6px;margin:6px 0;flex-wrap:wrap;}
 .intent-result-success{border:1px solid #86efac;background:#f0fdf4;}
@@ -679,6 +709,7 @@ li{margin:4px 0;color:#374151;}
 .intent-parallel-content{flex:1;font-weight:500;color:#1e40af;}
 .intent-parallel-steps{display:flex;gap:4px;flex-wrap:wrap;}
 .intent-badge-parallel-step{background:#dbeafe;color:#1e40af;font-family:monospace;font-size:0.72rem;padding:2px 6px;border-radius:999px;}
+.intent-badge-join{background:#bfdbfe;color:#1e3a8a;font-size:0.72rem;padding:2px 6px;border-radius:999px;}
 .intent-retry{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid #fdba74;border-radius:6px;margin:6px 0;background:#fff7ed;}
 .intent-retry-icon{font-size:1rem;}
 .intent-retry-content{flex:1;font-weight:500;color:#c2410c;}
@@ -686,6 +717,20 @@ li{margin:4px 0;color:#374151;}
 .intent-badge-retry-max{background:#fed7aa;color:#9a3412;font-size:0.72rem;}
 .intent-badge-retry-delay{background:#fed7aa;color:#9a3412;font-size:0.72rem;font-family:monospace;}
 .intent-badge-retry-backoff{background:#ffedd5;color:#c2410c;font-size:0.72rem;font-style:italic;}
+/* v2.2 Agentic Workflow Blocks */
+.intent-gate{display:flex;gap:12px;margin:10px 0;padding:12px 14px;border:2px solid #f87171;border-radius:8px;background:#fef2f2;}
+.intent-gate-icon{font-size:1.4rem;flex-shrink:0;margin-top:2px;}
+.intent-gate-body{flex:1;}
+.intent-gate-label{font-weight:600;color:#991b1b;margin-bottom:4px;}
+.intent-gate-meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.intent-badge-approver{background:#fecaca;color:#991b1b;font-family:monospace;}
+.intent-gate-fallback{font-size:0.8rem;color:#c2410c;font-style:italic;}
+.intent-call{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px dashed #a78bfa;border-radius:6px;margin:6px 0;background:#faf5ff;}
+.intent-call-icon{font-size:1rem;}
+.intent-call-content{flex:1;font-weight:500;color:#6d28d9;font-family:monospace;font-size:0.9rem;}
+.intent-call-meta{display:flex;gap:8px;align-items:center;}
+.intent-call-input{font-size:0.78rem;color:#7c3aed;font-family:monospace;}
+.intent-call-output{font-size:0.78rem;color:#059669;font-family:monospace;}
 </style>
 ${html}
 </div>`;

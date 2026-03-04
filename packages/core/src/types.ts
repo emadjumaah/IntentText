@@ -51,18 +51,21 @@ export const KEYWORDS = [
   "error",
   "import",
   "export",
-  "schema",
   "progress",
   "context",
   "agent",
   "model",
   // v2.1 agentic workflow keywords
-  "status",
   "result",
   "handoff",
   "wait",
   "parallel",
   "retry",
+  // v2.2 agentic workflow keywords
+  "gate",
+  "call",
+  "emit",
+  "status", // alias → emit (deprecated)
 ];
 
 /** All valid block types for IntentText (v1 + v2 agentic). */
@@ -105,16 +108,18 @@ export type BlockType =
   | "error"
   | "import"
   | "export"
-  | "schema"
   | "progress"
   | "context"
   // v2.1 agentic workflow block types
-  | "status"
   | "result"
   | "handoff"
   | "wait"
   | "parallel"
-  | "retry";
+  | "retry"
+  // v2.2 agentic workflow block types
+  | "gate"
+  | "call"
+  | "emit";
 
 export type InlineNode =
   | { type: "text"; value: string }
@@ -171,7 +176,15 @@ export type AgenticStatus =
   | "failed"
   | "skipped"
   | "cancelled"
-  | "done";
+  | "done"
+  | "approved"
+  | "rejected"
+  | "waiting";
+
+/** A variable reference produced by {{variable}} interpolation. */
+export interface VariableRef {
+  $ref: string;
+}
 
 /** Document-level metadata including v2 agentic fields. */
 export interface IntentDocumentMetadata {
