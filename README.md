@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <a href="https://toit-psi.vercel.app/">Try the Editor</a> ·
+  <a href="https://iteditor.vercel.app/">Try the Editor</a> ·
   <a href="docs/SPEC.md">Specification</a> ·
   <a href="docs/TEMPLATES.md">Templates</a> ·
   <a href="https://www.npmjs.com/package/@intenttext/core">npm</a>
@@ -178,7 +178,7 @@ result: Onboarded      | code: 200 | data: {{workspace}}
 | **VS Code Extension**  | Syntax highlighting, live preview, and snippets for `.it` files. [Install from Marketplace](https://marketplace.visualstudio.com/items?itemName=intenttext.intenttext) |
 | **Python Package**     | [![PyPI](https://img.shields.io/pypi/v/intenttext)](https://pypi.org/project/intenttext/) Install with `pip install intenttext`                                        |
 | **GitHub Action**      | Validate `.it` files in CI with one line: `uses: intenttext/intenttext-action@v1`                                                                                      |
-| **Web Converter**      | Paste any web content or Markdown and convert to IntentText. [toit-psi.vercel.app](https://toit-psi.vercel.app/)                                                       |
+| **Web Converter**      | Paste any web content or Markdown and convert to IntentText. [iteditor.vercel.app](https://iteditor.vercel.app/)                                                       |
 
 ---
 
