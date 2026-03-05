@@ -18,6 +18,8 @@ export {
 export { documentToSource } from "./source";
 export { validateDocumentSemantic } from "./validate";
 export { diffDocuments } from "./diff";
+export { extractWorkflow } from "./workflow";
+export type { WorkflowStep, WorkflowGraph } from "./workflow";
 export type {
   IntentDocument,
   IntentBlock,

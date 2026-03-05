@@ -31,6 +31,8 @@ export { validateDocumentSemantic } from "./validate";
 export type { SemanticIssue, SemanticValidationResult } from "./validate";
 export { diffDocuments } from "./diff";
 export type { DocumentDiff, BlockModification } from "./diff";
+export { extractWorkflow } from "./workflow";
+export type { WorkflowStep, WorkflowGraph } from "./workflow";
 export type {
   IntentBlock,
   IntentDocument,
