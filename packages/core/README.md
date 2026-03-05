@@ -176,10 +176,10 @@ npm test
 
 ## Links
 
-- [Full Specification](https://github.com/emadjumaah/IntentText/blob/main/docs/SPEC.md)
-- [Usage Guide](https://github.com/emadjumaah/IntentText/blob/main/docs/USAGE.md)
-- [Changelog](https://github.com/emadjumaah/IntentText/blob/main/CHANGELOG.md)
-- [Example Templates](https://github.com/emadjumaah/IntentText/tree/main/examples/templates)
+- [Full Specification](https://github.com/intenttext/IntentText/blob/main/docs/SPEC.md)
+- [Usage Guide](https://github.com/intenttext/IntentText/blob/main/docs/USAGE.md)
+- [Changelog](https://github.com/intenttext/IntentText/blob/main/CHANGELOG.md)
+- [Example Templates](https://github.com/intenttext/IntentText/tree/main/examples/templates)
 
 ## License
 

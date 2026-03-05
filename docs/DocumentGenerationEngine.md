@@ -2,7 +2,7 @@
 
 # Implementation Prompt for Claude Opus Code Agent
 
-# Project: github.com/emadjumaah/IntentText
+# Project: github.com/intenttext/IntentText
 
 ---
 
@@ -1068,7 +1068,7 @@ note: _{{article.correction}}_ | align: left
     "subheading2": "Who Is Using It",
     "body6": "Early adopters include a legal services firm in Doha using it for contract generation, and a regional logistics company replacing their invoice system.",
     "body7": "The project remains open source under the MIT licence.",
-    "closing": "IntentText v2.1 is available at github.com/emadjumaah/IntentText.",
+    "closing": "IntentText v2.1 is available at github.com/intenttext/IntentText.",
     "footnote1": "IntentText source code reviewed by this publication. No independent security audit has been conducted.",
     "correction": "",
     "image1": {

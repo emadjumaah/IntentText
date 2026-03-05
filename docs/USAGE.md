@@ -11,7 +11,7 @@ npm install @intenttext/core
 Or from source:
 
 ```bash
-git clone https://github.com/emadjumaah/IntentText.git
+git clone https://github.com/intenttext/IntentText.git
 cd IntentText
 npm install && npm run build
 ```
