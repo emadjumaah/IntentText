@@ -9,7 +9,8 @@
         color-scheme: light;
       }
       body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
           Arial, sans-serif;
         margin: 0;
         padding: 0;
@@ -110,14 +111,16 @@
         color: #e5e7eb;
         border-radius: 10px;
         overflow: auto;
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+        font-family:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
           "Liberation Mono", monospace;
         font-size: 12.5px;
         line-height: 1.55;
         border: 1px solid #111827;
       }
       code {
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+        font-family:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
           "Liberation Mono", monospace;
       }
       table {
@@ -198,9 +201,12 @@
         <section class="card">
           <h2>Block pattern</h2>
           <div class="body">
-            <pre>[Keyword]: [Content] | [Property]: [Value] | [Property]: [Value]</pre>
+            <pre>
+[Keyword]: [Content] | [Property]: [Value] | [Property]: [Value]</pre
+            >
             <p class="muted" style="margin: 10px 0 0; font-size: 13px">
-              Keywords are case-insensitive. Properties are optional and open-ended.
+              Keywords are case-insensitive. Properties are optional and
+              open-ended.
             </p>
           </div>
         </section>
@@ -253,7 +259,9 @@
                 <tr>
                   <td><code>summary:</code></td>
                   <td>Short document description</td>
-                  <td><code>summary: Finalizing deployment in _Doha_.</code></td>
+                  <td>
+                    <code>summary: Finalizing deployment in _Doha_.</code>
+                  </td>
                 </tr>
                 <tr>
                   <td><code>section:</code></td>
@@ -278,7 +286,12 @@
                 <tr>
                   <td><code>task:</code></td>
                   <td>Actionable to-do</td>
-                  <td><code>task: Database migration | owner: Ahmed | due: Sunday</code></td>
+                  <td>
+                    <code
+                      >task: Database migration | owner: Ahmed | due:
+                      Sunday</code
+                    >
+                  </td>
                 </tr>
                 <tr>
                   <td><code>done:</code></td>
@@ -298,12 +311,19 @@
                 <tr>
                   <td><code>ref:</code></td>
                   <td>Cross-document reference</td>
-                  <td><code>ref: Related Doc | to: doc.it#section:Tasks</code></td>
+                  <td>
+                    <code>ref: Related Doc | to: doc.it#section:Tasks</code>
+                  </td>
                 </tr>
                 <tr>
                   <td><code>image:</code></td>
                   <td>Image reference</td>
-                  <td><code>image: Banner | at: assets/banner.png | caption: Launch artwork</code></td>
+                  <td>
+                    <code
+                      >image: Banner | at: assets/banner.png | caption: Launch
+                      artwork</code
+                    >
+                  </td>
                 </tr>
                 <tr>
                   <td><code>headers:</code></td>
@@ -323,13 +343,16 @@
         <section class="card">
           <h2>Lists</h2>
           <div class="body">
-            <pre>- Unordered list item
+            <pre>
+- Unordered list item
 - Another item
 
 1. First ordered step
-2. Second ordered step</pre>
+2. Second ordered step</pre
+            >
             <p class="muted" style="margin: 10px 0 0; font-size: 13px">
-              Unordered: lines starting with <code>-</code> or <code>*</code>. Ordered: digit + <code>.</code>.
+              Unordered: lines starting with <code>-</code> or <code>*</code>.
+              Ordered: digit + <code>.</code>.
             </p>
           </div>
         </section>
@@ -362,14 +385,64 @@
                   <td><code>note: ~Deprecated~</code></td>
                 </tr>
                 <tr>
-                  <td><code>```text```</code></td>
+                  <td><code>`text`</code></td>
                   <td>Inline code</td>
-                  <td><code>note: Saved at ```/logs/cam1```</code></td>
+                  <td><code>note: Saved at `/logs/cam1`</code></td>
+                </tr>
+                <tr>
+                  <td><code>^text^</code></td>
+                  <td>Highlight</td>
+                  <td><code>note: ^Important^ update</code></td>
+                </tr>
+                <tr>
+                  <td><code>[[text]]</code></td>
+                  <td>Inline note</td>
+                  <td><code>note: [[draft]] copy</code></td>
+                </tr>
+                <tr>
+                  <td><code>@person</code></td>
+                  <td>Mention token</td>
+                  <td><code>note: Review by @sara</code></td>
+                </tr>
+                <tr>
+                  <td><code>#topic</code></td>
+                  <td>Tag token</td>
+                  <td><code>note: Filed under #newsroom</code></td>
                 </tr>
               </tbody>
             </table>
             <p class="muted" style="margin: 10px 0 0; font-size: 13px">
-              v1.0: marks are within one line and non-nesting.
+              Marks are within one line and non-nesting.
+            </p>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>Prose paragraphs (no keyword)</h2>
+          <div class="body">
+            <pre>
+First paragraph line
+continues on next line
+
+New paragraph after blank line</pre
+            >
+            <p class="muted" style="margin: 10px 0 0; font-size: 13px">
+              Consecutive plain lines merge into one prose paragraph. Blank
+              lines start a new paragraph.
+            </p>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>Optional alignment</h2>
+          <div class="body">
+            <pre>
+note: Center this line | align: center
+note: Pull quote | align: right
+note: Editorial body | align: justify</pre
+            >
+            <p class="muted" style="margin: 10px 0 0; font-size: 13px">
+              Alignment is opt-in. Default flow remains left-aligned.
             </p>
           </div>
         </section>
@@ -377,9 +450,11 @@
         <section class="card">
           <h2>Pipe metadata</h2>
           <div class="body">
-            <pre>task: Database migration | owner: Ahmed | due: 2026-03-01
+            <pre>
+task: Database migration | owner: Ahmed | due: 2026-03-01
 image: Team Photo | at: assets/photo.png | caption: Team Day
-link: Docs | to: https://example.com | title: Documentation</pre>
+link: Docs | to: https://example.com | title: Documentation</pre
+            >
             <p class="muted" style="margin: 10px 0 0; font-size: 13px">
               Split on <code> | </code>. Unknown properties should be preserved.
             </p>
@@ -389,15 +464,18 @@ link: Docs | to: https://example.com | title: Documentation</pre>
         <section class="card">
           <h2>Multi-line code blocks</h2>
           <div class="body">
-            <pre>code:
+            <pre>
+code:
 ```
 SELECT *
 FROM users
 WHERE active = true
 ```
-end:</pre>
+end:</pre
+            >
             <p class="muted" style="margin: 10px 0 0; font-size: 13px">
-              If <code>code:</code> has no inline content, capture lines until an <code>end:</code> line.
+              If <code>code:</code> has no inline content, capture lines until
+              an <code>end:</code> line.
             </p>
           </div>
         </section>
@@ -405,8 +483,10 @@ end:</pre>
         <section class="card">
           <h2>Escaping</h2>
           <div class="body">
-            <pre>note: A literal pipe looks like \|
-note: A literal backslash looks like \\</pre>
+            <pre>
+note: A literal pipe looks like \|
+note: A literal backslash looks like \\</pre
+            >
             <p class="muted" style="margin: 10px 0 0; font-size: 13px">
               Escaping is applied before pipe splitting.
             </p>
@@ -416,7 +496,8 @@ note: A literal backslash looks like \\</pre>
         <section class="card">
           <h2>Quick full example</h2>
           <div class="body">
-            <pre>title: *Project Dalil* Launch Plan
+            <pre>
+title: *Project Dalil* Launch Plan
 summary: Finalizing the deployment for the AI-Agent hub in _Doha_.
 
 section: Logistics & Equipment
@@ -432,12 +513,13 @@ task: Database migration | owner: Ahmed | due: Sunday
 done: Secure the domain name | time: 09:00 AM
 
 question: Who has the _Master Key_ for the server room?
-note: Surveillance footage is saved at ```/logs/cam1```.
+note: Surveillance footage is saved at `/logs/cam1`.
 
 divider: End of Technical Sections
 
 link: *Full Documentation* | to: https://dalil.ai/docs | title: Dalil Docs
-image: *Launch Banner* | at: assets/banner.png | caption: Project Dalil launch artwork</pre>
+image: *Launch Banner* | at: assets/banner.png | caption: Project Dalil launch artwork</pre
+            >
           </div>
         </section>
       </div>

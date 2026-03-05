@@ -206,6 +206,22 @@ function parseInlineNodes(text: string): {
     content += node.value;
   };
 
+  const resolveDateToken = (token: string): string | null => {
+    const lower = token.toLowerCase();
+    if (lower === "today") {
+      return new Date().toISOString().slice(0, 10);
+    }
+    if (lower === "tomorrow") {
+      const d = new Date();
+      d.setDate(d.getDate() + 1);
+      return d.toISOString().slice(0, 10);
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(token)) {
+      return token;
+    }
+    return null;
+  };
+
   let i = 0;
   while (i < text.length) {
     // Check for link pattern [text](url)
@@ -217,6 +233,38 @@ function parseInlineNodes(text: string): {
         const linkUrl = text.slice(linkEnd + 2, urlEnd);
         addNode({ type: "link", value: linkText, href: linkUrl });
         i = urlEnd + 1;
+        continue;
+      }
+    }
+
+    // Inline side-note [[note text]]
+    if (text.startsWith("[[", i)) {
+      const end = text.indexOf("]]", i + 2);
+      if (end > i + 2) {
+        const noteText = text.slice(i + 2, end).trim();
+        const pipeAt = noteText.indexOf("|");
+        if (pipeAt > 0 && pipeAt < noteText.length - 1) {
+          const label = noteText.slice(0, pipeAt).trim();
+          const href = noteText.slice(pipeAt + 1).trim();
+          if (label && href) {
+            addNode({ type: "link", value: label, href });
+            i = end + 2;
+            continue;
+          }
+        }
+        addNode({ type: "inline-note", value: noteText });
+        i = end + 2;
+        continue;
+      }
+    }
+
+    // Inline quote ==quoted text==
+    if (text.startsWith("==", i)) {
+      const end = text.indexOf("==", i + 2);
+      if (end > i + 2) {
+        const quoteText = text.slice(i + 2, end);
+        addNode({ type: "inline-quote", value: quoteText });
+        i = end + 2;
         continue;
       }
     }
@@ -235,9 +283,23 @@ function parseInlineNodes(text: string): {
       continue;
     }
 
-    // Check for bold/italic/strike with */_/~
+    // Check for single-backtick code span `text`
+    if (text[i] === "`") {
+      const end = text.indexOf("`", i + 1);
+      if (end > i + 1) {
+        const codeText = text.slice(i + 1, end);
+        addNode({ type: "code", value: codeText });
+        i = end + 1;
+        continue;
+      }
+      currentText += "`";
+      i++;
+      continue;
+    }
+
+    // Check for bold/italic/strike/highlight with */_/~/^
     const ch = text[i];
-    if (ch === "*" || ch === "_" || ch === "~") {
+    if (ch === "*" || ch === "_" || ch === "~" || ch === "^") {
       const end = text.indexOf(ch, i + 1);
       if (end === -1) {
         currentText += ch;
@@ -245,9 +307,44 @@ function parseInlineNodes(text: string): {
         continue;
       }
       const innerText = text.slice(i + 1, end);
-      const type = ch === "*" ? "bold" : ch === "_" ? "italic" : "strike";
+      const type =
+        ch === "*"
+          ? "bold"
+          : ch === "_"
+            ? "italic"
+            : ch === "~"
+              ? "strike"
+              : "highlight";
       addNode({ type, value: innerText });
       i = end + 1;
+      continue;
+    }
+
+    // Mentions and tags for lightweight writer metadata
+    const dateTokenMatch = text
+      .slice(i)
+      .match(/^@(today|tomorrow|\d{4}-\d{2}-\d{2})\b/i);
+    if (dateTokenMatch) {
+      const token = dateTokenMatch[1];
+      const iso = resolveDateToken(token);
+      if (iso) {
+        addNode({ type: "date", value: `@${token}`, iso });
+        i += dateTokenMatch[0].length;
+        continue;
+      }
+    }
+
+    const mentionMatch = text.slice(i).match(/^@([A-Za-z0-9_-]+)/);
+    if (mentionMatch) {
+      addNode({ type: "mention", value: mentionMatch[1] });
+      i += mentionMatch[0].length;
+      continue;
+    }
+
+    const tagMatch = text.slice(i).match(/^#([A-Za-z0-9_-]+)/);
+    if (tagMatch) {
+      addNode({ type: "tag", value: tagMatch[1] });
+      i += tagMatch[0].length;
       continue;
     }
 
@@ -705,6 +802,29 @@ export function parseIntentText(
     headerLine?: number;
   } | null = null;
 
+  let previousLineWasBlank = false;
+
+  function appendBlockWithProseMerge(
+    target: IntentBlock[],
+    block: IntentBlock,
+  ) {
+    const last = target[target.length - 1];
+    if (
+      !previousLineWasBlank &&
+      last &&
+      last.type === "body-text" &&
+      block.type === "body-text"
+    ) {
+      const mergedOriginal = `${last.originalContent || last.content} ${block.originalContent || block.content}`;
+      const parsed = parseInline(mergedOriginal);
+      last.originalContent = mergedOriginal;
+      last.content = parsed.content;
+      last.inline = parsed.inline;
+      return;
+    }
+    target.push(block);
+  }
+
   function flushPendingTable() {
     if (!pendingTable) return;
 
@@ -771,11 +891,17 @@ export function parseIntentText(
       } else {
         codeContent.push(line);
       }
+      previousLineWasBlank = false;
       continue;
     }
 
     // Comment lines (// ...) are silently ignored
     if (trimmed.startsWith("//")) continue;
+
+    if (!trimmed) {
+      previousLineWasBlank = true;
+      continue;
+    }
 
     // If we have a pending table and current line is not a row (keyword or MD pipe), flush it.
     const isMdPipeRow = /^\|.+\|$/.test(trimmed);
@@ -788,6 +914,7 @@ export function parseIntentText(
       codeCaptureMode = true;
       codeCaptureType = "fence";
       codeStartLine = i + 1;
+      previousLineWasBlank = false;
       continue;
     }
 
@@ -804,6 +931,7 @@ export function parseIntentText(
         blocks.push(dividerBlock);
         currentSection = null;
       }
+      previousLineWasBlank = false;
       continue;
     }
 
@@ -816,6 +944,7 @@ export function parseIntentText(
         line: i + 1,
         column: 1,
       });
+      previousLineWasBlank = false;
       continue;
     }
 
@@ -839,6 +968,7 @@ export function parseIntentText(
           blocks.push(codeBlock);
         }
       }
+      previousLineWasBlank = false;
       continue;
     }
 
@@ -894,6 +1024,7 @@ export function parseIntentText(
         originalHeaders: block.originalContent || block.content,
         headerLine: i + 1,
       };
+      previousLineWasBlank = false;
       continue;
     }
 
@@ -913,6 +1044,7 @@ export function parseIntentText(
         pendingTable = { rows: [rowCells] };
         flushPendingTable();
       }
+      previousLineWasBlank = false;
       continue;
     }
 
@@ -968,14 +1100,14 @@ export function parseIntentText(
     } else if (block.type === "sub") {
       if (currentSection) {
         block.children = [];
-        currentSection.children!.push(block);
+        appendBlockWithProseMerge(currentSection.children!, block);
       } else {
         // No parent section, add to root
-        blocks.push(block);
+        appendBlockWithProseMerge(blocks, block);
       }
     } else if (block.type === "title" || block.type === "summary") {
       // These can appear anywhere, don't affect current section
-      blocks.push(block);
+      appendBlockWithProseMerge(blocks, block);
     } else if (
       block.type === "divider" ||
       block.type === "image" ||
@@ -987,7 +1119,7 @@ export function parseIntentText(
       block.type === "body-text"
     ) {
       // Top-level blocks reset current section
-      blocks.push(block);
+      appendBlockWithProseMerge(blocks, block);
       currentSection = null;
     } else {
       // Content blocks (task, note, question, list-item, agentic blocks, etc.)
@@ -999,11 +1131,13 @@ export function parseIntentText(
           target = lastSub;
         }
         if (!target.children) target.children = [];
-        target.children.push(block);
+        appendBlockWithProseMerge(target.children, block);
       } else {
-        blocks.push(block);
+        appendBlockWithProseMerge(blocks, block);
       }
     }
+
+    previousLineWasBlank = false;
   }
 
   // Flush any remaining table at EOF

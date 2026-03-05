@@ -14,10 +14,10 @@ note: This is a note`;
 
       expect(doc.blocks[0].type).toBe("title");
       expect(doc.blocks[1].type).toBe("body-text");
-      expect(doc.blocks[1].content).toBe("This is implicit body text.");
-      expect(doc.blocks[2].type).toBe("body-text");
-      expect(doc.blocks[2].content).toBe("It needs no keyword prefix.");
-      expect(doc.blocks[3].type).toBe("note");
+      expect(doc.blocks[1].content).toBe(
+        "This is implicit body text. It needs no keyword prefix.",
+      );
+      expect(doc.blocks[2].type).toBe("note");
     });
   });
 

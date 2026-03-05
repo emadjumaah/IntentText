@@ -25,7 +25,7 @@ console.log("hi")
     expect(itText).toContain("- item 1");
     expect(itText).toContain("1. step 1");
     expect(itText).toContain("code:");
-    expect(itText).toContain("console.log(\"hi\")");
+    expect(itText).toContain('console.log("hi")');
     expect(itText).toContain("end:");
   });
 
@@ -34,7 +34,7 @@ console.log("hi")
     const itText = convertMarkdownToIntentText(md);
 
     // paragraph becomes note:
-    expect(itText).toBe("note: *Bold* _italic_ ~strike~ ```code```");
+    expect(itText).toBe("note: *Bold* _italic_ ~strike~ `code`");
   });
 
   it("should convert standalone links and images", () => {

@@ -1,6 +1,6 @@
-# IntentText v2.3 - Usage Guide
+# IntentText v2.4 - Usage Guide
 
-This guide covers how to use the IntentText parser and renderer in different scenarios — including v2 agentic workflow blocks, inter-agent communication primitives, and v2.3 additions (gate, call, emit, `{{variable}}` interpolation).
+This guide covers how to use the IntentText parser and renderer in different scenarios — including v2 agentic workflow blocks, inter-agent communication primitives, and writer-first v2.4 additions (single-backtick code, highlights, inline notes, mention/tag tokens, prose paragraphs, optional alignment).
 
 ## 📦 Installation
 
@@ -385,13 +385,66 @@ steps.forEach((step) => {
 ```javascript
 const titleBlock = document.blocks.find((b) => b.type === "title");
 
-if (titleBlock.marks) {
-  titleBlock.marks.forEach((mark) => {
-    console.log(`${mark.type}: ${mark.start}-${mark.end}`);
-    // bold: 0-12, italic: 20-25, etc.
+if (titleBlock.inline) {
+  titleBlock.inline.forEach((node) => {
+    console.log(node.type, node.value);
+    // bold, italic, strike, code, highlight, inline-note, mention, tag, link
   });
 }
 ```
+
+### Writer-First Inline Syntax
+
+```it
+note: *bold* _italic_ ~strike~ `mono`
+note: ^important^ [[draft]] by @sara in #newsroom
+```
+
+Supported inline tokens:
+
+- `*text*` -> bold
+- `_text_` -> italic
+- `~text~` -> strikethrough
+- `` `text` `` -> inline code
+- `^text^` -> highlight
+- `==text==` -> inline quote emphasis
+- `[[text]]` -> inline side-note
+- `[[label|url]]` -> inline link shorthand
+- `@today`, `@tomorrow`, `@YYYY-MM-DD` -> date shorthand tokens
+- `@person` -> mention token
+- `#topic` -> tag token
+
+### Prose Paragraph Behavior (No Keyword)
+
+Plain lines without a keyword are treated as prose paragraphs:
+
+```it
+First line of narrative prose
+continues naturally on the next line
+
+This starts a new paragraph.
+```
+
+- Consecutive plain lines merge into one `body-text` block.
+- Blank lines split paragraphs.
+- Rendered prose uses a dedicated `.intent-prose` style for long-form readability.
+
+### Optional Alignment
+
+Alignment is opt-in and block-level via `align:` property:
+
+```it
+note: Centered quote | align: center
+note: Sidebar annotation | align: right
+note: Column copy | align: justify
+```
+
+Supported values: `center`, `right`, `justify`.
+
+### Planned Writer UX (Not Yet in Core)
+
+- Smart typing replacements (`--`, `...`, typographic quotes)
+- App-level writing modes (`Book`, `News`, `Journal`, `Plain`), focus mode, and typewriter scroll
 
 ## 🔧 Advanced Usage
 

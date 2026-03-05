@@ -159,7 +159,9 @@ image: *Launch Banner* | at: assets/banner.png | caption: Project Dalil launch a
     expect(taskBlock?.properties?.owner).toBe("Ahmed");
 
     const doneBlock =
-      result.blocks.find((b) => b.type === "task" && b.properties?.status === "done") ||
+      result.blocks.find(
+        (b) => b.type === "task" && b.properties?.status === "done",
+      ) ||
       result.blocks
         .flatMap((b) => b.children || [])
         .find((b) => b.type === "task" && b.properties?.status === "done");
@@ -181,6 +183,67 @@ image: *Launch Banner* | at: assets/banner.png | caption: Project Dalil launch a
     expect(result.blocks[0].type).toBe("note");
     expect(result.blocks[0].content).toBe("Path is /tmp/file.");
     expect(result.blocks[0].inline?.some((n) => n.type === "code")).toBe(true);
+  });
+
+  it("should parse inline code using single backticks", () => {
+    const input = "note: Label is `mono` text.";
+    const result = parseIntentText(input);
+
+    expect(result.blocks).toHaveLength(1);
+    expect(result.blocks[0].type).toBe("note");
+    expect(result.blocks[0].content).toBe("Label is mono text.");
+    expect(result.blocks[0].inline?.some((n) => n.type === "code")).toBe(true);
+  });
+
+  it("should merge consecutive no-keyword prose lines into one body-text block", () => {
+    const input = `First line of prose
+continues naturally
+
+New paragraph starts`;
+    const result = parseIntentText(input);
+
+    const prose = result.blocks.filter((b) => b.type === "body-text");
+    expect(prose).toHaveLength(2);
+    expect(prose[0].content).toBe("First line of prose continues naturally");
+    expect(prose[1].content).toBe("New paragraph starts");
+  });
+
+  it("should parse highlight, inline note, mentions, and tags", () => {
+    const input = "note: ^important^ [[draft]] by @sara in #news";
+    const result = parseIntentText(input);
+    const inline = result.blocks[0].inline || [];
+
+    expect(inline.some((n) => n.type === "highlight")).toBe(true);
+    expect(inline.some((n) => n.type === "inline-note")).toBe(true);
+    expect(inline.some((n) => n.type === "mention")).toBe(true);
+    expect(inline.some((n) => n.type === "tag")).toBe(true);
+  });
+
+  it("should parse inline quote emphasis with ==text==", () => {
+    const result = parseIntentText("note: ==Urgent quote== for editor");
+    const inline = result.blocks[0].inline || [];
+    expect(inline.some((n) => n.type === "inline-quote")).toBe(true);
+  });
+
+  it("should parse shorthand links using [[label|url]]", () => {
+    const result = parseIntentText(
+      "note: Open [[web-to-it|https://toit-psi.vercel.app/]] now",
+    );
+    const inline = result.blocks[0].inline || [];
+    const linkNode = inline.find((n) => n.type === "link") as
+      | { type: "link"; value: string; href: string }
+      | undefined;
+    expect(linkNode?.value).toBe("web-to-it");
+    expect(linkNode?.href).toBe("https://toit-psi.vercel.app/");
+  });
+
+  it("should parse date shorthand tokens", () => {
+    const result = parseIntentText(
+      "note: publish @today and review @tomorrow before @2026-03-10",
+    );
+    const inline = result.blocks[0].inline || [];
+    const dateNodes = inline.filter((n) => n.type === "date");
+    expect(dateNodes).toHaveLength(3);
   });
 
   it("should parse list task shorthand with embedded task metadata", () => {

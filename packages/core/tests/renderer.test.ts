@@ -21,6 +21,33 @@ describe("HTML Renderer", () => {
     expect(html).toContain("<em>italic</em>");
   });
 
+  it("should render single-backtick inline code as monospace", () => {
+    const input = "note: label is `mono` text";
+    const parsed = parseIntentText(input);
+    const html = renderHTML(parsed);
+
+    expect(html).toContain("<code>mono</code>");
+  });
+
+  it("should apply optional text alignment via align property", () => {
+    const input = "note: Center this line | align: center";
+    const parsed = parseIntentText(input);
+    const html = renderHTML(parsed);
+
+    expect(html).toContain('class="intent-note intent-align-center"');
+  });
+
+  it("should render inline quote, date shorthand, and shorthand link", () => {
+    const input =
+      "note: ==Quote== by @sara on @today via [[portal|https://example.com]]";
+    const parsed = parseIntentText(input);
+    const html = renderHTML(parsed);
+
+    expect(html).toContain('class="intent-inline-quote"');
+    expect(html).toContain('class="intent-inline-date"');
+    expect(html).toContain('href="https://example.com"');
+  });
+
   it("should render tasks with metadata", () => {
     const input = "task: Database migration | owner: Ahmed | due: Sunday";
     const parsed = parseIntentText(input);

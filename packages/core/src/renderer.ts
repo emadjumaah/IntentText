@@ -61,8 +61,20 @@ function applyInlineFormatting(
             return `<em>${escapeHtml(node.value)}</em>`;
           case "strike":
             return `<del>${escapeHtml(node.value)}</del>`;
+          case "inline-quote":
+            return `<q class="intent-inline-quote">${escapeHtml(node.value)}</q>`;
+          case "highlight":
+            return `<mark class="intent-inline-highlight">${escapeHtml(node.value)}</mark>`;
           case "code":
             return `<code>${escapeHtml(node.value)}</code>`;
+          case "inline-note":
+            return `<span class="intent-inline-note">${escapeHtml(node.value)}</span>`;
+          case "date":
+            return `<time class="intent-inline-date" datetime="${escapeHtml(node.iso)}">${escapeHtml(node.value)}</time>`;
+          case "mention":
+            return `<span class="intent-inline-mention">@${escapeHtml(node.value)}</span>`;
+          case "tag":
+            return `<span class="intent-inline-tag">#${escapeHtml(node.value)}</span>`;
           case "link":
             return `<a href="${escapeHtml(sanitizeUrl(node.href))}" class="intent-inline-link">${escapeHtml(node.value)}</a>`;
           default:
@@ -75,6 +87,16 @@ function applyInlineFormatting(
   return escapeHtml(originalContent || content);
 }
 
+function getAlignmentClass(props: Record<string, string | number>): string {
+  const raw = String(props.align || "")
+    .toLowerCase()
+    .trim();
+  if (raw === "center") return " intent-align-center";
+  if (raw === "right") return " intent-align-right";
+  if (raw === "justify") return " intent-align-justify";
+  return "";
+}
+
 // Helper function to render a single block
 function renderBlock(block: IntentBlock): string {
   const content = applyInlineFormatting(
@@ -83,19 +105,20 @@ function renderBlock(block: IntentBlock): string {
     block.originalContent,
   );
   const props = block.properties || {};
+  const alignClass = getAlignmentClass(props);
 
   switch (block.type) {
     case "title":
-      return `<h1 class="intent-title">${content}</h1>`;
+      return `<h1 class="intent-title${alignClass}">${content}</h1>`;
 
     case "summary":
-      return `<div class="intent-summary">${content}</div>`;
+      return `<div class="intent-summary${alignClass}">${content}</div>`;
 
     case "section":
-      return `<h2 class="intent-section">${content}</h2>`;
+      return `<h2 class="intent-section${alignClass}">${content}</h2>`;
 
     case "sub":
-      return `<h3 class="intent-sub">${content}</h3>`;
+      return `<h3 class="intent-sub${alignClass}">${content}</h3>`;
 
     case "divider":
       const label = content
@@ -107,8 +130,9 @@ function renderBlock(block: IntentBlock): string {
       </div>`;
 
     case "note":
+      return `<p class="intent-note${alignClass}">${content}</p>`;
     case "body-text":
-      return `<p class="intent-note">${content}</p>`;
+      return `<p class="intent-prose${alignClass}">${content}</p>`;
 
     case "info":
       return `<div class="intent-callout intent-info"><span class="intent-callout-label">Note</span><div class="intent-callout-content">${content}</div></div>`;
@@ -575,6 +599,10 @@ export function renderHTML(document: IntentDocument): string {
 .intent-section{margin:28px 0 8px;font-size:1.15rem;line-height:1.3;font-weight:600;padding-bottom:5px;border-bottom:1px solid #e2e8f0;}
 .intent-sub{margin:18px 0 6px;font-size:1rem;line-height:1.3;color:#374151;font-weight:600;}
 .intent-note{margin:8px 0;color:#374151;}
+.intent-prose{margin:0 0 1.1em;color:#273244;font-size:1.04rem;line-height:1.86;max-width:68ch;letter-spacing:0.001em;text-wrap:pretty;}
+.intent-align-center{text-align:center;}
+.intent-align-right{text-align:right;}
+.intent-align-justify{text-align:justify;}
 .intent-divider{margin:22px 0;text-align:center;}
 .intent-divider-line{border:none;border-top:1px solid #e2e8f0;margin:0;}
 .intent-divider-label{display:inline-block;padding:0 12px;background:white;color:#94a3b8;font-size:0.8rem;position:relative;top:-10px;}
@@ -623,6 +651,12 @@ export function renderHTML(document: IntentDocument): string {
 .intent-success .intent-callout-label{color:#047857;}
 .intent-inline-link{color:#2563eb;text-decoration:none;}
 .intent-inline-link:hover{text-decoration:underline;}
+.intent-inline-highlight{background:#fef08a;color:#854d0e;padding:0 .15em;border-radius:3px;}
+.intent-inline-note{display:inline-block;padding:0 .35em;border-radius:4px;background:#f8fafc;border:1px solid #e2e8f0;color:#475569;font-size:.92em;}
+.intent-inline-quote{color:#475569;font-style:italic;}
+.intent-inline-date{color:#b45309;font-weight:600;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;}
+.intent-inline-mention{color:#0f766e;font-weight:600;}
+.intent-inline-tag{color:#1d4ed8;font-weight:600;}
 ul,ol{margin:8px 0 8px 20px;padding:0;}
 li{margin:4px 0;color:#374151;}
 /* v2 Agentic Workflow Blocks */

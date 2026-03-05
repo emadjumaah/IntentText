@@ -126,7 +126,13 @@ export type InlineNode =
   | { type: "bold"; value: string }
   | { type: "italic"; value: string }
   | { type: "strike"; value: string }
+  | { type: "inline-quote"; value: string }
+  | { type: "highlight"; value: string }
   | { type: "code"; value: string }
+  | { type: "inline-note"; value: string }
+  | { type: "date"; value: string; iso: string }
+  | { type: "mention"; value: string }
+  | { type: "tag"; value: string }
   | { type: "link"; value: string; href: string };
 
 export interface IntentExtension {

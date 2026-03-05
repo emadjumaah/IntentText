@@ -181,7 +181,7 @@ node cli.js document.it --html    # Render to HTML
 
 ### Web Converter
 
-[![Web to IntentText Converter](https://res.cloudinary.com/drceui2nh/image/upload/v1772457511/webtoit_ctghye.png)](https://toit-psi.vercel.app/)
+[![Web to IntentText Converter](https://res.cloudinary.com/drceui2nh/image/upload/v1772678289/dotit_no1zlt.png)](https://toit-psi.vercel.app/)
 
 Try it live at [toit-psi.vercel.app](https://toit-psi.vercel.app/)
 
@@ -303,13 +303,49 @@ Every `.it` document parses to typed, deterministic JSON:
 
 ### Inline Formatting
 
-| Style         | Syntax         |
-| ------------- | -------------- |
-| Bold          | `*text*`       |
-| Italic        | `_text_`       |
-| Strikethrough | `~text~`       |
-| Inline code   | `` `code` ``   |
-| Link          | `[label](url)` |
+| Style          | Syntax                               |
+| -------------- | ------------------------------------ | ------ |
+| Bold           | `*text*`                             |
+| Italic         | `_text_`                             |
+| Strikethrough  | `~text~`                             |
+| Inline code    | `` `code` ``                         |
+| Link           | `[label](url)`                       |
+| Highlight      | `^text^`                             |
+| Inline quote   | `==text==`                           |
+| Inline note    | `[[text]]`                           |
+| Quick link     | `[[label                             | url]]` |
+| Date shorthand | `@today`, `@tomorrow`, `@2026-03-10` |
+| Mention        | `@person`                            |
+| Tag            | `#topic`                             |
+
+### Writer-First Prose Mode
+
+IntentText now supports paragraph-first writing for regular users.
+
+- Lines with no keyword are parsed as prose (`body-text`).
+- Consecutive plain lines are merged into one paragraph.
+- A blank line starts a new paragraph.
+- In HTML rendering, prose uses `.intent-prose` with long-form reading rhythm (larger line-height and comfortable measure).
+
+### Optional Text Alignment
+
+Centering is opt-in, not forced. You can control alignment per block:
+
+```
+note: Centered opening quote | align: center
+note: Editorial aside | align: right
+note: Body text should flow naturally | align: justify
+```
+
+Supported values: `center`, `right`, `justify`.
+
+### Writer Roadmap (Planned)
+
+The following items are planned and documented for upcoming releases, but are not implemented in core yet:
+
+- Smart typing replacements (`--`, `...`, typographic quotes)
+- Writer UI modes in apps: `Book`, `News`, `Journal`, `Plain`
+- Focus mode, typewriter scroll, and slash-command insert menu in app shells
 
 ---
 

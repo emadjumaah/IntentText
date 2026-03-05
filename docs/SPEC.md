@@ -125,11 +125,11 @@ end:
 
 This makes multi-line blocks unambiguous for parsers without requiring backtick counting.
 
-**Inline code** within any block — use triple backticks:
+**Inline code** within any block — use single backticks:
 
-````
-note: Footage saved at ```/logs/cam1```.
-````
+```
+note: Footage saved at `/logs/cam1`.
+```
 
 ---
 
@@ -154,12 +154,16 @@ Lists use familiar WhatsApp / Markdown syntax — no new keywords required.
 
 Inline marks follow WhatsApp conventions and apply inside any block content.
 
-| Syntax         | Result            | Notes                        |
-| -------------- | ----------------- | ---------------------------- |
-| `*text*`       | **Bold**          | WhatsApp standard            |
-| `_text_`       | _Italic_          | WhatsApp standard            |
-| `~text~`       | ~~Strikethrough~~ | WhatsApp standard            |
-| ` ```text``` ` | `Code`            | Inline code / path / literal |
+| Syntax       | Result            | Notes                        |
+| ------------ | ----------------- | ---------------------------- |
+| `*text*`     | **Bold**          | WhatsApp standard            |
+| `_text_`     | _Italic_          | WhatsApp standard            |
+| `~text~`     | ~~Strikethrough~~ | WhatsApp standard            |
+| `` `text` `` | `Code`            | Inline code / path / literal |
+| `^text^`     | Highlight         | Soft marker emphasis         |
+| `[[text]]`   | Inline note       | Side-note/comment            |
+| `@person`    | Mention           | Lightweight attribution      |
+| `#topic`     | Tag               | Lightweight topic marker     |
 
 ### 5.1 Inline Mark Constraints (v1.0)
 
@@ -235,8 +239,9 @@ Any line matching `[Keyword]:` at the start is a **semantic block**. Parse the k
 - Lines starting with `-` or `*` → `list-item` (unordered)
 - Lines starting with `- task:` → `list-item` with embedded `task` block
 - Lines starting with a digit followed by `.` → `step-item` (ordered)
-- Blank lines → ignored / block separator
+- Blank lines → paragraph separator
 - All other non-blank, non-keyword lines → `body-text`
+- Consecutive `body-text` lines are merged into one prose paragraph until a blank line
 
 ### Rule 3 — Inline Processing
 
@@ -279,6 +284,10 @@ interface IntentBlock {
     | { type: "italic"; value: string }
     | { type: "strike"; value: string }
     | { type: "code"; value: string }
+    | { type: "highlight"; value: string }
+    | { type: "inline-note"; value: string }
+    | { type: "mention"; value: string }
+    | { type: "tag"; value: string }
   >;
   marks?: Array<{
     // legacy model (offsets may be unreliable)

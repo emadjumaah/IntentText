@@ -6,6 +6,35 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-03-05
+
+### Added
+
+- Native single-backtick inline code parsing (`` `code` ``) in core parser.
+- New inline node types for writer-first flows:
+  - `highlight` from `^text^`
+  - `inline-quote` from `==text==`
+  - `inline-note` from `[[text]]`
+  - shorthand inline links from `[[label|url]]`
+  - `date` from `@today`, `@tomorrow`, `@YYYY-MM-DD`
+  - `mention` from `@person`
+  - `tag` from `#topic`
+- Paragraph-first prose behavior for plain lines:
+  - consecutive no-keyword lines merge into one `body-text` paragraph
+  - blank lines split paragraphs
+- Optional per-block alignment via `align:` (`center`, `right`, `justify`).
+- Dedicated prose render style (`.intent-prose`) for long-form readability.
+
+### Changed
+
+- Markdown-to-IntentText converter now preserves inline code as single backticks instead of converting to triple-backtick inline form.
+- Docs updated for writer-first syntax and prose behavior in README, SPEC, USAGE, and cheatsheet.
+
+### Planned (Not Implemented Yet)
+
+- Smart typing replacements (`--`, `...`, typographic quotes).
+- App-level writing UX modes: `Book`, `News`, `Journal`, `Plain`; focus mode; typewriter scroll.
+
 ## [2.3.0] - 2026-03-05
 
 ### Added
