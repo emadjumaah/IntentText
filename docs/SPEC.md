@@ -1,8 +1,70 @@
-# IntentText (`.it`) v2.6 — Official Specification
+# IntentText (`.it`) v2.7 — Official Specification
 
-> **Status:** Stable · **Version:** 2.5 · **Source of Truth**
+> **Status:** Stable · **Version:** 2.7 · **Source of Truth**
 
-IntentText is a human-friendly, AI-semantic document language — and the structured interchange format between AI agents and humans. It combines plain-language keywords, WhatsApp-style inline formatting, and agentic metadata — so that any writer can produce machine-readable documents without learning technical markup. Agents can execute `.it` documents deterministically.
+## What IntentText Is
+
+IntentText is a universal semantic line protocol. Every line declares
+its type, carries its content, and attaches structured properties —
+all on one line, all human readable, all machine deterministic.
+
+**The complete grammar:**
+
+```
+Line := Type ":" Content ("|" Property)*
+Property := Key ":" Value
+```
+
+**The complete syntax in one example:**
+
+```
+// Each line: type, content, properties. Nothing else.
+
+title: Q2 Deployment Plan
+summary: Coordinating the June release across three teams.
+
+section: Tasks
+task: Finalize pricing page | owner: Sarah | due: Friday | priority: 1
+task: Record demo video | owner: Ahmed | due: Monday
+done: Legal review complete | time: Tuesday
+
+section: Agent Workflow
+agent: deploy-agent | model: claude-sonnet-4
+
+policy: No weekend deploys | if: day == "saturday" | action: deny
+policy: No weekend deploys | if: day == "sunday" | action: deny
+
+step: Run smoke tests | tool: ci.test | output: testResult
+decision: Tests passed | if: {{testResult.passed}} | then: step-deploy | else: step-rollback
+gate: Approve deployment | approver: ops-lead | timeout: 4h
+step: Deploy production | tool: k8s.deploy | depends: step-2
+audit: Deployed | by: deploy-agent | at: {{timestamp}}
+result: Success | code: 200
+
+section: Notes
+note: The city had no memory of rain. | align: justify
+quote: Ship it. We can iterate. | by: Ahmed
+```
+
+This single file contains: a task list, an agent definition, standing
+policies, an executable workflow, human approval gates, an audit trail,
+and prose notes. One format. One parser. Zero ambiguity.
+
+**What makes this different from every other format:**
+
+|                         | Markdown | YAML | JSON | IntentText |
+| ----------------------- | -------- | ---- | ---- | ---------- |
+| Human writable          | ✅       | ⚠️   | ❌   | ✅         |
+| Machine deterministic   | ❌       | ✅   | ✅   | ✅         |
+| No indentation rules    | ✅       | ❌   | ❌   | ✅         |
+| LLM-friendly generation | ⚠️       | ❌   | ❌   | ✅         |
+| Agent executable        | ❌       | ❌   | ❌   | ✅         |
+| Human-owned policies    | ❌       | ❌   | ❌   | ✅         |
+
+IntentText is not competing with Markdown for notes or with YAML for
+config. It fills the gap that none of them fill: a format where the
+description and the execution are the same document, readable by the
+human who owns it and executable by the agent that runs it.
 
 ---
 
@@ -97,6 +159,37 @@ The `ref:` keyword creates semantic connections between documents. Unlike `link:
 - `to:` — Target document path with optional anchor (e.g., `doc.it#section:Name`)
 
 **Rendering:** References render as italicized links to distinguish them from regular external links.
+
+### 3.8 The Pipe Syntax — How Properties Work
+
+The `|` character attaches structured properties to any line.
+It extends a line without wrapping it. Every segment after `|`
+must be `key: value`.
+
+```
+// Without properties — still valid
+task: Write the introduction
+
+// With one property
+task: Write the introduction | owner: Ahmed
+
+// With multiple properties
+task: Write the introduction | owner: Ahmed | due: Friday | priority: 1
+
+// Works identically on any keyword
+step: Deploy app | tool: k8s.deploy | depends: step-1 | output: deployment
+note: Important. | align: center
+image: Logo | at: logo.png | caption: Brand mark
+policy: Tone rule | always: professional | never: casual
+```
+
+**Rules:**
+
+- Split on `|` (space-pipe-space)
+- First segment: `type: content`
+- Every remaining segment: `key: value`
+- Unknown properties are preserved — parsers must not reject them
+- Escaped pipe `\|` is a literal character, not a separator
 
 ### 3.6 Code
 
@@ -360,41 +453,152 @@ task: Database migration | owner: Ahmed | due: Sunday
 
 ---
 
-## 10. Full Example (`.it` File)
+## 10. Complete Examples
 
-````
-title: *Project Dalil* Launch Plan
-summary: Finalizing the deployment for the AI-Agent hub in _Doha_.
+The same syntax works across entirely different domains. These three
+examples show the full range of IntentText in practice.
 
-section: Logistics & Equipment
-headers: Item | Location | Status
-row: Dell Server | Rack 04 | Delivered
-row: Fiber Cables | Storage | ~Missing~ Ordered
+### 10.1 Agent Definition
 
-section: Team Tasks
-- Set up the environment.
-- Configure the firewall.
-- task: Update README | owner: Sarah | due: Monday
-task: Database migration | owner: Ahmed | due: Sunday
-done: Secure the domain name | time: 09:00 AM
-
-section: Security Questions
-question: Who has the _Master Key_ for the server room?
-note: Surveillance footage is saved at ```/logs/cam1```.
-
-section: Setup Script
-code:
 ```
-#!/bin/bash
-apt-get update && apt-get install -y nginx
+agent: customer-support | model: claude-sonnet-4 | id: cs-agent
+
+context: | language: arabic | tone: professional | escalation_threshold: 3
+
+policy: Refund standard    | if: order_age_days < 30          | action: approve
+policy: Refund extended    | if: customer.tier == "pro"        | action: approve
+policy: No digital refund  | if: product.type == "digital"     | action: deny
+policy: Fraud block        | if: fraud_score > 0.8             | action: deny  | notify: fraud-team
+policy: Escalate anger     | if: sentiment == "angry" | after: 3_turns          | action: gate
+policy: Language           | always: respond_in_user_language
+policy: Tone               | always: professional | never: casual
+
+trigger: webhook | event: message.received
+
+step: Get customer     | tool: crm.lookup      | input: {{phone}}       | output: customer    | id: step-1
+step: Get order        | tool: orders.latest   | input: {{customer.id}} | output: order       | id: step-2 | depends: step-1
+step: Score sentiment  | tool: llm.sentiment   | input: {{message}}     | output: sentiment   | id: step-3
+step: Check fraud      | tool: fraud.score     | input: {{customer.id}} | output: fraudScore  | id: step-4
+
+decision: Route intent | if: {{intent}} == "refund"              | then: step-refund  | else: step-answer
+decision: Refund check | if: {{order.age_days}} < 30             | then: step-approve | else: step-deny
+step: Approve refund   | tool: orders.refund   | input: {{order.id}}    | output: refund      | id: step-approve
+step: Deny refund      | tool: whatsapp.send   | input: "Refund window expired"               | id: step-deny
+step: Answer query     | tool: llm.answer      | input: {{message}}     | output: response    | id: step-answer
+step: Send reply       | tool: whatsapp.send   | input: {{response}}    | output: sent
+
+gate: Human escalation | approver: support-lead | timeout: 2h | trigger: {{turns}} > 3
+
+checkpoint: post-response
+audit: Interaction logged | by: cs-agent | ref: {{customer.id}} | at: {{timestamp}}
+emit: support.resolved    | data: {{sent}} | channel: analytics
+result: Resolved          | code: 200
 ```
-end:
 
-divider: End of Technical Sections
+### 10.2 Writer Document
 
-link: *Full Documentation* | to: https://dalil.ai/docs | title: Dalil Docs
-image: *Launch Banner* | at: assets/banner.png | caption: Project Dalil launch artwork
-````
+```
+font: | family: Georgia | size: 12pt | leading: 1.8 | heading: Playfair Display
+page: | size: A5 | margins: 24mm | footer: {{page}} | numbering: roman
+
+title: *The Weight of Small Things*
+byline: Emad Jumaah | date: March 2026 | publication: Dalil Review
+toc: | depth: 2 | title: Contents
+
+---
+
+epigraph: We are shaped by the things we carry, not the things we put down. | by: Anonymous
+dedication: For everyone who builds quietly, without applause.
+
+---
+
+section: Part One — Beginnings
+sub: The First Morning
+
+note: The city had no memory of rain. Not in the way cities forget things — deliberately,
+with purpose — but in the way a child forgets a dream, completely and without regret. | align: justify
+
+quote: To begin is already to be halfway there. | by: Unknown
+
+note: She stood at the window for a long time before she understood that the view had
+not changed. She had. | align: justify
+
+image: The window | at: window.jpg | caption: Looking out, not looking away.
+footnote: 1 | text: This scene was inspired by a photograph taken in Doha, winter 2024.
+
+---
+
+section: Part Two — The Work
+sub: What Gets Built
+
+note: Most things worth building are built slowly, in the hours between other things.
+In the margins of the day. In the quiet after everyone else has stopped. | align: justify
+
+warning: The temptation is always to wait for a better time. There is no better time.
+tip: Write the first draft as if no one will read it. Edit as if everyone will.
+
+note: She had learned this the hard way — that the work does not announce itself.
+It simply accumulates, line by line, day by day, until one morning you look up and
+realise something exists that did not exist before. | align: justify
+
+---
+
+section: Acknowledgements
+note: This would not exist without the people who asked the right questions at the right time.
+```
+
+### 10.3 Business Document with Placeholders
+
+```
+font: | family: Inter | size: 11pt | leading: 1.6 | mono: JetBrains Mono
+page: | size: A4 | margins: 20mm | header: {{company.name}} | footer: Page {{page}} of {{pages}}
+
+title: Invoice {{invoice.number}}
+summary: Issued by {{company.name}} to {{client.name}} — {{invoice.date}}
+
+---
+
+section: Issued By
+note: **{{company.name}}**
+note: {{company.address}}, {{company.city}}, {{company.country}}
+note: {{company.email}} · {{company.phone}}
+
+section: Billed To
+note: **{{client.name}}**
+note: {{client.address}}, {{client.city}}, {{client.country}}
+note: {{client.email}}
+
+section: Invoice Details
+| Field        | Value                |
+| Invoice No.  | {{invoice.number}}   |
+| Issue Date   | {{invoice.date}}     |
+| Due Date     | {{invoice.due_date}} |
+| Currency     | {{invoice.currency}} |
+
+section: Services
+| Description              | Qty              | Unit Price             | Total             |
+| {{items.0.description}}  | {{items.0.qty}}  | {{items.0.unit_price}} | {{items.0.total}} |
+| {{items.1.description}}  | {{items.1.qty}}  | {{items.1.unit_price}} | {{items.1.total}} |
+| {{items.2.description}}  | {{items.2.qty}}  | {{items.2.unit_price}} | {{items.2.total}} |
+
+---
+
+note: Subtotal: **{{totals.subtotal}} {{invoice.currency}}**             | align: right
+note: Tax ({{totals.tax_rate}}%): **{{totals.tax}} {{invoice.currency}}**| align: right
+note: **Total Due: {{totals.due}} {{invoice.currency}}**                 | align: right
+
+---
+
+section: Payment
+note: {{payment.instructions}}
+note: Bank: **{{payment.bank}}** · IBAN: **{{payment.iban}}** · Ref: **{{invoice.number}}**
+
+section: Notes
+note: {{invoice.notes}}
+tip: Payment due by {{invoice.due_date}}. Late payments subject to {{payment.late_fee}}% monthly fee.
+
+result: Invoice {{invoice.number}} | code: 200
+```
 
 ---
 
@@ -972,6 +1176,34 @@ retry: Send email | retries: 5
 }
 ```
 
+### 12.2.1 How an AI Agent Reads an IntentText Document
+
+When an agent receives a `.it` file via the MCP server or parses it
+directly, it sees a sequence of typed blocks:
+
+```javascript
+[
+  { type: "agent", content: "customer-support", properties: { model: "claude-sonnet-4" } },
+  { type: "policy", content: "Refund window", properties: { if: "order_age_days < 30", action: "approve" } },
+  { type: "policy", content: "Tone", properties: { always: "professional", never: "casual" } },
+  { type: "step", content: "Get customer", properties: { tool: "crm.lookup", input: "{{phone}}", output: "customer" } },
+  { type: "decision", content: "Route intent", properties: { if: "{{intent}} == 'refund'", then: "step-refund", else: "step-answer" } },
+  { type: "gate", content: "Escalate", properties: { approver: "support-lead", timeout: "2h" } },
+  { type: "result", content: "Done", properties: { code: "200" } }
+]
+```
+
+The agent can:
+
+- Query all `policy:` blocks to understand its own behavioural rules
+- Follow `step:` → `decision:` → `gate:` as an execution graph
+- Pause at `gate:` until a human approves
+- Write `audit:` blocks back into the document as execution records
+- Return the modified document with updated `status:` properties
+
+The `.it` file is simultaneously the agent's instruction set,
+its execution plan, and its audit trail — all in one human-readable file.
+
 ### 12.3 Document Generation Engine (v2.5)
 
 > **Added in v2.5** — Layout blocks, writer blocks, template merge engine, and print rendering.
@@ -1221,4 +1453,4 @@ _Breaking changes require a major version bump. Additive features (new keywords,
 
 ---
 
-_IntentText — Non-technical. Data-rich. Human by design._
+_IntentText — Each line is intent plus parameters. That is the whole format._

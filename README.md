@@ -4,11 +4,15 @@
 
 <h1 align="center">IntentText (.it)</h1>
 
-<p align="center"><strong>The first document format that is natively JSON.</strong></p>
+## The document language for AI agents.
 
-<p align="center">
-  Human-writable. Semantically typed. Machine-executable. Open source.
-</p>
+**Each line is intent plus parameters. That is the whole format.**
+
+```
+type: content | property: value | property: value
+```
+
+Human readable. Machine deterministic. JSON native. Agent executable.
 
 <p align="center">
   <a href="https://iteditor.vercel.app/">Try the Editor</a> ·
@@ -17,6 +21,81 @@
   <a href="docs/TEMPLATES.md">Templates</a> ·
   <a href="https://www.npmjs.com/package/@intenttext/core">npm</a>
 </p>
+
+---
+
+## The Syntax in 30 Seconds
+
+Every IntentText line follows one pattern:
+
+```
+type: content | property: value | property: value
+```
+
+The `type` declares what the line _is_. The `content` is what it says.
+The `| property: value` pairs add structured metadata — inline, on the
+same line, no indentation required.
+
+That is the entire grammar. See it across three domains:
+
+**An AI agent workflow:**
+```
+agent: customer-support | model: claude-sonnet-4 | id: cs-agent
+
+policy: Refund window | if: order_age_days < 30 | action: approve
+policy: Tone | always: professional | never: casual
+
+step: Get customer | tool: crm.lookup | input: {{phone}} | output: customer
+step: Check order | tool: orders.get | input: {{customer.id}} | output: order
+decision: Route intent | if: {{intent}} == "refund" | then: step-refund | else: step-answer
+gate: Escalate | approver: support-lead | timeout: 2h
+audit: Resolved | by: cs-agent | ref: {{customer.id}} | at: {{timestamp}}
+result: Done | code: 200
+```
+
+**A writer's document:**
+```
+font: | family: Georgia | size: 12pt | leading: 1.8
+page: | size: A5 | margins: 24mm | footer: {{page}}
+
+title: _The Weight of Small Things_
+byline: Emad Jumaah | date: March 2026 | publication: Dalil Review
+
+epigraph: We are shaped by the things we carry. | by: Anonymous
+
+section: Part One
+
+note: The city had no memory of rain. Not in the way cities forget things — deliberately,
+with purpose — but in the way a child forgets a dream. | align: justify
+
+quote: To begin is already to be halfway there. | by: Unknown
+footnote: 1 | text: This scene was inspired by a photograph taken in Doha, winter 2024.
+```
+
+**A business document template:**
+```
+font: | family: Inter | size: 11pt
+page: | size: A4 | margins: 20mm | footer: Page {{page}} of {{pages}}
+
+title: Invoice {{invoice.number}}
+
+section: Billed To
+note: **{{client.name}}** — {{client.address}}
+
+| Description | Qty | Total |
+| {{items.0.description}} | {{items.0.qty}} | {{items.0.total}} |
+| {{items.1.description}} | {{items.1.qty}} | {{items.1.total}} |
+
+note: **Total Due: {{totals.due}} {{invoice.currency}}** | align: right
+
+section: Payment
+note: Bank: **{{payment.bank}}** · IBAN: **{{payment.iban}}**
+```
+
+Three completely different use cases. One syntax. One parser. One format.
+
+The same `.it` file is readable by a journalist, executable by an AI agent,
+and renderable as a PDF — without conversion, without interpretation.
 
 ---
 
@@ -146,18 +225,43 @@ result: Invoice generated | code: 200
 
 An agentic workflow written in IntentText is human-reviewable and machine-executable. Agents generate `.it` files as their execution plans. Humans review and edit them. Runtimes execute them. The format is the contract between the human and the machine.
 
-```
-title: User Onboarding Pipeline
-agent: onboard-agent | model: claude-sonnet-4
-context: | userId: {{userId}} | plan: pro
+An entire AI agent — its identity, policies, workflow, and audit trail —
+defined in a single human-readable file that a non-technical operations
+manager can also read, edit, and own:
 
-policy: Language        | always: respond_in_user_language
-policy: Tone            | always: professional | never: casual
-step: Verify email     | tool: email.verify  | input: {{userId}}  | output: emailStatus
-step: Create workspace | tool: ws.create     | depends: step-1    | output: workspace
-gate: Confirm account  | approver: {{emailStatus.email}} | timeout: 24h
-call: ./notify-team.it | input: {{workspace}}
-result: Onboarded      | code: 200 | data: {{workspace}}
+```
+agent: customer-support | model: claude-sonnet-4 | id: cs-agent
+
+context: | language: arabic | tone: professional | escalation_threshold: 3
+
+policy: Refund standard    | if: order_age_days < 30          | action: approve
+policy: Refund extended    | if: customer.tier == "pro"        | action: approve
+policy: No digital refund  | if: product.type == "digital"     | action: deny
+policy: Fraud block        | if: fraud_score > 0.8             | action: deny  | notify: fraud-team
+policy: Escalate anger     | if: sentiment == "angry" | after: 3_turns          | action: gate
+policy: Language           | always: respond_in_user_language
+policy: Tone               | always: professional | never: casual
+
+trigger: webhook | event: message.received
+
+step: Get customer     | tool: crm.lookup      | input: {{phone}}       | output: customer    | id: step-1
+step: Get order        | tool: orders.latest   | input: {{customer.id}} | output: order       | id: step-2 | depends: step-1
+step: Score sentiment  | tool: llm.sentiment   | input: {{message}}     | output: sentiment   | id: step-3
+step: Check fraud      | tool: fraud.score     | input: {{customer.id}} | output: fraudScore  | id: step-4
+
+decision: Route intent | if: {{intent}} == "refund"              | then: step-refund  | else: step-answer
+decision: Refund check | if: {{order.age_days}} < 30             | then: step-approve | else: step-deny
+step: Approve refund   | tool: orders.refund   | input: {{order.id}}    | output: refund      | id: step-approve
+step: Deny refund      | tool: whatsapp.send   | input: "Refund window expired"               | id: step-deny
+step: Answer query     | tool: llm.answer      | input: {{message}}     | output: response    | id: step-answer
+step: Send reply       | tool: whatsapp.send   | input: {{response}}    | output: sent
+
+gate: Human escalation | approver: support-lead | timeout: 2h | trigger: {{turns}} > 3
+
+checkpoint: post-response
+audit: Interaction logged | by: cs-agent | ref: {{customer.id}} | at: {{timestamp}}
+emit: support.resolved    | data: {{sent}} | channel: analytics
+result: Resolved          | code: 200
 ```
 
 ---
@@ -300,6 +404,35 @@ node cli.js template.it --data data.json --pdf             # Template + data →
 ---
 
 ## Syntax Reference
+
+### The Grammar
+
+```
+Line := Type ":" Content ("|" Property)*
+Property := Key ":" Value
+Content := any text (inline formatting applies)
+```
+
+Every line is self-contained. No indentation. No closing brackets.
+No multi-line syntax except code blocks. A file with 1000 lines
+has 1000 independent, parseable semantic units.
+
+### Why This Syntax
+
+**Self-contained lines.** Every line is an independent semantic unit.
+Easy to diff, easy to stream, easy for an agent to edit one line
+without affecting any other.
+
+**No indentation rules.** Unlike YAML, there is no way to create a
+syntax error by using the wrong number of spaces.
+
+**LLM-friendly.** Language models generate IntentText reliably because
+there are no closing brackets to forget, no indentation to maintain,
+no complex syntax to track. Each line is complete on its own.
+
+**Human-first.** `step: Verify email` reads as a sentence.
+The machine metadata lives after the pipe — present when needed,
+invisible when reading.
 
 ### Document Header
 
@@ -453,6 +586,11 @@ npm run preview              # Live editor in browser
 **Keep the format dumb. Make the runtime smart.** IntentText expresses intent — what a document contains and means. How that intent is executed, stored, or rendered is the runtime's job. The format stays simple so a developer can understand the entire specification in an hour.
 
 **Every keyword earns its place.** A keyword is only added if it expresses something that genuinely cannot be expressed as a property on an existing block, and cannot be handled by the runtime without appearing in the document itself. The current set is final at 37 keywords.
+
+**One line, one intent.** Every semantic unit fits on one line.
+The pipe syntax extends a line without breaking it. This makes
+IntentText trivially diffable, streamable, and editable by both
+humans and machines.
 
 **The human is always the primary author.** Even in agentic workflows, the document must be readable and editable by a human without special tools. A `.it` file opened in any text editor must be immediately understandable.
 
