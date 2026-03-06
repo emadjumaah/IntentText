@@ -156,6 +156,68 @@ No existing format solves all three. IntentText does.
 
 ---
 
+## Why JSON Is Not the Answer for Agents
+
+Everyone says LLMs are good with JSON. They are not. That claim comes from people who have never watched an agent struggle with JSON in production.
+
+**JSON breaks completely on a single error.** One missing comma, one forgotten bracket, one hallucinated key — and the entire document is unreadable. There is no partial JSON. A broken JSON is no JSON at all. Agents forget closing brackets. They nest incorrectly under pressure. They hallucinate keys that don't exist in the schema. They break on escaped quotes inside strings. And when any of that happens, everything is lost.
+
+**IntentText fails gracefully.** One bad line does not break the document. Every other line is still fully parsed and valid. The parser skips or flags the bad line and continues. Partial output is still useful output.
+
+**Agents generate IntentText naturally** because it matches how they already think — one thought, one line. They don't have to track open brackets across hundreds of lines. They don't have to remember what level of nesting they're in. Each line is self-contained and complete.
+
+There is a reason the best prompt engineers moved from JSON output instructions to structured natural language. IntentText is the formalisation of that instinct.
+
+```
+// An agent generates this naturally — no brackets to track, no nesting to remember
+step: Get customer     | tool: crm.lookup    | input: {{phone}}       | output: customer
+step: Check order      | tool: orders.get    | input: {{customer.id}} | output: order
+decision: Route intent | if: {{intent}} == "refund" | then: step-refund | else: step-answer
+result: Done           | code: 200
+```
+
+```json
+// The same thing in JSON — and one missing bracket breaks everything
+{
+  "steps": [
+    {
+      "id": "step-1",
+      "type": "step",
+      "content": "Get customer",
+      "tool": "crm.lookup",
+      "input": "{{phone}}",
+      "output": "customer"
+    },
+    {
+      "id": "step-2",
+      "type": "step",
+      "content": "Check order",
+      "tool": "orders.get",
+      "input": "{{customer.id}}",
+      "output": "order"
+    },
+    {
+      "id": "decision-1",
+      "type": "decision",
+      "content": "Route intent",
+      "if": "{{intent}} == \"refund\"",
+      "then": "step-refund",
+      "else": "step-answer"
+    },
+    {
+      "id": "result-1",
+      "type": "result",
+      "content": "Done",
+      "code": 200
+    }
+  ]
+}
+```
+
+Four lines versus twenty-six. Zero brackets to forget versus fourteen. And when the agent makes a mistake on line three, IntentText still has lines one, two, and four. JSON has nothing.
+
+---
+
 ## How It Works
 
 Every `.it` file is a sequence of typed blocks. Each block is one line: a keyword, content, and optional pipe metadata.
