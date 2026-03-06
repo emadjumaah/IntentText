@@ -12,6 +12,7 @@
 
 <p align="center">
   <a href="https://iteditor.vercel.app/">Try the Editor</a> ·
+  <a href="https://intenttext-hub.vercel.app/">Template Hub</a> ·
   <a href="docs/SPEC.md">Specification</a> ·
   <a href="docs/TEMPLATES.md">Templates</a> ·
   <a href="https://www.npmjs.com/package/@intenttext/core">npm</a>
@@ -182,6 +183,7 @@ result: Onboarded      | code: 200 | data: {{workspace}}
 | **GitHub Action**      | Validate `.it` files in CI with one line: `uses: intenttext/intenttext-action@v1`                                                                                      |
 | **MCP Server**         | Give any AI agent IntentText tools via MCP. [Deployed](https://intenttext-mcp.onrender.com) · [GitHub](https://github.com/intenttext/intenttext-mcp)                   |
 | **Web Converter**      | Paste any web content or Markdown and convert to IntentText. [iteditor.vercel.app](https://iteditor.vercel.app/)                                                       |
+| **IntentText Hub**     | The template registry — browse, search, and share `.it` templates. [intenttext-hub.vercel.app](https://intenttext-hub.vercel.app/)                                     |
 
 ---
 
