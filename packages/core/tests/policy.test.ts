@@ -101,9 +101,7 @@ describe("policy: renderer", () => {
   });
 
   it("renders never: with it-policy-never class", () => {
-    const doc = parseIntentText(
-      "policy: Privacy | never: share_personal_data",
-    );
+    const doc = parseIntentText("policy: Privacy | never: share_personal_data");
     const html = renderHTML(doc);
     expect(html).toContain("it-policy-never");
     expect(html).toContain("never: share_personal_data");
@@ -157,9 +155,7 @@ describe("policy: validation", () => {
   });
 
   it("passes with always: and no action (always IS the action)", () => {
-    const doc = parseIntentText(
-      "policy: Tone | always: professional_tone",
-    );
+    const doc = parseIntentText("policy: Tone | always: professional_tone");
     const result = validateDocumentSemantic(doc);
     const policyIssues = result.issues.filter((i) =>
       i.code.startsWith("POLICY_"),

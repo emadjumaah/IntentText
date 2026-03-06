@@ -541,12 +541,30 @@ function renderBlock(block: IntentBlock): string {
 
     case "policy": {
       const conditions: string[] = [];
-      if (props.if) conditions.push(`<span class="it-policy-condition">if ${escapeHtml(String(props.if))}</span>`);
-      if (props.always) conditions.push(`<span class="it-policy-always">always: ${escapeHtml(String(props.always))}</span>`);
-      if (props.never) conditions.push(`<span class="it-policy-never">never: ${escapeHtml(String(props.never))}</span>`);
-      if (props.action) conditions.push(`<span class="it-policy-action">→ ${escapeHtml(String(props.action))}</span>`);
-      if (props.requires) conditions.push(`<span class="it-policy-requires">requires: ${escapeHtml(String(props.requires))}</span>`);
-      if (props.notify) conditions.push(`<span class="it-policy-notify">notify: ${escapeHtml(String(props.notify))}</span>`);
+      if (props.if)
+        conditions.push(
+          `<span class="it-policy-condition">if ${escapeHtml(String(props.if))}</span>`,
+        );
+      if (props.always)
+        conditions.push(
+          `<span class="it-policy-always">always: ${escapeHtml(String(props.always))}</span>`,
+        );
+      if (props.never)
+        conditions.push(
+          `<span class="it-policy-never">never: ${escapeHtml(String(props.never))}</span>`,
+        );
+      if (props.action)
+        conditions.push(
+          `<span class="it-policy-action">→ ${escapeHtml(String(props.action))}</span>`,
+        );
+      if (props.requires)
+        conditions.push(
+          `<span class="it-policy-requires">requires: ${escapeHtml(String(props.requires))}</span>`,
+        );
+      if (props.notify)
+        conditions.push(
+          `<span class="it-policy-notify">notify: ${escapeHtml(String(props.notify))}</span>`,
+        );
       return `<div class="it-block it-policy">
         <div class="it-policy-name">${content}</div>
         <div class="it-policy-rules">${conditions.join(" ")}</div>

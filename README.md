@@ -370,7 +370,7 @@ node cli.js template.it --data data.json --pdf             # Template + data →
 | `audit:`      | Immutable execution record | `audit: Complete \| by: {{agent}} \| at: {{timestamp}}`                  |
 | `emit:`       | Broadcast state externally | `emit: deploy.complete \| phase: production`                             |
 | `result:`     | Terminal workflow output   | `result: Success \| code: 200 \| data: {{workspace}}`                    |
-| `policy:`     | Standing behavioural rule | `policy: Refund window \| if: order_age_days < 30 \| action: approve`    |
+| `policy:`     | Standing behavioural rule  | `policy: Refund window \| if: order_age_days < 30 \| action: approve`    |
 
 ### Inline Formatting
 
