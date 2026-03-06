@@ -26,6 +26,7 @@ import { parseIntentText, renderHTML } from "@intenttext/core";
 const doc = parseIntentText(`
 title: Q2 Product Launch Plan
 summary: Coordinating the June release.
+meta: | author: Sarah | department: Product | confidential: true
 
 section: Tasks
 task: Finalize pricing page | owner: Sarah | due: Friday | priority: 1
@@ -43,7 +44,11 @@ const tasks = doc.blocks
   .filter((b) => b.type === "task");
 console.log(tasks.length); // 3 (includes done as task with status: "done")
 
-// Render to HTML
+// Access document metadata (meta: blocks populate metadata.meta)
+console.log(doc.metadata?.meta?.author); // "Sarah"
+console.log(doc.metadata?.meta?.confidential); // "true"
+
+// Render to HTML (meta: blocks are invisible in output)
 const html = renderHTML(doc);
 ```
 
@@ -56,8 +61,8 @@ const template = `
 title: Invoice {{invoice.number}}
 note: Bill To: {{client.name}}, {{client.address}}
 
-| Description           | Qty           | Total              |
-| {{items.0.description}} | {{items.0.qty}} | {{items.0.total}} |
+| Description          | Qty          | Total          | each: items |
+| {{item.description}} | {{item.qty}} | {{item.total}} |
 
 note: **Total Due: {{totals.due}} {{totals.currency}}** | align: right
 `;
@@ -65,8 +70,11 @@ note: **Total Due: {{totals.due}} {{totals.currency}}** | align: right
 const data = {
   invoice: { number: "INV-2026-042" },
   client: { name: "Acme Corp", address: "123 Main St" },
-  items: [{ description: "Consulting", qty: "10", total: "$5,000" }],
-  totals: { due: "$5,000", currency: "USD" },
+  items: [
+    { description: "Consulting", qty: "10", total: "$5,000" },
+    { description: "Design", qty: "5", total: "$1,500" },
+  ],
+  totals: { due: "$6,500", currency: "USD" },
 };
 
 const doc = parseAndMerge(template, data);
@@ -800,7 +808,138 @@ function validateDocument(document) {
 }
 ```
 
-## 📊 Performance Tips
+## 🏷️ Keyword Aliases (v2.8.1+)
+
+IntentText supports aliases for common keywords. Aliases resolve to their canonical form during parsing:
+
+```javascript
+import { parseIntentText, ALIASES } from "@intenttext/core";
+
+// These all produce the same block type: "note"
+const doc = parseIntentText(`
+text: This is a paragraph.
+body: This is also a paragraph.
+p: And this too.
+`);
+console.log(doc.blocks.every((b) => b.type === "note")); // true
+
+// Common aliases:
+// text, body, p, paragraph → note
+// h1 → title, h2 → section, h3 → sub
+// todo, check, action, item → task
+// completed, finished → done
+// rule, constraint, guard, requirement → policy
+// log → audit, lock → freeze, on → trigger
+// run → step, if → decision, status → emit
+// blockquote, cite → quote
+
+// Full alias map is exported
+console.log(ALIASES); // { text: "note", h1: "title", ... }
+```
+
+Aliases are always round-tripped back to canonical keywords by `documentToSource`.
+
+## 🎨 Style Properties (v2.8.1+)
+
+Blocks support inline style properties via pipe metadata:
+
+```javascript
+const doc = parseIntentText(`
+note: Important notice | color: red | size: 18px | align: center
+note: Subtle aside | opacity: 0.6 | italic: true
+note: Highlighted | bg: #fffde7 | border: true
+`);
+
+const html = renderHTML(doc);
+// Blocks get inline style attributes from recognized properties:
+// color, size (font-size), family (font-family), weight (font-weight),
+// align (text-align), bg (background-color), indent (padding-left),
+// opacity, italic (font-style), border
+```
+
+## 🔐 Document Trust (v2.8+)
+
+IntentText supports document sealing, verification, and history tracking:
+
+```javascript
+import { parseIntentText } from "@intenttext/core";
+
+const doc = parseIntentText(`
+title: Service Agreement
+meta: | author: Ahmed | client: Acme Corp | ref: CONTRACT-2026-042
+track: | version: 1.0 | by: Ahmed
+
+section: Terms
+note: Consulting services for Q3 2026.
+`);
+
+// Access tracking metadata
+console.log(doc.metadata?.tracking?.version); // "1.0"
+console.log(doc.metadata?.tracking?.by); // "Ahmed"
+
+// Access meta properties
+console.log(doc.metadata?.meta?.author); // "Ahmed"
+console.log(doc.metadata?.meta?.ref); // "CONTRACT-2026-042"
+```
+
+### CLI Trust Commands
+
+```bash
+# Seal a document (generates cryptographic signature)
+intenttext seal contract.it --signer "Ahmed Al-Rashid" --role "CEO"
+
+# Verify a sealed document
+intenttext verify contract.it
+
+# View change history
+intenttext history contract.it
+```
+
+## �️ Print Quality (v2.9+)
+
+IntentText v2.9 adds professional print layout for contracts, invoices,
+and reports.
+
+```javascript
+import { parseIntentText, renderPrint, collectPrintLayout } from "@intenttext/core";
+
+const doc = parseIntentText(`
+page: | size: A4 | margins: 25mm | print-mode: full
+header: | left: Acme Corp | right: CONTRACT-2026-042 | skip-first: true
+footer: | left: Confidential | center: Page {{page}} of {{pages}} | right: {{date}} | skip-first: true
+watermark: CONFIDENTIAL | color: #0000ff10 | angle: -45 | size: 72pt
+break: | before: section | keep: sign
+
+title: Service Agreement
+section: Terms
+note: Consulting services 2026.
+`);
+
+// Print-optimized HTML with headers, footers, watermarks
+const html = renderPrint(doc);
+
+// Inspect layout
+const layout = collectPrintLayout(doc);
+console.log(layout.header?.properties?.left); // "Acme Corp"
+console.log(layout.watermark?.content);       // "CONFIDENTIAL"
+```
+
+### Paper sizes
+
+`A4`, `A5`, `A3`, `Letter`, `Legal`, and `custom` (with `width:` / `height:`).
+
+### Print modes
+
+- `print-mode: full` — default, full color
+- `print-mode: minimal-ink` — strips backgrounds, converts text to black (B&W laser printing)
+
+### CLI
+
+```bash
+intenttext <file> --data data.json --pdf    # Full print quality PDF
+```
+
+## �📊 Performance Tips
 
 ### Large Files
 

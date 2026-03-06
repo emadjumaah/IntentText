@@ -434,6 +434,70 @@ export function validateDocumentSemantic(
     });
   }
 
+  // v2.8.1: meta: blocks that appear after a section (emitted as content blocks)
+  const metaBlocks = allBlocks.filter((b) => b.type === "meta");
+  for (const metaBlock of metaBlocks) {
+    issues.push({
+      blockId: metaBlock.id,
+      blockType: "meta",
+      type: "warning",
+      code: "META_AFTER_SECTION",
+      message:
+        "meta: block appears after a section: — it will be treated as content, not metadata",
+    });
+  }
+
+  // v2.9: Print layout warnings
+  const hasPage = allBlocks.some((b) => b.type === "page");
+  const headerBlocks = allBlocks.filter((b) => b.type === "header");
+  const footerBlocks = allBlocks.filter((b) => b.type === "footer");
+  const watermarkBlocks = allBlocks.filter((b) => b.type === "watermark");
+
+  if (headerBlocks.length > 0 && !hasPage) {
+    for (const hb of headerBlocks) {
+      issues.push({
+        blockId: hb.id,
+        blockType: "header",
+        type: "warning",
+        code: "HEADER_WITHOUT_PAGE",
+        message: "header: block present but no page: block found — header will have no effect",
+      });
+    }
+  }
+  if (footerBlocks.length > 0 && !hasPage) {
+    for (const fb of footerBlocks) {
+      issues.push({
+        blockId: fb.id,
+        blockType: "footer",
+        type: "warning",
+        code: "FOOTER_WITHOUT_PAGE",
+        message: "footer: block present but no page: block found — footer will have no effect",
+      });
+    }
+  }
+  if (watermarkBlocks.length > 0 && !hasPage) {
+    for (const wb of watermarkBlocks) {
+      issues.push({
+        blockId: wb.id,
+        blockType: "watermark",
+        type: "warning",
+        code: "WATERMARK_WITHOUT_PAGE",
+        message: "watermark: block present but no page: block found — watermark will have no effect",
+      });
+    }
+  }
+  if (watermarkBlocks.length > 1) {
+    for (let i = 0; i < watermarkBlocks.length - 1; i++) {
+      issues.push({
+        blockId: watermarkBlocks[i].id,
+        blockType: "watermark",
+        type: "warning",
+        code: "MULTIPLE_WATERMARKS",
+        message: "Multiple watermark: blocks found — only the last one will be used",
+      });
+    }
+  }
+
   const hasErrors = issues.some((i) => i.type === "error");
   return { valid: !hasErrors, issues };
 }

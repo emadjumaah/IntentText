@@ -74,6 +74,8 @@ export const KEYWORDS = [
   "sign",
   "freeze",
   "revision",
+  // v2.8.1 document metadata keyword
+  "meta",
   // v2.5 document generation keywords
   "font",
   "page",
@@ -84,6 +86,10 @@ export const KEYWORDS = [
   "footnote",
   "toc",
   "dedication",
+  // v2.9 print layout keywords
+  "header",
+  "footer",
+  "watermark",
 ];
 
 /** All valid block types for IntentText (v1 + v2 agentic). */
@@ -146,6 +152,8 @@ export type BlockType =
   | "sign"
   | "freeze"
   | "revision"
+  // v2.8.1 document metadata block type
+  | "meta"
   // v2.5 document generation block types
   | "font"
   | "page"
@@ -155,7 +163,11 @@ export type BlockType =
   | "caption"
   | "footnote"
   | "toc"
-  | "dedication";
+  | "dedication"
+  // v2.9 print layout block types
+  | "header"
+  | "footer"
+  | "watermark";
 
 export type InlineNode =
   | { type: "text"; value: string }
@@ -264,6 +276,17 @@ export interface IntentDocumentMetadata {
     hash: string;
     status: "locked";
   };
+  /** v2.8.1: Free-form document metadata from meta: blocks. */
+  meta?: Record<string, string>;
+}
+
+/** v2.9: Collected print layout blocks for the print renderer. */
+export interface PrintLayout {
+  page?: IntentBlock;
+  header?: IntentBlock;
+  footer?: IntentBlock;
+  watermark?: IntentBlock;
+  breaks: IntentBlock[];
 }
 
 export interface IntentDocument {

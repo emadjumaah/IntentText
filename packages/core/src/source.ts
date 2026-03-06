@@ -42,13 +42,19 @@ const PROPERTY_ORDER: Record<string, string[]> = {
   approve: ["by", "role", "at", "ref"],
   freeze: ["at", "hash", "status"],
   track: ["version", "by"],
+  // v2.8.1 metadata keyword — empty = preserve insertion order
+  meta: [],
+  // v2.9 print layout keywords
+  header: ["left", "center", "right", "skip-first"],
+  footer: ["left", "center", "right", "skip-first"],
+  watermark: ["color", "angle", "size"],
 };
 
 /** Properties that are internal / default-valued and should be skipped. */
 const SKIP_INTERNAL = new Set(["id"]);
 
 /** Header block types that should be emitted first. */
-const HEADER_TYPES = new Set(["agent", "context", "font", "page"]);
+const HEADER_TYPES = new Set(["agent", "context", "font", "page", "meta", "header", "footer", "watermark"]);
 
 /**
  * Convert a parsed IntentDocument back to .it source text.
@@ -75,7 +81,7 @@ export function documentToSource(doc: IntentDocument): string {
   }
 
   // Emit header blocks first, in canonical order
-  const headerOrder = ["agent", "context", "font", "page"];
+  const headerOrder = ["agent", "context", "font", "page", "header", "footer", "watermark", "meta"];
   for (const hType of headerOrder) {
     for (const block of headerBlocks) {
       if (block.type === hType) {

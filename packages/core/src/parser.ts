@@ -12,6 +12,7 @@ import {
   RegistryEntry,
   RevisionEntry,
 } from "./types";
+import { ALIASES } from "./aliases";
 
 // Fast sequential ID generator — deterministic and allocation-free vs uuid
 let _idCounter = 0;
@@ -79,7 +80,7 @@ const V21_BLOCK_TYPES = new Set<string>([
 const V22_BLOCK_TYPES = new Set<string>(["gate", "call", "emit"]);
 
 // v2.5 document generation layout block types
-const DOCGEN_LAYOUT_TYPES = new Set<string>(["font", "page", "break"]);
+const DOCGEN_LAYOUT_TYPES = new Set<string>(["font", "page", "break", "header", "footer", "watermark"]);
 
 // v2.5 document generation writer block types
 const DOCGEN_WRITER_TYPES = new Set<string>([
@@ -733,16 +734,18 @@ function parseLine(
       };
     }
 
-    // Apply keyword aliases (e.g. question → ask, subsection → sub, done → task)
-    const resolvedType = (KEYWORD_ALIASES[keyword] ?? keyword) as BlockType;
+    // Apply keyword aliases: first external ALIASES, then legacy KEYWORD_ALIASES
+    const aliasResolved = ALIASES[keyword] ?? keyword;
+    const resolvedType = (KEYWORD_ALIASES[aliasResolved] ?? aliasResolved) as BlockType;
 
     // done: always carries status: "done" on the normalized task block
-    if (keyword === "done") {
+    // Also applies to aliases that resolve to "done" (e.g. completed:, finished:)
+    if (keyword === "done" || aliasResolved === "done") {
       properties.status = "done";
     }
 
     // v2: context blocks parse key=value pairs into properties
-    if (keyword === "context") {
+    if (aliasResolved === "context") {
       const kvPairs = parseContextKeyValuePairs(rest);
       for (const [k, v] of Object.entries(kvPairs)) {
         properties[k] = v;
@@ -750,12 +753,12 @@ function parseLine(
     }
 
     // v2: step blocks auto-default status to "pending" if not set
-    if (keyword === "step" && !properties.status) {
+    if (aliasResolved === "step" && !properties.status) {
       properties.status = "pending";
     }
 
     // v2.1: retry blocks coerce numeric properties
-    if (keyword === "retry") {
+    if (aliasResolved === "retry") {
       if (properties.max) properties.max = Number(properties.max);
       if (properties.delay) properties.delay = Number(properties.delay);
       if (properties.retries) properties.retries = Number(properties.retries);
@@ -763,33 +766,33 @@ function parseLine(
 
     // v2.1: wait blocks coerce timeout to string (preserve unit suffix)
     // and default status to "waiting"
-    if (keyword === "wait" && !properties.status) {
+    if (aliasResolved === "wait" && !properties.status) {
       properties.status = "waiting";
     }
 
     // v2.1: result blocks default status to "success" if not set
     // result: is terminal-only — ends the workflow
-    if (keyword === "result" && !properties.status) {
+    if (aliasResolved === "result" && !properties.status) {
       properties.status = "success";
     }
 
     // v2.2: gate blocks default status to "blocked"
-    if (keyword === "gate" && !properties.status) {
+    if (aliasResolved === "gate" && !properties.status) {
       properties.status = "blocked";
     }
 
     // v2.2: parallel blocks default join to "all"
-    if (keyword === "parallel" && !properties.join) {
+    if (aliasResolved === "parallel" && !properties.join) {
       properties.join = "all";
     }
 
     // v2.2: call blocks default status to "pending"
-    if (keyword === "call" && !properties.status) {
+    if (aliasResolved === "call" && !properties.status) {
       properties.status = "pending";
     }
 
     // v2.2: emit blocks (formerly standalone status:) keep content as event name
-    if (keyword === "status" || keyword === "emit") {
+    if (aliasResolved === "status" || aliasResolved === "emit") {
       // Ensure emit blocks have a level default
       if (!properties.level) {
         properties.level = "info";
@@ -811,12 +814,12 @@ function parseLine(
     }
 
     // v2.5: font blocks coerce numeric leading
-    if (keyword === "font") {
+    if (aliasResolved === "font") {
       if (properties.leading) properties.leading = Number(properties.leading);
     }
 
     // v2.5: page blocks coerce numeric columns, handle boolean numbering
-    if (keyword === "page") {
+    if (aliasResolved === "page") {
       if (properties.columns) properties.columns = Number(properties.columns);
       if (properties.numbering !== undefined) {
         properties.numbering = properties.numbering === "true" ? 1 : 0;
@@ -824,7 +827,7 @@ function parseLine(
     }
 
     // v2.5: toc blocks default depth to 2
-    if (keyword === "toc") {
+    if (aliasResolved === "toc") {
       if (properties.depth) {
         properties.depth = Number(properties.depth);
       } else {
@@ -836,11 +839,12 @@ function parseLine(
     }
 
     // v2.5: break blocks have no content
-    if (keyword === "break") {
+    if (aliasResolved === "break") {
       return {
         id: nextId(),
         type: "break" as BlockType,
         content: "",
+        properties: Object.keys(properties).length > 0 ? properties : undefined,
       };
     }
 
@@ -1037,11 +1041,18 @@ export function parseIntentText(
 
   const extensions = options?.extensions || [];
   const keywords = new Set(KEYWORDS);
+  // v2.8.1: register alias keywords so they are recognised as known
+  for (const alias of Object.keys(ALIASES)) {
+    keywords.add(alias);
+  }
   for (const ext of extensions) {
     for (const k of ext.keywords || []) {
       keywords.add(k.toLowerCase());
     }
   }
+
+  // v2.8.1: meta accumulator — merged from all meta: blocks before first section
+  const metaAccumulator: Record<string, string> = {};
 
   const defaultParseInline = (text: string) => parseInlineNodes(text);
   const parseInline = (text: string) => {
@@ -1312,6 +1323,20 @@ export function parseIntentText(
       seenSectionBlock = true;
     }
 
+    // v2.8.1: meta: blocks before any section populate metadata.meta
+    // After a section, meta: is emitted as a normal content block
+    if (block.type === ("meta" as BlockType)) {
+      if (!seenSectionBlock) {
+        const metaProps = block.properties || {};
+        for (const [k, v] of Object.entries(metaProps)) {
+          metaAccumulator[k] = String(v);
+        }
+        // Don't emit meta: as a visible block — metadata only
+        continue;
+      }
+      // After a section: fall through to normal block handling
+    }
+
     // v2: agent: and model: at the top of the document (before any section)
     // are treated as document-level metadata, not blocks.
     if (METADATA_KEYWORDS.has(block.type) && !seenSectionBlock) {
@@ -1506,6 +1531,7 @@ export function parseIntentText(
     ...(trackingMeta != null && { tracking: trackingMeta }),
     ...(signatureBlocks.length > 0 && { signatures: signatureBlocks }),
     ...(freezeMeta != null && { freeze: freezeMeta }),
+    ...(Object.keys(metaAccumulator).length > 0 && { meta: metaAccumulator }),
   };
 
   const document: IntentDocument = {

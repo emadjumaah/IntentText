@@ -29,11 +29,13 @@ summary: Issued by {{company.name}} to {{client.name}} on {{invoice.date}}
 note: **{{client.name}}**
 note: {{client.address}}, {{client.city}}, {{client.country}}
 
-| Description             | Qty             | Unit Price             | Total             |
-| {{items.0.description}} | {{items.0.qty}} | {{items.0.unit_price}} | {{items.0.total}} |
+| Description          | Qty          | Unit Price         | Total         | each: items |
+| {{item.description}} | {{item.qty}} | {{item.unit_price}} | {{item.total}} |
 
 note: **Total Due: {{totals.due}} {{invoice.currency}}** | align: right
 ```
+
+The `each: items` column tells the merge engine to expand the template row once per item in the `items` array. The loop variable is automatically singularized (`items` → `item`). Use `each: X as Y` for explicit naming.
 
 ### Variable Resolution
 
@@ -172,9 +174,8 @@ section: Invoice Details
 | Currency     | {{invoice.currency}} |
 
 section: Services
-| Description              | Qty              | Unit Price             | Total             |
-| {{items.0.description}}  | {{items.0.qty}}  | {{items.0.unit_price}} | {{items.0.total}} |
-| {{items.1.description}}  | {{items.1.qty}}  | {{items.1.unit_price}} | {{items.1.total}} |
+| Description          | Qty          | Unit Price         | Total         | each: items |
+| {{item.description}} | {{item.qty}} | {{item.unit_price}} | {{item.total}} |
 
 ---
 

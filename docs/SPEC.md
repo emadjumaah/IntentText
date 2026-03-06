@@ -1,6 +1,6 @@
-# IntentText (`.it`) v2.8 — Official Specification
+# IntentText (`.it`) v2.9 — Official Specification
 
-> **Status:** Stable · **Version:** 2.7 · **Source of Truth**
+> **Status:** Stable · **Version:** 2.9 · **Source of Truth**
 
 ## What IntentText Is
 
@@ -94,6 +94,12 @@ Every semantic block follows this pattern:
 | ---------- | ---------------------------------- | ------------------------------------------- |
 | `title:`   | Unique document identifier / title | `title: *Project Dalil* Launch Plan`        |
 | `summary:` | Short description of the document  | `summary: Finalizing deployment in _Doha_.` |
+| `meta:`    | Document metadata — invisible in output, any properties valid | `meta: \| author: Ahmed \| lang: en \| ref: CONTRACT-2026-042` |
+
+> `meta:` is the escape hatch for any document-level information that
+> does not fit `title:`, `summary:`, or `track:`. All properties are
+> free-form. The block is completely invisible in rendered output.
+> Systems and integrations read it. Readers never see it.
 
 ### 3.2 Structure
 
@@ -112,6 +118,20 @@ Every semantic block follows this pattern:
 | `headers:` | Defines column names for a table             | `headers: Item \| Location \| Status`      |
 | `row:`     | A single data row (maps to headers in order) | `row: Dell Server \| Rack 04 \| Delivered` |
 | `note:`    | A standalone, discrete fact                  | `note: Witness is 40 yrs old`              |
+
+#### Dynamic Table Rows — `each:` property
+
+Add `each: arrayName` to a table header row to repeat the following
+template row for every item in the named data array.
+
+    | Description          | Qty          | Total          | each: items |
+    | {{item.description}} | {{item.qty}} | {{item.total}} |
+
+The loop variable is the singular form of the array name (`items` → `item`).
+Use `each: orders as order` for an explicit loop variable name.
+
+Zero items produces zero data rows. The header row is always rendered.
+The `each:` property is invisible in rendered output.
 
 ### 3.4 Tasks & Actions
 
@@ -216,6 +236,108 @@ This makes multi-line blocks unambiguous for parsers without requiring backtick 
 note: Footage saved at `/logs/cam1`.
 ```
 
+### 3.9 Keyword Aliases
+
+IntentText supports keyword aliases — alternative names that map to
+canonical keywords. Aliases are resolved by the parser before processing.
+All output always uses canonical keywords.
+
+**To add an alias in your parser implementation:**
+Add one entry to `src/aliases.ts`. No other files need to change.
+
+| Alias          | Canonical    | Context           |
+|----------------|--------------|-------------------|
+| `text:`        | `note:`      | Writer            |
+| `body:`        | `note:`      | Writer            |
+| `p:`           | `note:`      | HTML familiar     |
+| `paragraph:`   | `note:`      | Writer            |
+| `h1:`          | `title:`     | HTML familiar     |
+| `h2:`          | `section:`   | HTML familiar     |
+| `h3:`          | `sub:`       | HTML familiar     |
+| `heading:`     | `section:`   | Writer            |
+| `subheading:`  | `sub:`       | Writer            |
+| `blockquote:`  | `quote:`     | MD familiar       |
+| `cite:`        | `quote:`     | Writer            |
+| `check:`       | `task:`      | Natural           |
+| `todo:`        | `task:`      | Natural           |
+| `action:`      | `task:`      | Natural           |
+| `item:`        | `task:`      | Natural           |
+| `completed:`   | `done:`      | Natural           |
+| `finished:`    | `done:`      | Natural           |
+| `rule:`        | `policy:`    | Natural           |
+| `constraint:`  | `policy:`    | Formal            |
+| `guard:`       | `policy:`    | Developer         |
+| `requirement:` | `policy:`    | Formal            |
+| `log:`         | `audit:`     | Developer         |
+| `lock:`        | `freeze:`    | Intuitive         |
+| `on:`          | `trigger:`   | Natural           |
+| `run:`         | `step:`      | Developer         |
+| `if:`          | `decision:`  | Natural           |
+| `status:`      | `emit:`      | Backward compat   |
+
+Aliases are case-insensitive. `Rule:`, `RULE:`, and `rule:` all resolve
+to `policy:`.
+
+---
+
+### 3.10 Print Layout
+
+Print layout keywords are invisible in web rendering. They apply only
+when rendering to print HTML or PDF. They are valid in any document that
+uses `page:`.
+
+#### `header:` — Running page header
+
+    header: | left: {{company.name}} | center: CONFIDENTIAL | right: {{date}}
+    header: | left: Acme Corp | right: CONTRACT-2026-042 | skip-first: true
+
+Three zones: `left:`, `center:`, `right:`. All optional.
+`skip-first: true` suppresses header on the first page.
+
+#### `footer:` — Running page footer
+
+    footer: | left: {{contract.ref}} | center: Page {{page}} of {{pages}} | right: {{date}}
+    footer: | center: Page {{page}} of {{pages}} | skip-first: true
+
+Same three zones as `header:`. `{{page}}` and `{{pages}}` resolve at render time.
+
+#### `watermark:` — Background watermark
+
+    watermark: CONFIDENTIAL | color: #ff000020 | angle: -45 | size: 72pt
+    watermark: DRAFT | angle: -45
+
+Renders as fixed background text on every page.
+`watermark:` with no content removes any watermark.
+
+#### `break:` — Pagination control (extended in v2.9)
+
+    break:                          // explicit page break
+    break: | before: section       // page break before every section
+    break: | keep: table           // never split tables across pages
+    break: | keep: sign            // keep signatures with preceding content
+    break: | before: section | keep: sign
+
+`before: <keyword>` and `keep: <keyword>` are document-level declarations.
+They apply to all blocks of that type throughout the document.
+
+#### `print-mode:` property on `page:`
+
+    page: | size: A4 | margins: 20mm | print-mode: minimal-ink
+
+`minimal-ink` strips background colors and converts text to black.
+Intended for black-and-white laser printing.
+
+#### Paper sizes
+
+| Name      | CSS @page size     |
+| --------- | ------------------ |
+| `A4`      | A4                 |
+| `A5`      | A5                 |
+| `A3`      | 297mm 420mm        |
+| `Letter`  | Letter             |
+| `Legal`   | 8.5in 14in         |
+| `custom`  | uses `width:` and `height:` properties |
+
 ---
 
 ## 4. List Syntax
@@ -314,6 +436,28 @@ The format extends at the point of use, not at the point of definition.
 A journalist adds `source:` and `verified:`. A lawyer adds `clause:` and
 `jurisdiction:`. A developer adds `sprint:` and `effort:`. All valid.
 All stored. All queryable via `queryDocument()`.
+
+#### Known Style Properties
+
+Style properties apply visual formatting when rendered to HTML or print.
+They are plain pipe properties — the parser stores them like any property.
+The renderer applies them as inline CSS. Unknown style properties are ignored.
+
+| Property    | Effect              | Example                           |
+|-------------|---------------------|-----------------------------------|
+| `color:`    | Text colour         | `note: Warning. \| color: red`    |
+| `size:`     | Font size           | `note: Small. \| size: 0.85em`    |
+| `family:`   | Font family         | `note: Body. \| family: Georgia`  |
+| `weight:`   | Font weight         | `note: Bold. \| weight: bold`     |
+| `align:`    | Text alignment      | `note: Centre. \| align: center`  |
+| `bg:`       | Background colour   | `note: Highlight. \| bg: yellow`  |
+| `indent:`   | Left indent         | `note: Indented. \| indent: 2em`  |
+| `opacity:`  | Opacity             | `note: Faded. \| opacity: 0.5`    |
+| `italic:`   | Italic text         | `note: Aside. \| italic: true`    |
+| `border:`   | Border              | `note: Boxed. \| border: true`    |
+
+Style properties are ignored by parsers that do not support rendering.
+The document is valid regardless of which style properties are present.
 
 ### 6.1 Typed Conventions (Recommended)
 
@@ -717,6 +861,8 @@ revision: | version: 1.1 | at: 2026-03-03T09:00:00Z | by: Sarah | change: added 
 | **v2.6** | ✅ Stable | Production API: parseIntentTextSafe, documentToSource, validateDocumentSemantic, queryDocument, diffDocuments |
 | **v2.7** | ✅ Stable | `policy:` keyword — standing behavioural rules for AI agents                                                  |
 | **v2.8** | ✅ Stable | Document Trust: `track`, `approve`, `sign`, `freeze`, `revision` — seal, verify, change history               |
+| **v2.8.1** | ✅ Stable | `meta:` keyword, `each:` dynamic table rows, keyword aliases, known style properties                          |
+| **v2.9** | ✅ Stable | Print Quality: `header:`, `footer:`, `watermark:` keywords, extended `break:`, `print-mode:`, paper sizes    |
 
 ### 12.1 Implemented Features (v1.0 – v1.3)
 

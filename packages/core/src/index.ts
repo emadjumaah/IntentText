@@ -1,3 +1,4 @@
+export { ALIASES } from "./aliases";
 export {
   parseIntentText,
   _resetIdCounter,
@@ -9,7 +10,7 @@ export type {
   ParseWarning,
   ParseError,
 } from "./parser";
-export { renderHTML, renderPrint } from "./renderer";
+export { renderHTML, renderPrint, collectPrintLayout } from "./renderer";
 export { mergeData, parseAndMerge } from "./merge";
 export { convertMarkdownToIntentText } from "./markdown";
 export { convertHtmlToIntentText } from "./html-to-it";
@@ -77,4 +78,5 @@ export type {
   HistorySection,
   RegistryEntry,
   RevisionEntry,
+  PrintLayout,
 } from "./types";

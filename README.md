@@ -634,10 +634,12 @@ The format extends at the point of use, not at the point of definition.
 | ---------- | -------------------------------------------------------- |
 | `title:`   | `title: *My Document*`                                   |
 | `summary:` | `summary: A brief description`                           |
+| `meta:`    | `meta: \| author: Ahmed \| lang: en \| confidential: true` |
 | `agent:`   | `agent: my-agent \| model: claude-sonnet-4`              |
 | `context:` | `context: \| userId: u_123 \| plan: pro`                 |
 | `font:`    | `font: \| family: Georgia \| size: 12pt \| leading: 1.6` |
 | `page:`    | `page: \| size: A4 \| margins: 20mm \| footer: {{page}}` |
+| `track:`   | `track: \| version: 1.0 \| by: Ahmed`                   |
 
 ### Document Structure
 
@@ -648,7 +650,15 @@ The format extends at the point of use, not at the point of definition.
 | `toc:`     | `toc: \| depth: 2 \| title: Contents` |
 | `---`      | Horizontal divider                    |
 | `//`       | Comment — ignored by parser           |
-| `break:`   | Explicit page break                   |
+| `break:`   | Explicit page break / pagination control |
+
+### Print Layout (v2.9)
+
+| Keyword      | Example                                                                       |
+| ------------ | ----------------------------------------------------------------------------- |
+| `header:`    | `header: \| left: Acme Corp \| center: CONFIDENTIAL \| right: {{date}}`       |
+| `footer:`    | `footer: \| left: Ref-001 \| center: Page {{page}} of {{pages}}`              |
+| `watermark:` | `watermark: CONFIDENTIAL \| color: #ff000020 \| angle: -45 \| size: 72pt`    |
 
 ### Writer Blocks
 
@@ -753,9 +763,10 @@ IntentText/
 │   │   ├── utils.ts        # Shared utilities
 │   │   ├── browser.ts      # Browser entry point
 │   │   └── index.ts        # Public API
-│   └── tests/              # 426 tests
+│   └── tests/              # 566 tests
 ├── docs/
 │   ├── SPEC.md             # Full language specification
+│   ├── TEMPLATES.md        # Template system and document generation
 │   └── USAGE.md            # Usage guide
 ├── examples/
 │   └── templates/          # Invoice, contract, book, report, and more
@@ -768,7 +779,7 @@ IntentText/
 
 ```bash
 npm install && npm run build
-npm test                     # 426 tests passing
+npm test                     # 566 tests passing
 npm run demo                 # Demo output
 npm run preview              # Live editor in browser
 ```
@@ -779,7 +790,7 @@ npm run preview              # Live editor in browser
 
 **Keep the format dumb. Make the runtime smart.** IntentText expresses intent — what a document contains and means. How that intent is executed, stored, or rendered is the runtime's job. The format stays simple so a developer can understand the entire specification in an hour.
 
-**Every keyword earns its place.** A keyword is only added if it expresses something that genuinely cannot be expressed as a property on an existing block, and cannot be handled by the runtime without appearing in the document itself. The current set is final at 42 keywords.
+**Every keyword earns its place.** A keyword is only added if it expresses something that genuinely cannot be expressed as a property on an existing block, and cannot be handled by the runtime without appearing in the document itself. The current set is final at 46 keywords.
 
 **One line, one intent.** Every semantic unit fits on one line.
 The pipe syntax extends a line without breaking it. This makes

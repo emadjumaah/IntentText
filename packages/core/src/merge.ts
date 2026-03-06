@@ -186,6 +186,119 @@ function resolveBlock(
 }
 
 /**
+ * Singularize an array name for the loop variable.
+ * items → item, products → product, entries → entry
+ */
+function singularize(name: string): string {
+  if (name.endsWith("ies")) return name.slice(0, -3) + "y";
+  if (name.endsWith("s")) return name.slice(0, -1);
+  return name;
+}
+
+/**
+ * Expand `each:` declarations on table blocks.
+ * If a table's last header cell is `each: arrayName` (or `each: arrayName as varName`),
+ * the first row is used as a template and expanded once per array item.
+ */
+function expandEachRows(
+  blocks: IntentBlock[],
+  data: Record<string, unknown>,
+  agentName?: string,
+): IntentBlock[] {
+  const result: IntentBlock[] = [];
+
+  for (const block of blocks) {
+    // Only process table blocks with headers
+    if (block.type !== "table" || !block.table?.headers || block.table.headers.length === 0) {
+      // Recurse into children
+      if (block.children && block.children.length > 0) {
+        result.push({
+          ...block,
+          children: expandEachRows(block.children, data, agentName),
+        });
+      } else {
+        result.push(block);
+      }
+      continue;
+    }
+
+    const headers = block.table.headers;
+    const lastHeader = headers[headers.length - 1].trim();
+    const eachMatch = lastHeader.match(/^each:\s*(.+)$/i);
+
+    if (!eachMatch) {
+      result.push(block);
+      continue;
+    }
+
+    // Parse each directive: "items" or "items as item"
+    const eachDirective = eachMatch[1].trim();
+    let arrayName: string;
+    let loopVar: string;
+    if (eachDirective.includes(" as ")) {
+      const parts = eachDirective.split(" as ");
+      arrayName = parts[0].trim();
+      loopVar = parts[1].trim();
+    } else {
+      arrayName = eachDirective;
+      loopVar = singularize(arrayName);
+    }
+
+    // Get the data array
+    const items = getByPath(data, arrayName);
+
+    // Clean headers: remove the `each:` column
+    const cleanHeaders = headers.slice(0, -1);
+
+    if (!Array.isArray(items) || items.length === 0) {
+      // Emit header-only table with no rows
+      result.push({
+        ...block,
+        table: {
+          headers: cleanHeaders,
+          rows: [],
+        },
+      });
+      continue;
+    }
+
+    // Template row is the first row
+    const templateRow = block.table.rows[0];
+    if (!templateRow) {
+      result.push({
+        ...block,
+        table: {
+          headers: cleanHeaders,
+          rows: [],
+        },
+      });
+      continue;
+    }
+
+    // Expand template row for each item
+    const expandedRows: string[][] = [];
+    for (const item of items) {
+      const itemData = { ...data, [loopVar]: item };
+      const expandedRow = templateRow.map((cell) => {
+        const { resolved } = resolveString(cell, itemData, agentName);
+        return resolved;
+      });
+      expandedRows.push(expandedRow);
+    }
+
+    result.push({
+      ...block,
+      table: {
+        headers: cleanHeaders,
+        rows: expandedRows,
+      },
+    });
+  }
+
+  return result;
+}
+
+/**
  * Merge data into a parsed IntentDocument template.
  * Resolves all {{variable}} references in content, properties, and metadata.
  * Pure function — returns a new document, never mutates the input.
@@ -198,7 +311,10 @@ export function mergeData(
   if (!data || typeof data !== "object") return template;
   const agentName = template.metadata?.agent;
 
-  const newBlocks = template.blocks.map((block) =>
+  // v2.8.1: expand each: table rows before variable resolution
+  const expandedBlocks = expandEachRows(template.blocks, data, agentName);
+
+  const newBlocks = expandedBlocks.map((block) =>
     resolveBlock(block, data, agentName),
   );
 

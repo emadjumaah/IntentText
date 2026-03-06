@@ -1,4 +1,27 @@
-import { IntentBlock, IntentDocument, InlineNode } from "./types";
+import { IntentBlock, IntentDocument, InlineNode, PrintLayout } from "./types";
+
+// v2.9: Paper size to CSS @page size mapping
+const PAPER_SIZES: Record<string, string> = {
+  A4: "A4",
+  A5: "A5",
+  A3: "297mm 420mm",
+  Letter: "Letter",
+  Legal: "8.5in 14in",
+};
+
+/** v2.9: Collect print layout blocks from a document. */
+export function collectPrintLayout(doc: IntentDocument): PrintLayout {
+  const allBlocks = doc.blocks.flatMap(function collect(b: IntentBlock): IntentBlock[] {
+    return [b, ...(b.children ?? []).flatMap(collect)];
+  });
+  return {
+    page: allBlocks.find(b => b.type === "page"),
+    header: allBlocks.filter(b => b.type === "header").pop(),
+    footer: allBlocks.filter(b => b.type === "footer").pop(),
+    watermark: allBlocks.filter(b => b.type === "watermark").pop(),
+    breaks: allBlocks.filter(b => b.type === "break" && (b.properties?.before || b.properties?.keep)),
+  };
+}
 
 function escapeHtml(text: string): string {
   return text
@@ -141,6 +164,39 @@ function getAlignmentClass(props: Record<string, string | number>): string {
   return "";
 }
 
+// v2.8.1: Known style properties that map to CSS
+const STYLE_PROPERTIES: Record<string, string> = {
+  color: "color",
+  size: "font-size",
+  family: "font-family",
+  weight: "font-weight",
+  align: "text-align",
+  bg: "background-color",
+  indent: "padding-left",
+  opacity: "opacity",
+  italic: "font-style",
+  border: "border",
+};
+
+function extractInlineStyles(
+  properties: Record<string, string | number>,
+): string {
+  const styles: string[] = [];
+  for (const [prop, css] of Object.entries(STYLE_PROPERTIES)) {
+    const value = properties[prop];
+    if (value === undefined || value === "") continue;
+    const strValue = String(value);
+    if (prop === "border" && strValue === "true") {
+      styles.push("border: 1px solid currentColor");
+    } else if (prop === "italic" && strValue === "true") {
+      styles.push("font-style: italic");
+    } else {
+      styles.push(`${css}: ${strValue}`);
+    }
+  }
+  return styles.join("; ");
+}
+
 // Helper function to render a single block
 function renderBlock(block: IntentBlock): string {
   const content = applyInlineFormatting(
@@ -150,19 +206,21 @@ function renderBlock(block: IntentBlock): string {
   );
   const props = block.properties || {};
   const alignClass = getAlignmentClass(props);
+  const inlineStyle = extractInlineStyles(props);
+  const styleAttr = inlineStyle ? ` style="${inlineStyle}"` : "";
 
   switch (block.type) {
     case "title":
-      return `<h1 class="intent-title${alignClass}">${content}</h1>`;
+      return `<h1 class="intent-title${alignClass}"${styleAttr}>${content}</h1>`;
 
     case "summary":
-      return `<div class="intent-summary${alignClass}">${content}</div>`;
+      return `<div class="intent-summary${alignClass}"${styleAttr}>${content}</div>`;
 
     case "section":
-      return `<h2 id="${slugify(block.content)}" class="intent-section${alignClass}">${content}</h2>`;
+      return `<h2 id="${slugify(block.content)}" class="intent-section${alignClass}"${styleAttr}>${content}</h2>`;
 
     case "sub":
-      return `<h3 id="${slugify(block.content)}" class="intent-sub${alignClass}">${content}</h3>`;
+      return `<h3 id="${slugify(block.content)}" class="intent-sub${alignClass}"${styleAttr}>${content}</h3>`;
 
     case "divider":
       const label = content
@@ -174,21 +232,21 @@ function renderBlock(block: IntentBlock): string {
       </div>`;
 
     case "note":
-      return `<p class="intent-note${alignClass}">${content}</p>`;
+      return `<p class="intent-note${alignClass}"${styleAttr}>${content}</p>`;
     case "body-text":
-      return `<p class="intent-prose${alignClass}">${content}</p>`;
+      return `<p class="intent-prose${alignClass}"${styleAttr}>${content}</p>`;
 
     case "info":
-      return `<div class="intent-callout intent-info"><span class="intent-callout-label">Note</span><div class="intent-callout-content">${content}</div></div>`;
+      return `<div class="intent-callout intent-info"${styleAttr}><span class="intent-callout-label">Note</span><div class="intent-callout-content">${content}</div></div>`;
 
     case "warning":
-      return `<div class="intent-callout intent-warning"><span class="intent-callout-label">Caution</span><div class="intent-callout-content">${content}</div></div>`;
+      return `<div class="intent-callout intent-warning"${styleAttr}><span class="intent-callout-label">Caution</span><div class="intent-callout-content">${content}</div></div>`;
 
     case "tip":
-      return `<div class="intent-callout intent-tip"><span class="intent-callout-label">Tip</span><div class="intent-callout-content">${content}</div></div>`;
+      return `<div class="intent-callout intent-tip"${styleAttr}><span class="intent-callout-label">Tip</span><div class="intent-callout-content">${content}</div></div>`;
 
     case "success":
-      return `<div class="intent-callout intent-success"><span class="intent-callout-label">Done</span><div class="intent-callout-content">${content}</div></div>`;
+      return `<div class="intent-callout intent-success"${styleAttr}><span class="intent-callout-label">Done</span><div class="intent-callout-content">${content}</div></div>`;
 
     case "task":
     case "done": {
@@ -654,6 +712,19 @@ function renderBlock(block: IntentBlock): string {
       // Invisible — metadata only, not rendered
       return "";
 
+    case "meta":
+      // Invisible — metadata only, not rendered
+      return "";
+
+    // ─── v2.9 Print Layout Blocks (invisible in web output) ──────────
+
+    case "header":
+      return "";
+    case "footer":
+      return "";
+    case "watermark":
+      return "";
+
     case "approve": {
       const approveBy = props.by ? escapeHtml(String(props.by)) : "Unknown";
       const approveRole = props.role ? escapeHtml(String(props.role)) : "";
@@ -1090,10 +1161,20 @@ function buildDynamicCSS(doc: IntentDocument): string {
   const fontFamily = String(fontBlock?.properties?.family || "Georgia, serif");
   const fontSize = String(fontBlock?.properties?.size || "12pt");
   const leading = String(fontBlock?.properties?.leading || "1.6");
-  const pageSize = String(pageBlock?.properties?.size || "A4");
+  const rawSize = String(pageBlock?.properties?.size || "A4");
   const margins = String(pageBlock?.properties?.margins || "20mm");
 
-  return `@page{size:${escapeHtml(pageSize)};margin:${escapeHtml(margins)};}body.it-print{font-family:${escapeHtml(fontFamily)};font-size:${escapeHtml(fontSize)};line-height:${escapeHtml(leading)};}`;
+  // v2.9: Resolve paper size — named sizes or custom dimensions
+  let pageSize: string;
+  if (rawSize === "custom") {
+    const w = String(pageBlock?.properties?.width || "210mm");
+    const h = String(pageBlock?.properties?.height || "297mm");
+    pageSize = `${escapeHtml(w)} ${escapeHtml(h)}`;
+  } else {
+    pageSize = escapeHtml(PAPER_SIZES[rawSize] || rawSize);
+  }
+
+  return `@page{size:${pageSize};margin:${escapeHtml(margins)};}body.it-print{font-family:${escapeHtml(fontFamily)};font-size:${escapeHtml(fontSize)};line-height:${escapeHtml(leading)};}`;
 }
 
 // Print-optimized HTML renderer
@@ -1123,8 +1204,81 @@ export function renderPrint(doc: IntentDocument): string {
   const direction =
     doc.metadata?.language === "rtl" ? 'dir="rtl"' : 'dir="ltr"';
 
+  // v2.9: Collect print layout
+  const layout = collectPrintLayout(doc);
+
+  // v2.9: Build header/footer CSS
+  let headerFooterCSS = "";
+  if (layout.header) {
+    const hp = layout.header.properties || {};
+    const left = hp.left ? escapeHtml(String(hp.left)) : "";
+    const center = hp.center ? escapeHtml(String(hp.center)) : "";
+    const right = hp.right ? escapeHtml(String(hp.right)) : "";
+    headerFooterCSS += `@page{@top-left{content:"${left}";}@top-center{content:"${center}";}@top-right{content:"${right}";}}`;
+    if (String(hp["skip-first"]) === "true") {
+      headerFooterCSS += `@page:first{@top-left{content:"";}@top-center{content:"";}@top-right{content:"";}}`;
+    }
+  }
+  if (layout.footer) {
+    const fp = layout.footer.properties || {};
+    const left = fp.left ? escapeHtml(String(fp.left)) : "";
+    const center = fp.center ? escapeHtml(String(fp.center)) : "";
+    const right = fp.right ? escapeHtml(String(fp.right)) : "";
+    headerFooterCSS += `@page{@bottom-left{content:"${left}";}@bottom-center{content:"${center}";}@bottom-right{content:"${right}";}}`;
+    if (String(fp["skip-first"]) === "true") {
+      headerFooterCSS += `@page:first{@bottom-left{content:"";}@bottom-center{content:"";}@bottom-right{content:"";}}`;
+    }
+  }
+
+  // v2.9: Build break declaration CSS
+  let breakCSS = "";
+  for (const br of layout.breaks) {
+    const before = br.properties?.before ? String(br.properties.before) : "";
+    const keep = br.properties?.keep ? String(br.properties.keep) : "";
+    if (before) {
+      breakCSS += `.it-${escapeHtml(before)}{page-break-before:always;}`;
+    }
+    if (keep) {
+      breakCSS += `.it-${escapeHtml(keep)}{break-inside:avoid;}`;
+    }
+  }
+
+  // v2.9: Watermark HTML element
+  let watermarkHtml = "";
+  if (layout.watermark && layout.watermark.content) {
+    const wp = layout.watermark.properties || {};
+    const color = wp.color ? String(wp.color) : "rgba(0,0,0,0.08)";
+    const angle = wp.angle ? String(wp.angle) : "-45";
+    const size = wp.size ? String(wp.size) : "80pt";
+    watermarkHtml = `<div class="it-watermark" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(${escapeHtml(angle)}deg);font-size:${escapeHtml(size)};color:${escapeHtml(color)};z-index:-1;pointer-events:none;white-space:nowrap;">${escapeHtml(layout.watermark.content)}</div>`;
+  }
+
+  // v2.9: Print mode class
+  const pageBlock = layout.page;
+  const printMode = pageBlock?.properties?.["print-mode"] ? String(pageBlock.properties["print-mode"]) : "full";
+  const bodyClass = printMode === "minimal-ink" ? "it-print it-print-minimal" : "it-print";
+
+  // v2.9: Backward compat — page: header/footer string properties treated as center zone
+  let backwardCompatCSS = "";
+  if (!layout.header && pageBlock?.properties?.header) {
+    const h = escapeHtml(String(pageBlock.properties.header));
+    backwardCompatCSS += `@page{@top-center{content:"${h}";}}`;
+  }
+  if (!layout.footer && pageBlock?.properties?.footer) {
+    const f = escapeHtml(String(pageBlock.properties.footer));
+    backwardCompatCSS += `@page{@bottom-center{content:"${f}";}}`;
+  }
+
+  // v2.9: Minimal-ink CSS
+  const minimalInkCSS = printMode === "minimal-ink" ? `
+@media print{.it-print-minimal *{background-color:transparent !important;color:black !important;}.it-print-minimal strong,.it-print-minimal b{font-weight:bold;color:black !important;}.it-print-minimal em,.it-print-minimal i{font-style:italic;color:black !important;}.it-print-minimal .it-border{border:1px solid black !important;}}` : "";
+
   return `<!DOCTYPE html><html ${direction}><head><meta charset="utf-8"><style>
 ${dynamicCSS}
+${headerFooterCSS}
+${backwardCompatCSS}
+${breakCSS}
+${minimalInkCSS}
 @page{counter-increment:page;}
 @media print{body{margin:0;}.it-page-break{page-break-after:always;}.it-no-print{display:none;}a{text-decoration:none;color:inherit;}}
 body.it-print{color:#000;background:#fff;}
@@ -1156,5 +1310,5 @@ body.it-print .it-page-break{page-break-after:always;break-after:page;height:0;}
 body.it-print .intent-task-checkbox{display:none;}
 body.it-print .intent-task::before{content:"\\2610 ";margin-right:4pt;}
 body.it-print .intent-task-done::before{content:"\\2611 ";}
-</style></head><body class="it-print"><div class="intent-document">${html}</div></body></html>`;
+</style></head><body class="${bodyClass}"><div class="intent-document">${watermarkHtml}${html}</div></body></html>`;
 }
