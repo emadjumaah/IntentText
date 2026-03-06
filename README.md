@@ -284,7 +284,7 @@ result: Resolved          | code: 200
 | Project                | What it is                                                                                                                                                             |
 | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **`@intenttext/core`** | The parser, renderer, and template engine. Install and use in any Node.js or browser project.                                                                          |
-| **IntentText Editor**  | A WYSIWYG editor where the `.it` format is the data layer, invisible during normal writing. _(coming)_                                                                 |
+| **IntentText Editor**  | A block-based editor where the `.it` format is the data layer. Write visually, export structured. [iteditor.vercel.app](https://iteditor.vercel.app/)                  |
 | **VS Code Extension**  | Syntax highlighting, live preview, and snippets for `.it` files. [Install from Marketplace](https://marketplace.visualstudio.com/items?itemName=intenttext.intenttext) |
 | **Python Package**     | [![PyPI](https://img.shields.io/pypi/v/intenttext)](https://pypi.org/project/intenttext/) Install with `pip install intenttext`                                        |
 | **GitHub Action**      | Validate `.it` files in CI with one line: `uses: intenttext/intenttext-action@v1`                                                                                      |
