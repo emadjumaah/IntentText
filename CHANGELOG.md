@@ -6,6 +6,18 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
+## [2.11.0] - 2026-03-08
+
+### Added
+
+- **8 New Keywords** — `ref:` (redesigned as cross-document reference with `file:`/`url:`/`rel:` properties), `def:` (glossary/definitions), `metric:` (measurable values with trend indicators), `amendment:` (formal changes to frozen documents), `figure:` (document figures with `<figure>`/`<figcaption>` rendering), `signline:` (physical signature placeholders for print), `contact:` (structured contact information with `mailto:`/`tel:` links), `deadline:` (temporal commitments with urgency coloring).
+- **14 Validation Rules** — `REF_MISSING_TARGET`, `REF_MISSING_REL`, `DEF_MISSING_MEANING`, `DEF_DUPLICATE_TERM`, `METRIC_MISSING_VALUE`, `METRIC_INVALID_TREND`, `AMENDMENT_WITHOUT_FREEZE`, `AMENDMENT_MISSING_REF`, `AMENDMENT_MISSING_NOW`, `FIGURE_MISSING_SRC`, `FIGURE_MISSING_CAPTION`, `CONTACT_NO_REACH`, `DEADLINE_MISSING_DATE`, `DEADLINE_PAST`.
+- **23 New Aliases** — `references`/`see`/`related` → `ref`, `define`/`term`/`glossary` → `def`, `kpi`/`measure`/`stat` → `metric`, `amend`/`change` → `amendment`, `fig`/`diagram`/`chart` → `figure`, `signature-line`/`sign-here`/`sig` → `signline`, `person`/`party` → `contact`, `due`/`milestone`/`due-date` → `deadline`, `citation`/`source`/`reference` → `quote`.
+- **CLI `amend` Command** — `intenttext amend <file> --section --was --now --ref` to add amendment blocks to frozen documents with interactive confirmation.
+- **VS Code Extension** — Syntax highlighting, hover docs, snippets, and schemas for all 8 new keywords.
+- **17 New Templates** — Contract references, glossaries, executive dashboards, SLA reports, agent monitoring, contract amendments, research reports with figures, signature pages, contact directories, milestone trackers, and regulatory calendars.
+- 90 new tests (718 total passing across 18 test files).
+
 ## [2.10.0] - 2026-03-07
 
 ### Added

@@ -53,4 +53,47 @@ export const ALIASES: Record<string, string> = {
 
   // ── Already exists (backward compat) ────────────────────────────────────
   status: "emit",
+
+  // ── v2.11 ref: aliases ──────────────────────────────────────────────────
+  references: "ref",
+  see: "ref",
+  related: "ref",
+
+  // ── v2.11 def: aliases ──────────────────────────────────────────────────
+  define: "def",
+  term: "def",
+  glossary: "def",
+
+  // ── v2.11 metric: aliases ───────────────────────────────────────────────
+  kpi: "metric",
+  measure: "metric",
+  stat: "metric",
+
+  // ── v2.11 amendment: aliases ────────────────────────────────────────────
+  amend: "amendment",
+  change: "amendment",
+
+  // ── v2.11 figure: aliases ───────────────────────────────────────────────
+  fig: "figure",
+  diagram: "figure",
+  chart: "figure",
+
+  // ── v2.11 signline: aliases ─────────────────────────────────────────────
+  "signature-line": "signline",
+  "sign-here": "signline",
+  sig: "signline",
+
+  // ── v2.11 contact: aliases ──────────────────────────────────────────────
+  person: "contact",
+  party: "contact",
+
+  // ── v2.11 deadline: aliases ─────────────────────────────────────────────
+  due: "deadline",
+  milestone: "deadline",
+  "due-date": "deadline",
+
+  // ── v2.11 cite: aliases ─────────────────────────────────────────────────
+  citation: "quote",
+  source: "quote",
+  reference: "quote",
 };

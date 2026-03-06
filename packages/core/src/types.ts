@@ -90,6 +90,14 @@ export const KEYWORDS = [
   "header",
   "footer",
   "watermark",
+  // v2.11 keyword expansion
+  "def",
+  "metric",
+  "amendment",
+  "figure",
+  "signline",
+  "contact",
+  "deadline",
 ];
 
 /** All valid block types for IntentText (v1 + v2 agentic). */
@@ -167,7 +175,15 @@ export type BlockType =
   // v2.9 print layout block types
   | "header"
   | "footer"
-  | "watermark";
+  | "watermark"
+  // v2.11 keyword expansion
+  | "def"
+  | "metric"
+  | "amendment"
+  | "figure"
+  | "signline"
+  | "contact"
+  | "deadline";
 
 export type InlineNode =
   | { type: "text"; value: string }
@@ -222,7 +238,22 @@ export interface Diagnostic {
     | "HEADERS_WITHOUT_ROWS"
     | "ROW_WITHOUT_HEADERS"
     | "UNKNOWN_EXTENSION_KEYWORD"
-    | "EXTENSION_VALIDATION";
+    | "EXTENSION_VALIDATION"
+    // v2.11 diagnostic codes
+    | "REF_MISSING_TARGET"
+    | "REF_MISSING_REL"
+    | "DEF_MISSING_MEANING"
+    | "DEF_DUPLICATE_TERM"
+    | "METRIC_MISSING_VALUE"
+    | "METRIC_INVALID_TREND"
+    | "AMENDMENT_WITHOUT_FREEZE"
+    | "AMENDMENT_MISSING_REF"
+    | "AMENDMENT_MISSING_NOW"
+    | "FIGURE_MISSING_SRC"
+    | "FIGURE_MISSING_CAPTION"
+    | "CONTACT_NO_REACH"
+    | "DEADLINE_MISSING_DATE"
+    | "DEADLINE_PAST";
 }
 
 /** Execution status values for agentic workflow blocks. */

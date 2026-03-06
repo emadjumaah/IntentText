@@ -27,7 +27,9 @@ const {
   formatJSON,
   formatCSV,
   serializeContext,
+  findHistoryBoundaryInSource,
 } = require("./packages/core/dist");
+const readline = require("readline");
 const fs = require("fs");
 const path = require("path");
 const { glob } = require("fs");
@@ -37,7 +39,7 @@ function main() {
 
   if (args.length === 0) {
     console.log(`
-🚀 IntentText CLI v2.10
+🚀 IntentText CLI v2.11
 
 Usage:
   node cli.js <file.it>                     Parse and show JSON
@@ -83,6 +85,10 @@ Document Trust (v2.8):
   node cli.js history <file.it> --json                         History as JSON
   node cli.js history <file.it> --by "Ahmed"                   Filter by author
   node cli.js history <file.it> --section "Scope"              Filter by section
+
+Amendment (v2.11):
+  node cli.js amend <file.it> --section "Payment" --was "30 days" --now "15 days" --ref "Amendment #1"
+  node cli.js amend <file.it> --section "Scope" --now "Includes Phase 2" --ref "Amendment #2" --by "Ahmed"
 
 Query examples:
   node cli.js todo.it --query "type=task owner=Ahmed"
@@ -344,6 +350,12 @@ Built-in themes: ${listBuiltinThemes().join(", ")}
           );
         }
         console.log(`    Hash:     ${result.hash} ✅ matches`);
+        // v2.11: Report amendment count
+        const doc = parseIntentText(source);
+        const amendments = doc.blocks.filter((b) => b.type === "amendment");
+        if (amendments.length > 0) {
+          console.log(`    Amendments: ${amendments.length}`);
+        }
       } else {
         console.log("❌  Document has been modified since sealing");
         console.log(`    Sealed:   ${result.frozenAt}`);
@@ -415,6 +427,112 @@ Built-in themes: ${listBuiltinThemes().join(", ")}
       }
       return;
     }
+  }
+
+  // v2.11: Amend command
+  if (inputFile === "amend") {
+    const targetFile = args[1];
+    if (!targetFile) {
+      console.error("❌ Missing file argument for amend command");
+      process.exit(1);
+    }
+    if (!fs.existsSync(targetFile)) {
+      console.error(`❌ File not found: ${targetFile}`);
+      process.exit(1);
+    }
+
+    const sectionIdx = args.indexOf("--section");
+    const section = sectionIdx >= 0 ? args[sectionIdx + 1] : null;
+    const wasIdx = args.indexOf("--was");
+    const was = wasIdx >= 0 ? args[wasIdx + 1] : null;
+    const nowIdx = args.indexOf("--now");
+    const now = nowIdx >= 0 ? args[nowIdx + 1] : null;
+    const refIdx = args.indexOf("--ref");
+    const ref = refIdx >= 0 ? args[refIdx + 1] : null;
+    const byIdx = args.indexOf("--by");
+    const by = byIdx >= 0 ? args[byIdx + 1] : null;
+    const description = args[2] && !args[2].startsWith("--") ? args[2] : null;
+
+    if (!now) {
+      console.error("❌ --now is required for amend command");
+      process.exit(1);
+    }
+    if (!ref) {
+      console.error("❌ --ref is required for amend command");
+      process.exit(1);
+    }
+
+    const source = fs.readFileSync(targetFile, "utf-8");
+    const doc = parseIntentText(source);
+
+    // Check freeze exists
+    if (!doc.metadata?.freeze) {
+      console.error(
+        "❌ Cannot amend: document is not frozen. Seal the document first.",
+      );
+      process.exit(1);
+    }
+
+    // Build the amendment line
+    const at = new Date().toISOString().split("T")[0];
+    let amendLine = `amendment: ${description || "Amendment"}${section ? ` | section: ${section}` : ""}${was ? ` | was: ${was}` : ""} | now: ${now} | ref: ${ref}${by ? ` | by: ${by}` : ""} | at: ${at}`;
+
+    // Find insertion point: after the last freeze:/sign:/amendment: line, before history
+    const historyPos = findHistoryBoundaryInSource(source);
+    const contentEnd = historyPos === -1 ? source.length : historyPos;
+    const contentPart = source.slice(0, contentEnd);
+    const lines = contentPart.split("\n");
+
+    // Find the last freeze/sign/amendment line
+    let insertAfterLine = -1;
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const trimmed = lines[i].trim();
+      if (
+        trimmed.startsWith("freeze:") ||
+        trimmed.startsWith("sign:") ||
+        trimmed.startsWith("amendment:")
+      ) {
+        insertAfterLine = i;
+        break;
+      }
+    }
+
+    if (insertAfterLine === -1) {
+      console.error("❌ Cannot find freeze: block in document source");
+      process.exit(1);
+    }
+
+    // Build the updated source
+    const beforeLines = lines.slice(0, insertAfterLine + 1);
+    const afterLines = lines.slice(insertAfterLine + 1);
+    const afterContent = historyPos === -1 ? "" : source.slice(historyPos);
+
+    const updatedContent =
+      beforeLines.join("\n") + "\n" + amendLine + "\n" + afterLines.join("\n");
+    const updatedSource = afterContent
+      ? updatedContent + afterContent
+      : updatedContent;
+
+    // Show preview and confirm
+    console.log("\n📝 Amendment to add:");
+    console.log(`   ${amendLine}`);
+    console.log(`\n   File: ${targetFile}`);
+    console.log(`   Insert after line ${insertAfterLine + 1}`);
+
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+    rl.question("\nApply amendment? (y/N) ", (answer) => {
+      rl.close();
+      if (answer.toLowerCase() === "y" || answer.toLowerCase() === "yes") {
+        fs.writeFileSync(targetFile, updatedSource);
+        console.log("✅ Amendment added successfully");
+      } else {
+        console.log("❌ Amendment cancelled");
+      }
+    });
+    return;
   }
 
   const outputHtml = args.includes("--html");

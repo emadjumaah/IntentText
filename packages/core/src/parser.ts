@@ -87,6 +87,7 @@ const DOCGEN_LAYOUT_TYPES = new Set<string>([
   "header",
   "footer",
   "watermark",
+  "signline",
 ]);
 
 // v2.5 document generation writer block types
@@ -104,7 +105,12 @@ const DOCGEN_WRITER_TYPES = new Set<string>([
 const METADATA_KEYWORDS = new Set<string>(["agent", "model"]);
 
 // v2.8 trust keywords
-const TRUST_KEYWORDS = new Set<string>(["approve", "sign", "freeze"]);
+const TRUST_KEYWORDS = new Set<string>([
+  "approve",
+  "sign",
+  "freeze",
+  "amendment",
+]);
 
 // v2.8 document identity keywords (track joins title, summary)
 const DOCUMENT_IDENTITY_KEYWORDS = new Set<string>([
@@ -115,6 +121,17 @@ const DOCUMENT_IDENTITY_KEYWORDS = new Set<string>([
 
 // v2.8 history keywords — below boundary only, parser skips for block output
 const HISTORY_KEYWORDS = new Set<string>(["revision"]);
+
+// v2.11 keyword expansion block types
+const V211_BLOCK_TYPES = new Set<string>([
+  "def",
+  "metric",
+  "amendment",
+  "figure",
+  "signline",
+  "contact",
+  "deadline",
+]);
 
 /**
  * Detect the history boundary in an array of lines.
@@ -1543,17 +1560,19 @@ export function parseIntentText(
   };
 
   const document: IntentDocument = {
-    version: hasTrustContent
-      ? "2.8"
-      : hasDocgenContent
-        ? "2.5"
-        : hasV22Content
-          ? "2.2"
-          : hasV21Content
-            ? "2.1"
-            : hasAgenticContent
-              ? "2.0"
-              : "1.4",
+    version: allBlocks.some((b) => V211_BLOCK_TYPES.has(b.type))
+      ? "2.11"
+      : hasTrustContent
+        ? "2.8"
+        : hasDocgenContent
+          ? "2.5"
+          : hasV22Content
+            ? "2.2"
+            : hasV21Content
+              ? "2.1"
+              : hasAgenticContent
+                ? "2.0"
+                : "1.4",
     blocks,
     metadata,
     diagnostics: diagnostics.length > 0 ? diagnostics : undefined,

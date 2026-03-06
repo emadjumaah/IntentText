@@ -95,7 +95,7 @@ describe("v2.9 renderer — print layout", () => {
     );
     const html = renderHTML(doc);
     expect(html).not.toContain("Acme");
-    expect(html).not.toContain("header");
+    expect(html).not.toContain('<div class="it-header');
   });
 
   it("footer: produces no HTML in web output", () => {

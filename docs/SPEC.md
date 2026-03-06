@@ -1,6 +1,6 @@
 # IntentText (`.it`) v2.10 — Official Specification
 
-> **Status:** Stable · **Version:** 2.10 · **Source of Truth**
+> **Status:** Stable · **Version:** 2.11 · **Source of Truth**
 
 ## What IntentText Is
 
@@ -160,17 +160,93 @@ Both `image:` and `link:` support optional accessibility properties (`caption:`,
 
 ### 3.7 References (Cross-Document Links)
 
-| Keyword | Description              | Example                                        |
-| ------- | ------------------------ | ---------------------------------------------- |
-| `ref:`  | Cross-document reference | `ref: Related Doc \| to: doc.it#section:Tasks` |
+| Keyword | Description              | Example                                                          |
+| ------- | ------------------------ | ---------------------------------------------------------------- |
+| `ref:`  | Cross-document reference | `ref: Master Agreement \| file: ./master.it \| rel: governed-by` |
 
-The `ref:` keyword creates semantic connections between documents. Unlike `link:` which is for external URLs, `ref:` is specifically for internal/cross-document navigation.
+The `ref:` keyword creates semantic connections between documents. Unlike `link:` which is for external URLs, `ref:` is specifically for internal/cross-document references.
 
 **Properties:**
 
-- `to:` — Target document path with optional anchor (e.g., `doc.it#section:Name`)
+- `file:` — Path to the referenced `.it` document
+- `url:` — URL to an external referenced resource
+- `rel:` — Relationship type (e.g., `governed-by`, `amends`, `continuation`, `payment`)
+- `section:` — Specific section in the target document
+- `at:` — Timestamp of the reference
 
-**Rendering:** References render as italicized links to distinguish them from regular external links.
+At least one of `file:` or `url:` is required (`REF_MISSING_TARGET`). The `rel:` property is recommended (`REF_MISSING_REL` warning).
+
+**Rendering:** References render as labeled reference cards with relationship badges.
+
+### 3.11 Definitions (v2.11)
+
+| Keyword | Description                      | Example                                        |
+| ------- | -------------------------------- | ---------------------------------------------- |
+| `def:`  | Term definition / glossary entry | `def: SLA \| meaning: Service Level Agreement` |
+
+**Properties:** `meaning` (required), `abbr` (optional abbreviation).
+
+Grouped `def:` blocks in a section render as a glossary. `DEF_MISSING_MEANING` fires when `meaning:` is absent. `DEF_DUPLICATE_TERM` warns on repeated terms.
+
+### 3.12 Metrics (v2.11)
+
+| Keyword   | Description      | Example                                                                  |
+| --------- | ---------------- | ------------------------------------------------------------------------ |
+| `metric:` | Measurable value | `metric: Uptime \| value: 99.95 \| unit: % \| target: 99.9 \| trend: up` |
+
+**Properties:** `value` (required), `unit`, `period`, `as-of`, `target`, `trend` (up/down/stable/at-risk), `owner`, `source`.
+
+Metrics render as cards with color indicators (green if value ≥ target, red if below). Trend arrows: ↑ up, ↓ down, → stable.
+
+### 3.13 Amendment (v2.11)
+
+| Keyword      | Description                 | Example                                                                                                                          |
+| ------------ | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `amendment:` | Change to a frozen document | `amendment: Payment revised \| section: Terms \| was: Net-30 \| now: Net-15 \| ref: Amendment #1 \| by: Legal \| at: 2026-02-01` |
+
+**Properties:** `section` (required), `was`, `now` (required), `ref` (required), `by` (required), `at` (required), `approved-by`, `hash`.
+
+Amendments may only appear after a `freeze:` block (`AMENDMENT_WITHOUT_FREEZE`). They record formal changes to sealed documents.
+
+### 3.14 Figures (v2.11)
+
+| Keyword   | Description                  | Example                                                               |
+| --------- | ---------------------------- | --------------------------------------------------------------------- |
+| `figure:` | Document figure with caption | `figure: Architecture \| src: ./arch.png \| caption: System overview` |
+
+**Properties:** `src` (required), `caption` (recommended), `num`, `width`, `align`, `alt`.
+
+Renders as `<figure><img><figcaption>`. `FIGURE_MISSING_SRC` fires when `src:` absent. `FIGURE_MISSING_CAPTION` warns when caption is missing.
+
+### 3.15 Signature Lines (v2.11)
+
+| Keyword     | Description                    | Example                                                                       |
+| ----------- | ------------------------------ | ----------------------------------------------------------------------------- |
+| `signline:` | Physical signature placeholder | `signline: Provider Signature \| name: Alice \| role: CEO \| date-line: true` |
+
+**Properties:** `name`, `role`, `date-line` (true/false), `org`, `width`, `label`.
+
+For print documents requiring physical signatures. Unlike `sign:` (digital trust), `signline:` renders visual signature lines. Multiple signlines render side-by-side in print.
+
+### 3.16 Contact Information (v2.11)
+
+| Keyword    | Description                    | Example                                                                    |
+| ---------- | ------------------------------ | -------------------------------------------------------------------------- |
+| `contact:` | Structured contact information | `contact: Jane Doe \| role: PM \| email: jane@x.com \| phone: +1-555-0100` |
+
+**Properties:** `role`, `email`, `phone`, `org`, `address`, `url`, `preferred` (email/phone).
+
+Email renders as `mailto:` link; phone as `tel:` link. `CONTACT_NO_REACH` warns when no email, phone, or url is present.
+
+### 3.17 Deadlines (v2.11)
+
+| Keyword     | Description         | Example                                                                      |
+| ----------- | ------------------- | ---------------------------------------------------------------------------- |
+| `deadline:` | Temporal commitment | `deadline: Contract Renewal \| date: 2027-06-15 \| consequence: Auto-renews` |
+
+**Properties:** `date` (required), `consequence`, `authority`, `ref`, `owner`, `reminder`.
+
+`DEADLINE_MISSING_DATE` fires when `date:` absent. `DEADLINE_PAST` warns for past dates. Renders with urgency coloring based on proximity.
 
 ### 3.8 The Pipe Syntax — How Properties Work
 
@@ -245,35 +321,60 @@ All output always uses canonical keywords.
 **To add an alias in your parser implementation:**
 Add one entry to `src/aliases.ts`. No other files need to change.
 
-| Alias          | Canonical   | Context         |
-| -------------- | ----------- | --------------- |
-| `text:`        | `note:`     | Writer          |
-| `body:`        | `note:`     | Writer          |
-| `p:`           | `note:`     | HTML familiar   |
-| `paragraph:`   | `note:`     | Writer          |
-| `h1:`          | `title:`    | HTML familiar   |
-| `h2:`          | `section:`  | HTML familiar   |
-| `h3:`          | `sub:`      | HTML familiar   |
-| `heading:`     | `section:`  | Writer          |
-| `subheading:`  | `sub:`      | Writer          |
-| `blockquote:`  | `quote:`    | MD familiar     |
-| `cite:`        | `quote:`    | Writer          |
-| `check:`       | `task:`     | Natural         |
-| `todo:`        | `task:`     | Natural         |
-| `action:`      | `task:`     | Natural         |
-| `item:`        | `task:`     | Natural         |
-| `completed:`   | `done:`     | Natural         |
-| `finished:`    | `done:`     | Natural         |
-| `rule:`        | `policy:`   | Natural         |
-| `constraint:`  | `policy:`   | Formal          |
-| `guard:`       | `policy:`   | Developer       |
-| `requirement:` | `policy:`   | Formal          |
-| `log:`         | `audit:`    | Developer       |
-| `lock:`        | `freeze:`   | Intuitive       |
-| `on:`          | `trigger:`  | Natural         |
-| `run:`         | `step:`     | Developer       |
-| `if:`          | `decision:` | Natural         |
-| `status:`      | `emit:`     | Backward compat |
+| Alias             | Canonical    | Context         |
+| ----------------- | ------------ | --------------- |
+| `text:`           | `note:`      | Writer          |
+| `body:`           | `note:`      | Writer          |
+| `p:`              | `note:`      | HTML familiar   |
+| `paragraph:`      | `note:`      | Writer          |
+| `h1:`             | `title:`     | HTML familiar   |
+| `h2:`             | `section:`   | HTML familiar   |
+| `h3:`             | `sub:`       | HTML familiar   |
+| `heading:`        | `section:`   | Writer          |
+| `subheading:`     | `sub:`       | Writer          |
+| `blockquote:`     | `quote:`     | MD familiar     |
+| `cite:`           | `quote:`     | Writer          |
+| `check:`          | `task:`      | Natural         |
+| `todo:`           | `task:`      | Natural         |
+| `action:`         | `task:`      | Natural         |
+| `item:`           | `task:`      | Natural         |
+| `completed:`      | `done:`      | Natural         |
+| `finished:`       | `done:`      | Natural         |
+| `rule:`           | `policy:`    | Natural         |
+| `constraint:`     | `policy:`    | Formal          |
+| `guard:`          | `policy:`    | Developer       |
+| `requirement:`    | `policy:`    | Formal          |
+| `log:`            | `audit:`     | Developer       |
+| `lock:`           | `freeze:`    | Intuitive       |
+| `on:`             | `trigger:`   | Natural         |
+| `run:`            | `step:`      | Developer       |
+| `if:`             | `decision:`  | Natural         |
+| `status:`         | `emit:`      | Backward compat |
+| `references:`     | `ref:`       | v2.11           |
+| `see:`            | `ref:`       | v2.11           |
+| `related:`        | `ref:`       | v2.11           |
+| `define:`         | `def:`       | v2.11           |
+| `term:`           | `def:`       | v2.11           |
+| `glossary:`       | `def:`       | v2.11           |
+| `kpi:`            | `metric:`    | v2.11           |
+| `measure:`        | `metric:`    | v2.11           |
+| `stat:`           | `metric:`    | v2.11           |
+| `amend:`          | `amendment:` | v2.11           |
+| `change:`         | `amendment:` | v2.11           |
+| `fig:`            | `figure:`    | v2.11           |
+| `diagram:`        | `figure:`    | v2.11           |
+| `chart:`          | `figure:`    | v2.11           |
+| `signature-line:` | `signline:`  | v2.11           |
+| `sign-here:`      | `signline:`  | v2.11           |
+| `sig:`            | `signline:`  | v2.11           |
+| `person:`         | `contact:`   | v2.11           |
+| `party:`          | `contact:`   | v2.11           |
+| `due:`            | `deadline:`  | v2.11           |
+| `milestone:`      | `deadline:`  | v2.11           |
+| `due-date:`       | `deadline:`  | v2.11           |
+| `citation:`       | `quote:`     | v2.11           |
+| `source:`         | `quote:`     | v2.11           |
+| `reference:`      | `quote:`     | v2.11           |
 
 Aliases are case-insensitive. `Rule:`, `RULE:`, and `rule:` all resolve
 to `policy:`.
@@ -766,9 +867,13 @@ result: Invoice {{invoice.number}} | code: 200
 
 **Layer 4 — Document Generation (9):** `font` · `page` · `break` · `byline` · `epigraph` · `caption` · `footnote` · `toc` · `dedication`
 
-**Layer 5 — Document Trust (4):** `approve` · `sign` · `freeze` · `revision`
+**Layer 5 — Document Trust (5):** `approve` · `sign` · `freeze` · `revision` · `amendment`
+
+**Layer 6 — v2.11 Keyword Expansion (7):** `def` · `metric` · `figure` · `signline` · `contact` · `deadline` · `ref` (redesigned)
 
 **Alias:** `status` → `emit` (backward compatibility)
+
+**Total canonical keywords: 55.** **Total aliases: 47.**
 
 All keywords are **case-insensitive** (`Title:` = `title:`). User content is always preserved as written.
 

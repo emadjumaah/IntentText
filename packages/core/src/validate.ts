@@ -338,14 +338,18 @@ export function validateDocumentSemantic(
   if (freezeBlocks.length === 1) {
     const freezeIdx = allBlocks.indexOf(freezeBlocks[0]);
     const blocksAfterFreeze = allBlocks.slice(freezeIdx + 1);
-    if (blocksAfterFreeze.length > 0) {
+    // v2.11: amendment: and sign: blocks may appear after freeze:
+    const nonAmendmentAfterFreeze = blocksAfterFreeze.filter(
+      (b) => b.type !== "amendment" && b.type !== "sign",
+    );
+    if (nonAmendmentAfterFreeze.length > 0) {
       issues.push({
         blockId: freezeBlocks[0].id,
         blockType: "freeze",
         type: "error",
         code: "FREEZE_NOT_LAST",
         message:
-          "freeze: block is not the last block before the history boundary",
+          "freeze: block is not the last block before the history boundary (amendment: and sign: are allowed after freeze:)",
       });
     }
   }
@@ -499,6 +503,186 @@ export function validateDocumentSemantic(
         message:
           "Multiple watermark: blocks found — only the last one will be used",
       });
+    }
+  }
+
+  // ── v2.11: ref: validation ──────────────────────────────────────────────
+  const refBlocks = allBlocks.filter((b) => b.type === "ref");
+  for (const rb of refBlocks) {
+    const hasFile = rb.properties?.file != null;
+    const hasUrl = rb.properties?.url != null;
+    if (!hasFile && !hasUrl) {
+      issues.push({
+        blockId: rb.id,
+        blockType: "ref",
+        type: "error",
+        code: "REF_MISSING_TARGET",
+        message:
+          "ref: block has no file: or url: property — target is required",
+      });
+    }
+    if (!rb.properties?.rel) {
+      issues.push({
+        blockId: rb.id,
+        blockType: "ref",
+        type: "warning",
+        code: "REF_MISSING_REL",
+        message:
+          "ref: block has no rel: property — relationship type recommended",
+      });
+    }
+  }
+
+  // ── v2.11: def: validation ──────────────────────────────────────────────
+  const defBlocks = allBlocks.filter((b) => b.type === "def");
+  const seenTerms = new Map<string, IntentBlock>();
+  for (const db of defBlocks) {
+    if (!db.properties?.meaning) {
+      issues.push({
+        blockId: db.id,
+        blockType: "def",
+        type: "error",
+        code: "DEF_MISSING_MEANING",
+        message: `def: "${db.content}" has no meaning: property`,
+      });
+    }
+    const termKey = db.content.toLowerCase().trim();
+    if (seenTerms.has(termKey)) {
+      issues.push({
+        blockId: db.id,
+        blockType: "def",
+        type: "warning",
+        code: "DEF_DUPLICATE_TERM",
+        message: `def: "${db.content}" is defined more than once`,
+      });
+    } else {
+      seenTerms.set(termKey, db);
+    }
+  }
+
+  // ── v2.11: metric: validation ───────────────────────────────────────────
+  const metricBlocks = allBlocks.filter((b) => b.type === "metric");
+  const validTrends = new Set(["up", "down", "stable", "at-risk"]);
+  for (const mb of metricBlocks) {
+    if (mb.properties?.value == null) {
+      issues.push({
+        blockId: mb.id,
+        blockType: "metric",
+        type: "error",
+        code: "METRIC_MISSING_VALUE",
+        message: `metric: "${mb.content}" has no value: property`,
+      });
+    }
+    if (
+      mb.properties?.trend != null &&
+      !validTrends.has(String(mb.properties.trend))
+    ) {
+      issues.push({
+        blockId: mb.id,
+        blockType: "metric",
+        type: "warning",
+        code: "METRIC_INVALID_TREND",
+        message: `metric: "${mb.content}" has unknown trend "${mb.properties.trend}" — expected up, down, stable, or at-risk`,
+      });
+    }
+  }
+
+  // ── v2.11: amendment: validation ────────────────────────────────────────
+  const amendmentBlocks = allBlocks.filter((b) => b.type === "amendment");
+  const hasFreezeBlock = freezeBlocks.length > 0;
+  for (const ab of amendmentBlocks) {
+    if (!hasFreezeBlock) {
+      issues.push({
+        blockId: ab.id,
+        blockType: "amendment",
+        type: "error",
+        code: "AMENDMENT_WITHOUT_FREEZE",
+        message:
+          "amendment: block in a document with no freeze: — amendments require a frozen document",
+      });
+    }
+    if (!ab.properties?.ref) {
+      issues.push({
+        blockId: ab.id,
+        blockType: "amendment",
+        type: "error",
+        code: "AMENDMENT_MISSING_REF",
+        message: `amendment: "${ab.content}" has no ref: property`,
+      });
+    }
+    if (!ab.properties?.now) {
+      issues.push({
+        blockId: ab.id,
+        blockType: "amendment",
+        type: "error",
+        code: "AMENDMENT_MISSING_NOW",
+        message: `amendment: "${ab.content}" has no now: property`,
+      });
+    }
+  }
+
+  // ── v2.11: figure: validation ───────────────────────────────────────────
+  const figureBlocks = allBlocks.filter((b) => b.type === "figure");
+  for (const fb of figureBlocks) {
+    if (!fb.properties?.src) {
+      issues.push({
+        blockId: fb.id,
+        blockType: "figure",
+        type: "error",
+        code: "FIGURE_MISSING_SRC",
+        message: `figure: "${fb.content}" has no src: property`,
+      });
+    }
+    if (!fb.properties?.caption) {
+      issues.push({
+        blockId: fb.id,
+        blockType: "figure",
+        type: "warning",
+        code: "FIGURE_MISSING_CAPTION",
+        message: `figure: "${fb.content}" has no caption: property — figures should have captions`,
+      });
+    }
+  }
+
+  // ── v2.11: contact: validation ──────────────────────────────────────────
+  const contactBlocks = allBlocks.filter((b) => b.type === "contact");
+  for (const cb of contactBlocks) {
+    const hasEmail = cb.properties?.email != null;
+    const hasPhone = cb.properties?.phone != null;
+    const hasUrl2 = cb.properties?.url != null;
+    if (!hasEmail && !hasPhone && !hasUrl2) {
+      issues.push({
+        blockId: cb.id,
+        blockType: "contact",
+        type: "warning",
+        code: "CONTACT_NO_REACH",
+        message: `contact: "${cb.content}" has no email:, phone:, or url: — how do you reach them?`,
+      });
+    }
+  }
+
+  // ── v2.11: deadline: validation ─────────────────────────────────────────
+  const deadlineBlocks = allBlocks.filter((b) => b.type === "deadline");
+  for (const dl of deadlineBlocks) {
+    if (!dl.properties?.date) {
+      issues.push({
+        blockId: dl.id,
+        blockType: "deadline",
+        type: "error",
+        code: "DEADLINE_MISSING_DATE",
+        message: `deadline: "${dl.content}" has no date: property`,
+      });
+    } else {
+      const dateVal = new Date(String(dl.properties.date));
+      if (!isNaN(dateVal.getTime()) && dateVal.getTime() < Date.now()) {
+        issues.push({
+          blockId: dl.id,
+          blockType: "deadline",
+          type: "warning",
+          code: "DEADLINE_PAST",
+          message: `deadline: "${dl.content}" has a past date (${dl.properties.date})`,
+        });
+      }
     }
   }
 

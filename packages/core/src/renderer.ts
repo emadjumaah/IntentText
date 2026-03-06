@@ -305,10 +305,28 @@ function renderBlock(block: IntentBlock): string {
         : "";
       return `<p class="intent-link"><a href="${href}" ${titleAttr}>${content}</a></p>`;
 
-    case "ref":
-      const refTo = escapeHtml(String(props.to || content));
-      const refText = content || refTo;
-      return `<p class="intent-ref"><a href="${refTo}">${refText}</a></p>`;
+    case "ref": {
+      const refFile = props.file ? String(props.file) : "";
+      const refUrl = props.url ? String(props.url) : "";
+      const refRel = props.rel ? escapeHtml(String(props.rel)) : "";
+      const refHref = refFile
+        ? escapeHtml(sanitizeUrl(refFile))
+        : refUrl
+          ? escapeHtml(sanitizeUrl(refUrl))
+          : "";
+      const refName = escapeHtml(block.content || refFile || refUrl);
+      const relBadge = refRel
+        ? `<span class="it-ref-rel">${refRel}</span>`
+        : "";
+      const linkEl = refHref
+        ? `<a href="${refHref}" class="it-ref-link">${refName}</a>`
+        : `<span class="it-ref-name">${refName}</span>`;
+      return `<div class="it-ref-card">
+        <span class="it-ref-icon">📎</span>
+        ${linkEl}
+        ${relBadge}
+      </div>`;
+    }
 
     case "embed": {
       const embedType = props.type || "iframe";
@@ -784,6 +802,156 @@ function renderBlock(block: IntentBlock): string {
       // Should never appear above the history boundary — render as muted if somehow present
       return "";
 
+    // ─── v2.11 Keyword Expansion ───────────────────────────────────────
+
+    case "def": {
+      const meaning = props.meaning ? escapeHtml(String(props.meaning)) : "";
+      const abbr = props.abbr
+        ? ` <span class="it-def-abbr">(${escapeHtml(String(props.abbr))})</span>`
+        : "";
+      return `<div class="it-def">
+        <dt class="it-def-term">${content}${abbr}</dt>
+        <dd class="it-def-meaning">${meaning}</dd>
+      </div>`;
+    }
+
+    case "metric": {
+      const val = props.value != null ? escapeHtml(String(props.value)) : "";
+      const unit = props.unit ? escapeHtml(String(props.unit)) : "";
+      const target = props.target != null ? String(props.target) : "";
+      const trend = props.trend ? String(props.trend) : "";
+      const period = props.period ? escapeHtml(String(props.period)) : "";
+
+      const trendIcon =
+        trend === "up"
+          ? "↑"
+          : trend === "down"
+            ? "↓"
+            : trend === "stable"
+              ? "→"
+              : "";
+      let colorClass = "it-metric-neutral";
+      if (target && val) {
+        colorClass =
+          Number(val) >= Number(target) ? "it-metric-green" : "it-metric-red";
+      }
+
+      return `<div class="it-metric ${colorClass}">
+        <div class="it-metric-name">${content}</div>
+        <div class="it-metric-value">${val}<span class="it-metric-unit">${unit}</span></div>
+        ${target ? `<div class="it-metric-target">Target: ${escapeHtml(target)}</div>` : ""}
+        ${trendIcon ? `<div class="it-metric-trend">${trendIcon}</div>` : ""}
+        ${period ? `<div class="it-metric-period">${period}</div>` : ""}
+      </div>`;
+    }
+
+    case "amendment": {
+      const amendRef = props.ref ? escapeHtml(String(props.ref)) : "";
+      const amendSection = props.section
+        ? escapeHtml(String(props.section))
+        : "";
+      const amendWas = props.was ? escapeHtml(String(props.was)) : "";
+      const amendNow = props.now ? escapeHtml(String(props.now)) : "";
+      const amendBy = props.by ? escapeHtml(String(props.by)) : "";
+      const amendAt = props.at ? formatTrustDate(String(props.at)) : "";
+      return `<div class="it-amendment">
+        <div class="it-amendment-header">
+          <span class="it-amendment-icon">✏️</span>
+          <span class="it-amendment-ref">${amendRef}</span>
+          <span class="it-amendment-title">${content}</span>
+        </div>
+        ${amendSection ? `<div class="it-amendment-section">Section: ${amendSection}</div>` : ""}
+        ${amendWas ? `<div class="it-amendment-was">Was: ${amendWas}</div>` : ""}
+        ${amendNow ? `<div class="it-amendment-now">Now: ${amendNow}</div>` : ""}
+        <div class="it-amendment-meta">
+          ${amendBy ? `<span class="it-amendment-by">${amendBy}</span>` : ""}
+          ${amendAt ? `<span class="it-amendment-at">${amendAt}</span>` : ""}
+        </div>
+      </div>`;
+    }
+
+    case "figure": {
+      const figSrc = props.src
+        ? escapeHtml(sanitizeUrl(String(props.src)))
+        : "";
+      const figCaption = props.caption ? escapeHtml(String(props.caption)) : "";
+      const figNum = props.num ? escapeHtml(String(props.num)) : "";
+      const figWidth = props.width
+        ? `width:${escapeHtml(String(props.width))};`
+        : "";
+      const figAlign = props.align ? String(props.align) : "center";
+      const figAlt = props.alt
+        ? escapeHtml(String(props.alt))
+        : escapeHtml(block.content);
+      const numPrefix = figNum ? `Figure ${figNum}: ` : "";
+      return `<figure class="it-figure" style="text-align:${escapeHtml(figAlign)};">
+        ${figSrc ? `<img src="${figSrc}" alt="${figAlt}" style="${figWidth}max-width:100%;" />` : ""}
+        <figcaption class="it-figure-caption">${numPrefix}${figCaption}</figcaption>
+      </figure>`;
+    }
+
+    case "signline": {
+      const sigLabel = props.label
+        ? escapeHtml(String(props.label))
+        : "Signature";
+      const sigRole = props.role ? escapeHtml(String(props.role)) : "";
+      const sigDateLine = String(props["date-line"]) === "true";
+      const sigWidth = props.width ? escapeHtml(String(props.width)) : "60%";
+      return `<div class="it-signline" style="width:${sigWidth};">
+        <div class="it-signline-label">${sigLabel}</div>
+        <div class="it-signline-rule"></div>
+        <div class="it-signline-name">${content}</div>
+        ${sigRole ? `<div class="it-signline-role">${sigRole}</div>` : ""}
+        ${sigDateLine ? `<div class="it-signline-date">Date: _______________</div>` : ""}
+      </div>`;
+    }
+
+    case "contact": {
+      const cRole = props.role ? escapeHtml(String(props.role)) : "";
+      const cEmail = props.email ? String(props.email) : "";
+      const cPhone = props.phone ? String(props.phone) : "";
+      const cOrg = props.org ? escapeHtml(String(props.org)) : "";
+      const cUrl2 = props.url ? String(props.url) : "";
+      return `<div class="it-contact">
+        <div class="it-contact-name">${content}</div>
+        ${cRole ? `<div class="it-contact-role">${cRole}</div>` : ""}
+        ${cOrg ? `<div class="it-contact-org">${cOrg}</div>` : ""}
+        ${cEmail ? `<div class="it-contact-email"><a href="mailto:${escapeHtml(cEmail)}">${escapeHtml(cEmail)}</a></div>` : ""}
+        ${cPhone ? `<div class="it-contact-phone"><a href="tel:${escapeHtml(cPhone)}">${escapeHtml(cPhone)}</a></div>` : ""}
+        ${cUrl2 ? `<div class="it-contact-url"><a href="${escapeHtml(sanitizeUrl(cUrl2))}">${escapeHtml(cUrl2)}</a></div>` : ""}
+      </div>`;
+    }
+
+    case "deadline": {
+      const dlDate = props.date ? String(props.date) : "";
+      const dlConsequence = props.consequence
+        ? escapeHtml(String(props.consequence))
+        : "";
+      const dlAuthority = props.authority
+        ? escapeHtml(String(props.authority))
+        : "";
+      const dlOwner = props.owner ? escapeHtml(String(props.owner)) : "";
+
+      let dlColorClass = "it-deadline-green";
+      if (dlDate) {
+        const dlDateObj = new Date(dlDate);
+        if (!isNaN(dlDateObj.getTime())) {
+          const daysUntil =
+            (dlDateObj.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+          if (daysUntil < 7) dlColorClass = "it-deadline-red";
+          else if (daysUntil < 30) dlColorClass = "it-deadline-amber";
+        }
+      }
+
+      return `<div class="it-deadline ${dlColorClass}">
+        <div class="it-deadline-name">${content}</div>
+        ${dlDate ? `<div class="it-deadline-date">${escapeHtml(dlDate)}</div>` : ""}
+        ${dlConsequence ? `<div class="it-deadline-consequence">${dlConsequence}</div>` : ""}
+        ${dlOwner ? `<div class="it-deadline-owner">${dlOwner}</div>` : ""}
+        ${dlAuthority ? `<div class="it-deadline-authority">${dlAuthority}</div>` : ""}
+      </div>`;
+    }
+
     default:
       return `<div class="intent-unknown">
         <small class="intent-unknown-type">[${block.type}]</small> ${content}
@@ -1172,6 +1340,60 @@ sup.it-fn-ref a{color:#111;text-decoration:none;border-bottom:1px solid #999;}
 .it-sealed-banner__text{font-size:1rem;color:#c62828;text-transform:uppercase;letter-spacing:0.04em;}
 .it-sealed-banner__date{font-size:0.8rem;color:#666;margin-left:auto;}
 .it-sealed-banner__hash{font-size:0.72rem;color:#888;font-family:monospace;}
+/* ── v2.11 Keyword Expansion ──────────────────────────── */
+.it-ref-card{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid #ddd;margin:5px 0;}
+.it-ref-icon{font-size:1rem;flex-shrink:0;}
+.it-ref-link{color:#111;text-decoration:underline;font-weight:500;}
+.it-ref-name{font-weight:500;}
+.it-ref-rel{font-size:0.7rem;padding:1px 6px;border:1px solid #bbb;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;}
+.it-def{margin:6px 0;padding:4px 0;}
+.it-def-term{font-weight:700;font-size:0.95rem;color:#111;}
+.it-def-abbr{font-weight:400;color:#555;}
+.it-def-meaning{margin:2px 0 0 0;color:#333;font-size:0.92rem;padding-left:1em;}
+.it-metric{display:inline-block;padding:10px 14px;border:1px solid #ddd;margin:5px;min-width:140px;vertical-align:top;}
+.it-metric-name{font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:#555;}
+.it-metric-value{font-size:1.6rem;font-weight:700;line-height:1.2;color:#111;}
+.it-metric-unit{font-size:0.85rem;font-weight:400;color:#666;margin-left:2px;}
+.it-metric-target{font-size:0.78rem;color:#888;}
+.it-metric-trend{font-size:1rem;font-weight:700;margin-top:2px;}
+.it-metric-period{font-size:0.72rem;color:#888;}
+.it-metric-green{border-color:#4caf50;}
+.it-metric-green .it-metric-value{color:#2e7d32;}
+.it-metric-red{border-color:#c62828;}
+.it-metric-red .it-metric-value{color:#c62828;}
+.it-metric-neutral{border-color:#ddd;}
+.it-amendment{margin:10px 0;padding:10px 14px;border:2px solid #e65100;background:#fff8e1;}
+.it-amendment-header{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.it-amendment-icon{font-size:1rem;}
+.it-amendment-ref{font-size:0.72rem;font-weight:700;padding:1px 6px;border:1px solid #e65100;color:#e65100;text-transform:uppercase;letter-spacing:0.04em;}
+.it-amendment-title{font-weight:600;color:#111;}
+.it-amendment-section{font-size:0.85rem;color:#555;font-style:italic;}
+.it-amendment-was{font-size:0.85rem;color:#c62828;text-decoration:line-through;}
+.it-amendment-now{font-size:0.85rem;color:#2e7d32;font-weight:500;}
+.it-amendment-meta{display:flex;gap:8px;margin-top:4px;font-size:0.8rem;color:#666;}
+.it-figure{margin:14px 0;}
+.it-figure img{display:block;margin:0 auto;border:1px solid #ddd;}
+.it-figure-caption{font-size:0.85em;font-style:italic;text-align:center;color:#444;margin-top:6px;}
+.it-signline{margin:20px 0;padding:0;}
+.it-signline-label{font-size:0.72rem;color:#888;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;}
+.it-signline-rule{border-bottom:1px solid #111;margin-bottom:4px;}
+.it-signline-name{font-size:0.9rem;font-weight:500;color:#111;}
+.it-signline-role{font-size:0.82rem;color:#555;}
+.it-signline-date{font-size:0.82rem;color:#555;margin-top:4px;}
+.it-contact{padding:8px 12px;border:1px solid #ddd;margin:5px 0;}
+.it-contact-name{font-weight:600;font-size:0.95rem;color:#111;}
+.it-contact-role{font-size:0.82rem;color:#555;}
+.it-contact-org{font-size:0.82rem;color:#555;}
+.it-contact-email a,.it-contact-phone a,.it-contact-url a{color:#111;text-decoration:underline;font-size:0.85rem;}
+.it-deadline{padding:8px 12px;border-left:3px solid #4caf50;margin:5px 0;}
+.it-deadline-name{font-weight:600;color:#111;}
+.it-deadline-date{font-size:0.9rem;font-weight:600;color:#111;}
+.it-deadline-consequence{font-size:0.85rem;color:#555;font-style:italic;}
+.it-deadline-owner{font-size:0.82rem;color:#555;}
+.it-deadline-authority{font-size:0.82rem;color:#555;}
+.it-deadline-green{border-color:#4caf50;}
+.it-deadline-amber{border-color:#f57c00;}
+.it-deadline-red{border-color:#c62828;}
 ${themeCSS}
 </style>
 ${html}
@@ -1350,5 +1572,21 @@ body.it-print .it-page-break{page-break-after:always;break-after:page;height:0;}
 body.it-print .intent-task-checkbox{display:none;}
 body.it-print .intent-task::before{content:"\\2610 ";margin-right:4pt;}
 body.it-print .intent-task-done::before{content:"\\2611 ";}
+/* ── v2.11 Print ───────────────────────────────────────── */
+body.it-print .it-ref-card{border:none;padding:0;margin:0.5em 0;font-style:italic;}
+body.it-print .it-def{margin:0.3em 0;}
+body.it-print .it-def-term{font-weight:bold;}
+body.it-print .it-def-meaning{padding-left:1.5em;}
+body.it-print .it-metric{border:1pt solid #ccc;padding:6pt 10pt;display:inline-block;min-width:100pt;margin:4pt;vertical-align:top;}
+body.it-print .it-amendment{border:2pt solid #000;padding:8pt 12pt;margin:1em 0;}
+body.it-print .it-amendment-ref{border:1pt solid #000;color:#000;}
+body.it-print .it-figure{margin:1em 0;text-align:center;}
+body.it-print .it-figure img{max-width:100%;border:1pt solid #ccc;}
+body.it-print .it-figure-caption{font-size:0.85em;font-style:italic;text-align:center;margin-top:0.3em;}
+body.it-print .it-signline{display:inline-block;width:45%;margin:2em 2%;vertical-align:top;}
+body.it-print .it-signline-rule{border-bottom:1pt solid #000;margin-bottom:4pt;}
+body.it-print .it-contact{border:none;padding:0;margin:0.3em 0;}
+body.it-print .it-deadline{border-left:3pt solid #000;padding-left:8pt;margin:0.5em 0;}
+body.it-print .it-deadline-date{font-weight:bold;text-decoration:underline;}
 </style></head><body class="${bodyClass}"><div class="intent-document">${watermarkHtml}${html}</div></body></html>`;
 }

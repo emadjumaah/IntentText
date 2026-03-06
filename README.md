@@ -810,7 +810,7 @@ IntentText/
 │   │   ├── utils.ts        # Shared utilities
 │   │   ├── browser.ts      # Browser entry point
 │   │   └── index.ts        # Public API
-│   └── tests/              # 566 tests
+│   └── tests/              # 718 tests
 ├── docs/
 │   ├── SPEC.md             # Full language specification
 │   ├── TEMPLATES.md        # Template system and document generation
@@ -825,7 +825,7 @@ IntentText/
 
 ```bash
 npm install && npm run build
-npm test                     # 566 tests passing
+npm test                     # 718 tests passing
 npm run demo                 # Demo output
 npm run preview              # Live editor in browser
 ```
@@ -836,7 +836,7 @@ npm run preview              # Live editor in browser
 
 **Keep the format dumb. Make the runtime smart.** IntentText expresses intent — what a document contains and means. How that intent is executed, stored, or rendered is the runtime's job. The format stays simple so a developer can understand the entire specification in an hour.
 
-**Every keyword earns its place.** A keyword is only added if it expresses something that genuinely cannot be expressed as a property on an existing block, and cannot be handled by the runtime without appearing in the document itself. The current set is final at 46 keywords.
+**Every keyword earns its place.** A keyword is only added if it expresses something that genuinely cannot be expressed as a property on an existing block, and cannot be handled by the runtime without appearing in the document itself. The current set is 55 keywords with 47 aliases.
 
 **One line, one intent.** Every semantic unit fits on one line.
 The pipe syntax extends a line without breaking it. This makes
