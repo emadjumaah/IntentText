@@ -1,3 +1,7 @@
+> **Note:** The full IntentText specification is now at
+> [itdocs.vercel.app/docs/reference](https://itdocs.vercel.app/docs/reference).
+> This file is kept for reference and will no longer be updated after v2.11.
+
 # IntentText (`.it`) v2.10 — Official Specification
 
 > **Status:** Stable · **Version:** 2.11 · **Source of Truth**

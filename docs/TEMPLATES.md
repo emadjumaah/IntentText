@@ -1,3 +1,7 @@
+> **Note:** Template documentation has moved to
+> [itdocs.vercel.app/docs/reference/templates](https://itdocs.vercel.app/docs/reference/templates).
+> This file is kept for reference and will no longer be updated after v2.11.
+
 # IntentText Template System
 
 A complete guide to document generation with IntentText: templates, data, rendering, and the merge engine.

@@ -1,3 +1,7 @@
+> **Note:** Usage documentation has moved to
+> [itdocs.vercel.app/docs/guide](https://itdocs.vercel.app/docs/guide).
+> This file is kept for reference and will no longer be updated after v2.11.
+
 # IntentText — Usage Guide
 
 This guide covers how to use the `@intenttext/core` package — parsing, rendering, querying, validating, template merging, and converting to/from other formats.
