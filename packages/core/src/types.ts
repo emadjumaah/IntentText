@@ -1,7 +1,9 @@
+import { CANONICAL_KEYWORDS, ALIAS_MAP } from "./language-registry";
+
 export interface IntentBlock {
   id: string; // auto-generated UUID or sequential ID
   type: BlockType; // title | section | sub | task | done | ask | quote
-  // note | headers | row | image | link | code
+  // text | columns | row | image | link | code
   // divider | summary | list-item | step-item | body-text
   content: string; // primary text value (inline marks already parsed)
   originalContent?: string; // original text with formatting marks
@@ -14,90 +16,10 @@ export interface IntentBlock {
   };
 }
 
-/** All recognized keywords for the IntentText parser (v1 + v2 agentic). */
-export const KEYWORDS = [
-  // v1 core keywords
-  "title",
-  "summary",
-  "section",
-  "sub",
-  "subsection", // alias → sub
-  "divider",
-  "note",
-  "info",
-  "warning",
-  "tip",
-  "success",
-  "headers",
-  "row",
-  "task",
-  "done",
-  "ask",
-  "question", // alias → ask
-  "quote",
-  "image",
-  "link",
-  "ref",
-  "embed",
-  "code",
-  "end",
-  // v2 agentic workflow keywords
-  "step",
-  "decision",
-  "trigger",
-  "loop",
-  "checkpoint",
-  "audit",
-  "error",
-  "import",
-  "export",
-  "progress",
-  "context",
-  "agent",
-  "model",
-  // v2.1 agentic workflow keywords
-  "result",
-  "handoff",
-  "wait",
-  "parallel",
-  "retry",
-  // v2.2 agentic workflow keywords
-  "gate",
-  "call",
-  "emit",
-  "status", // alias → emit (deprecated)
-  // v2.7 agentic workflow keywords
-  "policy",
-  // v2.8 document trust keywords
-  "track",
-  "approve",
-  "sign",
-  "freeze",
-  "revision",
-  // v2.8.1 document metadata keyword
-  "meta",
-  // v2.5 document generation keywords
-  "font",
-  "page",
-  "break",
-  "byline",
-  "epigraph",
-  "caption",
-  "footnote",
-  "toc",
-  "dedication",
-  // v2.9 print layout keywords
-  "header",
-  "footer",
-  "watermark",
-  // v2.11 keyword expansion
-  "def",
-  "metric",
-  "amendment",
-  "figure",
-  "signline",
-  "contact",
-  "deadline",
+/** All recognized keywords (canonical + all aliases). Used by the parser. */
+export const KEYWORDS: string[] = [
+  ...CANONICAL_KEYWORDS,
+  ...Object.keys(ALIAS_MAP),
 ];
 
 /** All valid block types for IntentText (v1 + v2 agentic). */
@@ -108,12 +30,13 @@ export type BlockType =
   | "section"
   | "sub"
   | "divider"
-  | "note"
+  | "text"
   | "info"
   | "warning"
   | "tip"
   | "success"
-  | "headers"
+  | "danger"
+  | "columns"
   | "row"
   | "table"
   | "extension"
@@ -121,12 +44,15 @@ export type BlockType =
   | "done"
   | "ask"
   | "quote"
+  | "cite"
+  | "group"
   | "image"
   | "link"
   | "ref"
   | "embed"
   | "code"
-  | "end"
+  | "input"
+  | "output"
   | "list-item"
   | "step-item"
   | "body-text"
@@ -142,6 +68,9 @@ export type BlockType =
   | "export"
   | "progress"
   | "context"
+  | "tool"
+  | "prompt"
+  | "memory"
   // v2.1 agentic workflow block types
   | "result"
   | "handoff"
@@ -151,7 +80,7 @@ export type BlockType =
   // v2.2 agentic workflow block types
   | "gate"
   | "call"
-  | "emit"
+  | "signal"
   // v2.7 agentic workflow block types
   | "policy"
   // v2.8 document trust block types
@@ -185,7 +114,10 @@ export type BlockType =
   | "figure"
   | "signline"
   | "contact"
-  | "deadline";
+  | "deadline"
+  // v2.13 new keywords
+  | "assert"
+  | "secret";
 
 export type InlineNode =
   | { type: "text"; value: string }
@@ -199,6 +131,7 @@ export type InlineNode =
   | { type: "date"; value: string; iso: string }
   | { type: "mention"; value: string }
   | { type: "tag"; value: string }
+  | { type: "label"; value: string }
   | { type: "link"; value: string; href: string }
   | { type: "footnote-ref"; value: string };
 
@@ -258,7 +191,16 @@ export interface Diagnostic {
     | "DEADLINE_PAST"
     // v2.12 diagnostic codes
     | "LEGACY_HISTORY_BOUNDARY"
-    | "HISTORY_WITHOUT_FREEZE";
+    | "HISTORY_WITHOUT_FREEZE"
+    // v2.13 language registry diagnostic codes
+    | "DEPRECATED_KEYWORD"
+    | "CITE_MISSING_TITLE"
+    | "INPUT_MISSING_NAME"
+    | "OUTPUT_MISSING_NAME"
+    | "TOOL_MISSING_API"
+    | "PROMPT_MISSING_CONTENT"
+    | "ASSERT_MISSING_CONDITION"
+    | "SECRET_MISSING_NAME";
 }
 
 /** Execution status values for agentic workflow blocks. */

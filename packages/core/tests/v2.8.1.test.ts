@@ -306,7 +306,7 @@ describe("alias system", () => {
     const docAlias = parseIntentText("text: Hello world");
     const docCanonical = parseIntentText("note: Hello world");
     expect(docAlias.blocks[0].type).toBe(docCanonical.blocks[0].type);
-    expect(docAlias.blocks[0].type).toBe("note");
+    expect(docAlias.blocks[0].type).toBe("text");
     expect(docAlias.blocks[0].content).toBe(docCanonical.blocks[0].content);
   });
 
@@ -369,10 +369,9 @@ describe("alias system", () => {
 
   it("documentToSource of aliased block outputs canonical keyword", () => {
     const doc = parseIntentText("text: Hello world");
-    expect(doc.blocks[0].type).toBe("note");
+    expect(doc.blocks[0].type).toBe("text");
     const source = documentToSource(doc);
-    expect(source).toContain("note:");
-    expect(source).not.toContain("text:");
+    expect(source).toContain("text:");
   });
 
   it("round-trip: parse with alias → source → parse again produces same result", () => {
@@ -399,11 +398,11 @@ describe("alias system", () => {
 
   it("completed: and finished: resolve to done (task with status: done)", () => {
     const doc1 = parseIntentText("completed: Task A");
-    expect(doc1.blocks[0].type).toBe("task");
+    expect(doc1.blocks[0].type).toBe("done");
     expect(doc1.blocks[0].properties?.status).toBe("done");
 
     const doc2 = parseIntentText("finished: Task B");
-    expect(doc2.blocks[0].type).toBe("task");
+    expect(doc2.blocks[0].type).toBe("done");
     expect(doc2.blocks[0].properties?.status).toBe("done");
   });
 
@@ -484,7 +483,7 @@ describe("style properties", () => {
     // Parser stores them as regular properties
     expect(doc.blocks[0].properties?.color).toBe("red");
     expect(doc.blocks[0].properties?.bg).toBe("yellow");
-    // Type is still note
-    expect(doc.blocks[0].type).toBe("note");
+    // Type is still text (formerly note)
+    expect(doc.blocks[0].type).toBe("text");
   });
 });

@@ -304,7 +304,7 @@ describe("v2.10 index builder — buildIndexEntry", () => {
     const entry = buildIndexEntry(doc, source, "2025-01-01T00:00:00Z");
     const titles = entry.blocks.filter((b) => b.type === "title");
     const sections = entry.blocks.filter((b) => b.type === "section");
-    const notes = entry.blocks.filter((b) => b.type === "note");
+    const notes = entry.blocks.filter((b) => b.type === "text");
     expect(titles.length).toBe(1);
     expect(sections.length).toBe(1);
     expect(notes.length).toBe(1);
@@ -316,7 +316,7 @@ describe("v2.10 index builder — buildIndexEntry", () => {
       "section: Overview\nnote: Note under overview\nsection: Details\nnote: Note under details",
     );
     const entry = buildIndexEntry(doc, source, "2025-01-01T00:00:00Z");
-    const notes = entry.blocks.filter((b) => b.type === "note");
+    const notes = entry.blocks.filter((b) => b.type === "text");
     expect(notes[0].section).toBe("Overview");
     expect(notes[1].section).toBe("Details");
   });

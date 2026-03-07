@@ -17,7 +17,7 @@ note: This is a note`;
       expect(doc.blocks[1].content).toBe(
         "This is implicit body text. It needs no keyword prefix.",
       );
-      expect(doc.blocks[2].type).toBe("note");
+      expect(doc.blocks[2].type).toBe("text");
     });
   });
 
@@ -27,7 +27,7 @@ note: This is a note`;
 
       const doc = parseIntentText(input);
 
-      expect(doc.blocks[0].type).toBe("note");
+      expect(doc.blocks[0].type).toBe("text");
       expect(doc.blocks[0].inline).toHaveLength(3);
       expect(doc.blocks[0].inline![0].type).toBe("text");
       expect(doc.blocks[0].inline![1].type).toBe("link");

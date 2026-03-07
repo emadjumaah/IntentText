@@ -1,5 +1,19 @@
 export { ALIASES } from "./aliases";
 export {
+  LANGUAGE_REGISTRY,
+  CANONICAL_KEYWORDS,
+  ALIAS_MAP,
+  DEPRECATED_ALIASES,
+  COMPAT_ONLY_ALIASES,
+  BOUNDARY_KEYWORDS,
+  PUBLIC_KEYWORDS,
+} from "./language-registry";
+export type {
+  KeywordDefinition,
+  KeywordCategory,
+  KeywordStatus,
+} from "./language-registry";
+export {
   getBuiltinTheme,
   listBuiltinThemes,
   registerBuiltinTheme,
@@ -90,6 +104,7 @@ export type {
 // v2.10 natural language query
 export { askDocuments, serializeContext } from "./ask";
 export type { AskOptions } from "./ask";
+export { KEYWORDS } from "./types";
 export type {
   IntentBlock,
   IntentDocument,

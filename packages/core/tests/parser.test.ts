@@ -67,11 +67,11 @@ row: Sara | 25 | Abu Dhabi`;
     ]);
   });
 
-  it("should parse multi-line code blocks", () => {
-    const input = `code:
+  it("should parse multi-line code blocks with backtick fences", () => {
+    const input = `\`\`\`
 #!/bin/bash
 echo "Hello World"
-end:`;
+\`\`\``;
 
     const result = parseIntentText(input);
 
@@ -108,10 +108,10 @@ question: Who has the _Master Key_ for the server room?
 note: Surveillance footage is saved at \`\`\`/logs/cam1\`\`\`.
 
 section: Setup Script
-code:
+\`\`\`
 #!/bin/bash
 apt-get update && apt-get install -y nginx
-end:
+\`\`\`
 
 divider: End of Technical Sections
 
@@ -160,11 +160,11 @@ image: *Launch Banner* | at: assets/banner.png | caption: Project Dalil launch a
 
     const doneBlock =
       result.blocks.find(
-        (b) => b.type === "task" && b.properties?.status === "done",
+        (b) => b.type === "done" && b.properties?.status === "done",
       ) ||
       result.blocks
         .flatMap((b) => b.children || [])
-        .find((b) => b.type === "task" && b.properties?.status === "done");
+        .find((b) => b.type === "done" && b.properties?.status === "done");
     expect(doneBlock?.properties?.time).toBe("09:00 AM");
 
     const codeBlock =
@@ -180,7 +180,7 @@ image: *Launch Banner* | at: assets/banner.png | caption: Project Dalil launch a
     const result = parseIntentText(input);
 
     expect(result.blocks).toHaveLength(1);
-    expect(result.blocks[0].type).toBe("note");
+    expect(result.blocks[0].type).toBe("text");
     expect(result.blocks[0].content).toBe("Path is /tmp/file.");
     expect(result.blocks[0].inline?.some((n) => n.type === "code")).toBe(true);
   });
@@ -190,7 +190,7 @@ image: *Launch Banner* | at: assets/banner.png | caption: Project Dalil launch a
     const result = parseIntentText(input);
 
     expect(result.blocks).toHaveLength(1);
-    expect(result.blocks[0].type).toBe("note");
+    expect(result.blocks[0].type).toBe("text");
     expect(result.blocks[0].content).toBe("Label is mono text.");
     expect(result.blocks[0].inline?.some((n) => n.type === "code")).toBe(true);
   });
@@ -261,19 +261,18 @@ New paragraph starts`;
     expect(result.blocks[0].children?.[0].type).toBe("task");
   });
 
-  it("should emit a diagnostic for stray end: lines", () => {
+  it("should treat end: as an unknown keyword (end: was removed)", () => {
     const input = `title: Doc
 end:`;
     const result = parseIntentText(input);
 
-    expect(result.blocks).toHaveLength(1);
-    expect(result.diagnostics?.some((d) => d.code === "UNEXPECTED_END")).toBe(
-      true,
-    );
+    // end: is no longer recognized; it becomes body-text
+    expect(result.blocks.length).toBeGreaterThanOrEqual(1);
+    expect(result.blocks[0].type).toBe("title");
   });
 
-  it("should emit a diagnostic for unterminated code blocks and still return a code block", () => {
-    const input = `code:
+  it("should emit a diagnostic for unterminated fenced code blocks and still return a code block", () => {
+    const input = `\`\`\`
 line 1
 line 2`;
     const result = parseIntentText(input);
@@ -291,7 +290,7 @@ line 2`;
     const result = parseIntentText(input);
 
     expect(result.blocks).toHaveLength(1);
-    expect(result.blocks[0].type).toBe("note");
+    expect(result.blocks[0].type).toBe("text");
     expect(result.blocks[0].content).toBe("A | B");
     expect(result.blocks[0].properties).toEqual({ owner: "John" });
   });

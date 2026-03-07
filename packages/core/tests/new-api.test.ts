@@ -531,7 +531,7 @@ describe("diffDocuments", () => {
     const after = parseIntentText("title: Doc\nnote: New block");
     const diff = diffDocuments(before, after);
     expect(diff.added.length).toBe(1);
-    expect(diff.added[0].type).toBe("note");
+    expect(diff.added[0].type).toBe("text");
   });
 
   it("one block removed", () => {
@@ -539,7 +539,7 @@ describe("diffDocuments", () => {
     const after = parseIntentText("title: Doc");
     const diff = diffDocuments(before, after);
     expect(diff.removed.length).toBe(1);
-    expect(diff.removed[0].type).toBe("note");
+    expect(diff.removed[0].type).toBe("text");
   });
 
   it("content change: appears in modified with contentChanged: true", () => {

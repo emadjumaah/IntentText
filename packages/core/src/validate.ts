@@ -276,6 +276,87 @@ export function validateDocumentSemantic(
       }
     }
 
+    // cite: should have either content (title) or a url
+    if (block.type === "cite" && !block.content && !block.properties?.url) {
+      issues.push({
+        blockId: block.id,
+        blockType: "cite",
+        type: "warning",
+        code: "CITE_MISSING_TITLE",
+        message: "cite block has no title and no url",
+      });
+    }
+
+    // input: should have a name (content)
+    if (block.type === "input" && !block.content) {
+      issues.push({
+        blockId: block.id,
+        blockType: "input",
+        type: "warning",
+        code: "INPUT_MISSING_NAME",
+        message: "input block has no parameter name",
+      });
+    }
+
+    // output: should have a name (content)
+    if (block.type === "output" && !block.content) {
+      issues.push({
+        blockId: block.id,
+        blockType: "output",
+        type: "warning",
+        code: "OUTPUT_MISSING_NAME",
+        message: "output block has no parameter name",
+      });
+    }
+
+    // tool: should have api: or content
+    if (block.type === "tool" && !block.content && !block.properties?.api) {
+      issues.push({
+        blockId: block.id,
+        blockType: "tool",
+        type: "warning",
+        code: "TOOL_MISSING_API",
+        message: "tool block has no name and no api property",
+      });
+    }
+
+    // prompt: should have content
+    if (block.type === "prompt" && !block.content) {
+      issues.push({
+        blockId: block.id,
+        blockType: "prompt",
+        type: "warning",
+        code: "PROMPT_MISSING_CONTENT",
+        message: "prompt block has no prompt text",
+      });
+    }
+
+    // assert: should have content or expect:
+    if (
+      block.type === "assert" &&
+      !block.content &&
+      !block.properties?.expect
+    ) {
+      issues.push({
+        blockId: block.id,
+        blockType: "assert",
+        type: "warning",
+        code: "ASSERT_MISSING_CONDITION",
+        message: "assert block has no description and no expect property",
+      });
+    }
+
+    // secret: should have content (the secret name/identifier)
+    if (block.type === "secret" && !block.content) {
+      issues.push({
+        blockId: block.id,
+        blockType: "secret",
+        type: "error",
+        code: "SECRET_MISSING_NAME",
+        message: "secret block has no name",
+      });
+    }
+
     // Check for unresolved {{variables}} in content and property values
     checkUnresolvedVars(block, declaredVars, issues);
 

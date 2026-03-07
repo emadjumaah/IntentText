@@ -483,7 +483,7 @@ ask: Who has the key?`;
     expect(tasks[0].type).toBe("task");
     expect(tasks[0].content).toBe("Database migration");
     expect(tasks[0].properties?.owner).toBe("Ahmed");
-    expect(tasks[1].type).toBe("task");
+    expect(tasks[1].type).toBe("done");
     expect(tasks[1].properties?.status).toBe("done");
   });
 
@@ -786,34 +786,37 @@ step: Second`;
 
 describe("emit: blocks", () => {
   it("basic emit block (via status: keyword alias)", () => {
-    const { block } = findBlock("status: In Progress", "emit");
-    expect(block.type).toBe("emit");
+    const { block } = findBlock("status: In Progress", "signal");
+    expect(block.type).toBe("signal");
     expect(block.content).toBe("In Progress");
   });
 
   it("emit with phase property", () => {
-    const { block } = findBlock("emit: Active | phase: onboarding", "emit");
+    const { block } = findBlock("emit: Active | phase: onboarding", "signal");
     expect(block.content).toBe("Active");
     expect(block.properties?.phase).toBe("onboarding");
   });
 
   it("emit with level property", () => {
-    const { block } = findBlock("emit: Warning state | level: warning", "emit");
+    const { block } = findBlock(
+      "emit: Warning state | level: warning",
+      "signal",
+    );
     expect(block.properties?.level).toBe("warning");
   });
 
   it("renders emit block HTML", () => {
     const doc = parseIntentText("emit: deploy.running | phase: staging");
     const html = renderHTML(doc);
-    expect(html).toContain("intent-emit-block");
+    expect(html).toContain("intent-signal-block");
     expect(html).toContain("📡");
     expect(html).toContain("deploy.running");
     expect(html).toContain("staging");
   });
 
   it("status: keyword aliases to emit type", () => {
-    const { block } = findBlock("status: Deploying | phase: release", "emit");
-    expect(block.type).toBe("emit");
+    const { block } = findBlock("status: Deploying | phase: release", "signal");
+    expect(block.type).toBe("signal");
     expect(block.content).toBe("Deploying");
     expect(block.properties?.phase).toBe("release");
   });
@@ -1032,7 +1035,7 @@ describe("v2.1 pipe properties", () => {
   });
 
   it("level property stays as string", () => {
-    const { block } = findBlock("emit: Warning | level: critical", "emit");
+    const { block } = findBlock("emit: Warning | level: critical", "signal");
     expect(block.properties?.level).toBe("critical");
   });
 
@@ -1059,7 +1062,7 @@ handoff: Transfer | to: next-agent`;
     const section = doc.blocks.find((b) => b.type === "section");
     expect(section).toBeDefined();
     expect(section!.children).toHaveLength(3);
-    expect(section!.children![0].type).toBe("emit");
+    expect(section!.children![0].type).toBe("signal");
     expect(section!.children![1].type).toBe("result");
     expect(section!.children![2].type).toBe("handoff");
   });
@@ -1089,7 +1092,7 @@ emit: deploy.started | phase: init`;
     expect(section!.children).toHaveLength(3);
     expect(section!.children![0].type).toBe("gate");
     expect(section!.children![1].type).toBe("call");
-    expect(section!.children![2].type).toBe("emit");
+    expect(section!.children![2].type).toBe("signal");
   });
 });
 

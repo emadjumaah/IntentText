@@ -13,6 +13,7 @@ import {
   RevisionEntry,
 } from "./types";
 import { ALIASES } from "./aliases";
+import { DEPRECATED_ALIASES } from "./language-registry";
 
 // Fast sequential ID generator — deterministic and allocation-free vs uuid
 let _idCounter = 0;
@@ -32,14 +33,6 @@ const MAX_INLINE_LENGTH = 100_000;
 // Property keys that must never be set from user input (prototype pollution guard)
 const DANGEROUS_KEYS = new Set(["__proto__", "constructor", "prototype"]);
 
-// Keyword aliases: maps a written keyword to its canonical block type
-const KEYWORD_ALIASES: Record<string, string> = {
-  question: "ask",
-  subsection: "sub",
-  done: "task",
-  status: "emit", // v2.2: standalone status: renamed to emit:
-};
-
 // v2 agentic block types that are treated as content blocks within sections
 const AGENTIC_BLOCK_TYPES = new Set<string>([
   "step",
@@ -53,6 +46,9 @@ const AGENTIC_BLOCK_TYPES = new Set<string>([
   "export",
   "progress",
   "context",
+  "tool",
+  "prompt",
+  "memory",
   // v2.1
   "result",
   "handoff",
@@ -62,9 +58,12 @@ const AGENTIC_BLOCK_TYPES = new Set<string>([
   // v2.2
   "gate",
   "call",
-  "emit",
+  "signal",
   // v2.7
   "policy",
+  // v2.13
+  "assert",
+  "secret",
 ]);
 
 // v2.1+ inter-agent block types (subset of AGENTIC_BLOCK_TYPES)
@@ -77,7 +76,7 @@ const V21_BLOCK_TYPES = new Set<string>([
 ]);
 
 // v2.2 block types
-const V22_BLOCK_TYPES = new Set<string>(["gate", "call", "emit"]);
+const V22_BLOCK_TYPES = new Set<string>(["gate", "call", "signal"]);
 
 // v2.5 document generation layout block types
 const DOCGEN_LAYOUT_TYPES = new Set<string>([
@@ -516,6 +515,24 @@ function parseInlineNodes(text: string): {
       continue;
     }
 
+    // Inline label {Name} — renders as a badge/pill
+    // Skip {{var}} template syntax: don't match if preceded or followed by '{'
+    if (
+      text[i] === "{" &&
+      text[i + 1] !== "{" &&
+      (i === 0 || text[i - 1] !== "{")
+    ) {
+      const end = text.indexOf("}", i + 1);
+      if (end > i + 1 && text[end + 1] !== "}") {
+        const labelText = text.slice(i + 1, end).trim();
+        if (labelText && !labelText.includes("{")) {
+          addNode({ type: "label", value: labelText });
+          i = end + 1;
+          continue;
+        }
+      }
+    }
+
     // Regular character
     currentText += text[i];
     i++;
@@ -662,7 +679,7 @@ function parseLine(
     let content: string;
     const properties: Record<string, string | number> = Object.create(null);
 
-    if (keyword === "headers" || keyword === "row") {
+    if (keyword === "headers" || keyword === "columns" || keyword === "row") {
       content = rest;
     } else {
       const parts = splitPipeMetadata(rest);
@@ -767,19 +784,28 @@ function parseLine(
       };
     }
 
-    // Apply keyword aliases: first external ALIASES, then legacy KEYWORD_ALIASES
-    const aliasResolved = ALIASES[keyword] ?? keyword;
-    const resolvedType = (KEYWORD_ALIASES[aliasResolved] ??
-      aliasResolved) as BlockType;
+    // Apply keyword aliases from the language registry
+    const resolvedType = (ALIASES[keyword] ?? keyword) as BlockType;
+
+    // Emit deprecation warning for deprecated aliases
+    if (DEPRECATED_ALIASES.has(keyword)) {
+      ctx.diagnostics.push({
+        severity: "warning",
+        code: "DEPRECATED_KEYWORD",
+        message: `'${keyword}:' is deprecated. Use '${resolvedType}:' instead.`,
+        line: ctx.lineNumber,
+        column: 1,
+      });
+    }
 
     // done: always carries status: "done" on the normalized task block
     // Also applies to aliases that resolve to "done" (e.g. completed:, finished:)
-    if (keyword === "done" || aliasResolved === "done") {
+    if (keyword === "done" || resolvedType === "done") {
       properties.status = "done";
     }
 
     // v2: context blocks parse key=value pairs into properties
-    if (aliasResolved === "context") {
+    if (resolvedType === "context") {
       const kvPairs = parseContextKeyValuePairs(rest);
       for (const [k, v] of Object.entries(kvPairs)) {
         properties[k] = v;
@@ -787,12 +813,12 @@ function parseLine(
     }
 
     // v2: step blocks auto-default status to "pending" if not set
-    if (aliasResolved === "step" && !properties.status) {
+    if (resolvedType === "step" && !properties.status) {
       properties.status = "pending";
     }
 
     // v2.1: retry blocks coerce numeric properties
-    if (aliasResolved === "retry") {
+    if (resolvedType === "retry") {
       if (properties.max) properties.max = Number(properties.max);
       if (properties.delay) properties.delay = Number(properties.delay);
       if (properties.retries) properties.retries = Number(properties.retries);
@@ -800,34 +826,34 @@ function parseLine(
 
     // v2.1: wait blocks coerce timeout to string (preserve unit suffix)
     // and default status to "waiting"
-    if (aliasResolved === "wait" && !properties.status) {
+    if (resolvedType === "wait" && !properties.status) {
       properties.status = "waiting";
     }
 
     // v2.1: result blocks default status to "success" if not set
     // result: is terminal-only — ends the workflow
-    if (aliasResolved === "result" && !properties.status) {
+    if (resolvedType === "result" && !properties.status) {
       properties.status = "success";
     }
 
     // v2.2: gate blocks default status to "blocked"
-    if (aliasResolved === "gate" && !properties.status) {
+    if (resolvedType === "gate" && !properties.status) {
       properties.status = "blocked";
     }
 
     // v2.2: parallel blocks default join to "all"
-    if (aliasResolved === "parallel" && !properties.join) {
+    if (resolvedType === "parallel" && !properties.join) {
       properties.join = "all";
     }
 
     // v2.2: call blocks default status to "pending"
-    if (aliasResolved === "call" && !properties.status) {
+    if (resolvedType === "call" && !properties.status) {
       properties.status = "pending";
     }
 
-    // v2.2: emit blocks (formerly standalone status:) keep content as event name
-    if (aliasResolved === "status" || aliasResolved === "emit") {
-      // Ensure emit blocks have a level default
+    // v2.2: signal blocks (formerly emit/status) keep content as event name
+    if (resolvedType === "signal") {
+      // Ensure signal blocks have a level default
       if (!properties.level) {
         properties.level = "info";
       }
@@ -848,12 +874,12 @@ function parseLine(
     }
 
     // v2.5: font blocks coerce numeric leading
-    if (aliasResolved === "font") {
+    if (resolvedType === "font") {
       if (properties.leading) properties.leading = Number(properties.leading);
     }
 
     // v2.5: page blocks coerce numeric columns, handle boolean numbering
-    if (aliasResolved === "page") {
+    if (resolvedType === "page") {
       if (properties.columns) properties.columns = Number(properties.columns);
       if (properties.numbering !== undefined) {
         properties.numbering = properties.numbering === "true" ? 1 : 0;
@@ -861,7 +887,7 @@ function parseLine(
     }
 
     // v2.5: toc blocks default depth to 2
-    if (aliasResolved === "toc") {
+    if (resolvedType === "toc") {
       if (properties.depth) {
         properties.depth = Number(properties.depth);
       } else {
@@ -873,7 +899,7 @@ function parseLine(
     }
 
     // v2.5: break blocks have no content
-    if (aliasResolved === "break") {
+    if (resolvedType === "break") {
       return {
         id: nextId(),
         type: "break" as BlockType,
@@ -1182,15 +1208,13 @@ export function parseIntentText(
     const line = parseLines[i];
     const trimmed = line.trim();
 
-    // Handle multi-line code blocks (both keyword and fence modes)
+    // Handle multi-line code blocks (fence mode only)
     // NOTE: This must come BEFORE the comment check so that // lines inside code blocks are preserved
     if (codeCaptureMode) {
-      const isEndKeyword =
-        codeCaptureType === "keyword" && trimmed.toLowerCase() === "end:";
       const isEndFence =
         codeCaptureType === "fence" && trimmed.startsWith("```");
 
-      if (isEndKeyword || isEndFence) {
+      if (isEndFence) {
         const codeBlock: IntentBlock = {
           id: nextId(),
           type: "code",
@@ -1252,38 +1276,21 @@ export function parseIntentText(
       continue;
     }
 
-    // Stray end: outside code capture mode
-    if (trimmed.toLowerCase() === "end:") {
-      diagnostics.push({
-        severity: "warning",
-        code: "UNEXPECTED_END",
-        message: "Unexpected 'end:' outside of a code block.",
-        line: i + 1,
-        column: 1,
-      });
-      previousLineWasBlank = false;
-      continue;
-    }
-
     // Check for code block start via keyword
     const codeMatch = trimmed.match(/^code:\s*(.*)$/);
     if (codeMatch) {
       const inlineCode = codeMatch[1];
-      if (inlineCode === "") {
-        codeCaptureMode = true;
-        codeCaptureType = "keyword";
-        codeStartLine = i + 1;
+      // code: with content is a single-line code block
+      // code: without content is an empty code block (use ``` fences for multi-line)
+      const codeBlock: IntentBlock = {
+        id: nextId(),
+        type: "code",
+        content: inlineCode,
+      };
+      if (currentSection && currentSection.children) {
+        currentSection.children.push(codeBlock);
       } else {
-        const codeBlock: IntentBlock = {
-          id: nextId(),
-          type: "code",
-          content: inlineCode,
-        };
-        if (currentSection && currentSection.children) {
-          currentSection.children.push(codeBlock);
-        } else {
-          blocks.push(codeBlock);
-        }
+        blocks.push(codeBlock);
       }
       previousLineWasBlank = false;
       continue;
@@ -1332,8 +1339,8 @@ export function parseIntentText(
       }
     }
 
-    // Table grouping: headers starts a table, rows are appended.
-    if (block.type === "headers") {
+    // Table grouping: columns starts a table, rows are appended.
+    if (block.type === "columns") {
       flushPendingTable();
       pendingTable = {
         headers: splitTableRow(block.originalContent || block.content),
@@ -1525,7 +1532,8 @@ export function parseIntentText(
     diagnostics.push({
       severity: "error",
       code: "UNTERMINATED_CODE_BLOCK",
-      message: "Unterminated code block. Expected 'end:' before end of file.",
+      message:
+        "Unterminated code block. Expected closing ``` before end of file.",
       line: codeStartLine || lines.length,
       column: 1,
     });
@@ -1713,11 +1721,7 @@ export function parseIntentTextSafe(
       const kwMatch = line.match(/^(\s*)([a-zA-Z_-]+)\s*:/);
       if (kwMatch) {
         const kw = kwMatch[2].toLowerCase();
-        if (
-          kw !== "end" &&
-          !knownKeywords.has(kw) &&
-          !line.trim().startsWith("//")
-        ) {
+        if (!knownKeywords.has(kw) && !line.trim().startsWith("//")) {
           const entry = {
             line: i + 1,
             message: `Unknown keyword: "${kw}"`,
@@ -1734,10 +1738,10 @@ export function parseIntentTextSafe(
           if (opts.unknownKeyword === "skip") {
             continue; // skip this line entirely
           }
-          // 'note' mode: rewrite as note: so the parser handles it
+          // 'note' mode: rewrite as text: so the parser handles it (note: also works via alias)
           if (opts.unknownKeyword === "note") {
             const content = line.slice(line.indexOf(":") + 1).trim();
-            line = `note: ${content}`;
+            line = `text: ${content}`;
           }
         }
       }

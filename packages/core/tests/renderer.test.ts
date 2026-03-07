@@ -34,7 +34,7 @@ describe("HTML Renderer", () => {
     const parsed = parseIntentText(input);
     const html = renderHTML(parsed);
 
-    expect(html).toContain('class="intent-note intent-align-center"');
+    expect(html).toContain('class="intent-text intent-align-center"');
   });
 
   it("should render inline quote, date shorthand, and shorthand link", () => {

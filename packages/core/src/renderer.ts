@@ -159,6 +159,8 @@ function applyInlineFormatting(
             return `<a href="${escapeHtml(sanitizeUrl(node.href))}" class="intent-inline-link">${escapeHtml(node.value)}</a>`;
           case "footnote-ref":
             return `<sup class="it-fn-ref"><a href="#fn-${escapeHtml(node.value)}">${escapeHtml(node.value)}</a></sup>`;
+          case "label":
+            return `<span class="it-label">${escapeHtml(node.value)}</span>`;
           default:
             return escapeHtml((node as { value: string }).value);
         }
@@ -247,8 +249,8 @@ function renderBlock(block: IntentBlock): string {
         ${label}
       </div>`;
 
-    case "note":
-      return `<p class="intent-note${alignClass}"${styleAttr}>${content}</p>`;
+    case "text":
+      return `<p class="intent-text${alignClass}"${styleAttr}>${content}</p>`;
     case "body-text":
       return `<p class="intent-prose${alignClass}"${styleAttr}>${content}</p>`;
 
@@ -263,6 +265,9 @@ function renderBlock(block: IntentBlock): string {
 
     case "success":
       return `<div class="intent-callout intent-success"${styleAttr}><span class="intent-callout-label">Done</span><div class="intent-callout-content">${content}</div></div>`;
+
+    case "danger":
+      return `<div class="it-callout it-danger" role="alert"><span class="it-callout-icon" aria-hidden="true">⛔</span><div class="it-callout-body">${content}</div></div>`;
 
     case "task":
     case "done": {
@@ -287,6 +292,29 @@ function renderBlock(block: IntentBlock): string {
         ? `<cite class="intent-quote-cite">— ${escapeHtml(String(props.by))}</cite>`
         : "";
       return `<blockquote class="intent-quote"><p>${content}</p>${attribution}</blockquote>`;
+    }
+
+    case "cite": {
+      const citeAuthor = props.author
+        ? `<span class="it-cite-author">${escapeHtml(String(props.author))}</span>`
+        : "";
+      const citeDate = props.date
+        ? `<span class="it-cite-date">${escapeHtml(String(props.date))}</span>`
+        : "";
+      const citeUrl = props.url
+        ? ` href="${escapeHtml(sanitizeUrl(String(props.url)))}"`
+        : "";
+      const citeTitle = citeUrl
+        ? `<a class="it-cite-title"${citeUrl} target="_blank" rel="noopener noreferrer">${content}</a>`
+        : `<span class="it-cite-title">${content}</span>`;
+      return `<div class="it-cite">${citeTitle}${citeAuthor ? ` — ${citeAuthor}` : ""}${citeDate ? `, ${citeDate}` : ""}</div>`;
+    }
+
+    case "group": {
+      const childHtml = (block.children ?? [])
+        .map((c) => renderBlock(c))
+        .join("\n");
+      return `<div class="it-group" data-group="${escapeHtml(block.content)}">${childHtml}</div>`;
     }
 
     case "image":
@@ -518,17 +546,17 @@ function renderBlock(block: IntentBlock): string {
 
     // ─── v2.1 Agentic Workflow Blocks ──────────────────────────────────
 
-    case "emit": {
+    case "signal": {
       const phase = props.phase
-        ? `<span class="intent-emit-phase">${escapeHtml(String(props.phase))}</span>`
+        ? `<span class="intent-signal-phase">${escapeHtml(String(props.phase))}</span>`
         : "";
       const levelBadge = props.level
         ? `<span class="intent-badge intent-badge-level">${escapeHtml(String(props.level))}</span>`
         : "";
-      return `<div class="intent-emit-block">
-        <span class="intent-emit-icon">📡</span>
-        <span class="intent-emit-content">${content}</span>
-        <span class="intent-emit-meta">${phase}${levelBadge}</span>
+      return `<div class="intent-signal-block">
+        <span class="intent-signal-icon">📡</span>
+        <span class="intent-signal-content">${content}</span>
+        <span class="intent-signal-meta">${phase}${levelBadge}</span>
       </div>`;
     }
 
@@ -694,6 +722,63 @@ function renderBlock(block: IntentBlock): string {
         <div class="it-policy-rules">${conditions.join(" ")}</div>
       </div>`;
     }
+
+    case "input": {
+      const inputType = props.type ? escapeHtml(String(props.type)) : "string";
+      const inputRequired =
+        props.required === "true" || props.required === true;
+      const inputDef =
+        props.default != null
+          ? `<span class="it-input-default">= ${escapeHtml(String(props.default))}</span>`
+          : "";
+      return `<div class="it-input"><span class="it-input-name">${content}</span><span class="it-input-type">${inputType}</span>${inputRequired ? '<span class="it-input-required">required</span>' : ""}${inputDef}</div>`;
+    }
+
+    case "output": {
+      const outputType = props.type ? escapeHtml(String(props.type)) : "any";
+      const outputFormat = props.format
+        ? `<span class="it-output-format">${escapeHtml(String(props.format))}</span>`
+        : "";
+      return `<div class="it-output"><span class="it-output-name">${content}</span><span class="it-output-type">${outputType}</span>${outputFormat}</div>`;
+    }
+
+    case "tool": {
+      const toolApi = props.api
+        ? `<code class="it-tool-api">${escapeHtml(String(props.api))}</code>`
+        : "";
+      const toolMethod = props.method
+        ? `<span class="it-tool-method">${escapeHtml(String(props.method))}</span>`
+        : "";
+      return `<div class="it-tool"><span class="it-tool-name">${content}</span>${toolApi}${toolMethod}</div>`;
+    }
+
+    case "prompt": {
+      const promptModel = props.model
+        ? `<span class="it-prompt-model">${escapeHtml(String(props.model))}</span>`
+        : "";
+      return `<div class="it-prompt">${promptModel}<div class="it-prompt-content">${content}</div></div>`;
+    }
+
+    case "memory": {
+      const memoryScope = props.scope
+        ? escapeHtml(String(props.scope))
+        : "session";
+      return `<div class="it-memory"><span class="it-memory-scope">${memoryScope}</span><span class="it-memory-content">${content}</span></div>`;
+    }
+
+    case "assert": {
+      const expectExpr = props.expect
+        ? `<code class="it-assert-expect">${escapeHtml(String(props.expect))}</code>`
+        : "";
+      const severity = props.severity
+        ? escapeHtml(String(props.severity))
+        : "error";
+      return `<div class="it-assert it-assert-${severity}"><span class="it-assert-label">ASSERT</span><span class="it-assert-content">${content}</span>${expectExpr}</div>`;
+    }
+
+    case "secret":
+      // Secrets are NEVER rendered — always redacted
+      return `<div class="it-secret"><span class="it-secret-label">SECRET</span><span class="it-secret-value">${"\u2022".repeat(8)}</span></div>`;
 
     // ─── v2.5 Document Generation Blocks ─────────────────────────────
 
