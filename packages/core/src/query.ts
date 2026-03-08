@@ -35,8 +35,12 @@ export interface QueryResult {
 }
 
 /**
- * Parse a query string into QueryOptions
+ * Parse a query string into QueryOptions.
  * Syntax: "type=task owner=Ahmed due<2026-03-01 sort:due:asc limit:10"
+ *
+ * Limitation: conditions are split on whitespace, so values containing spaces
+ * cannot be expressed in the string syntax. Use the programmatic QueryOptions
+ * API for queries that require multi-word values.
  */
 export function parseQuery(queryString: string): QueryOptions {
   const options: QueryOptions = { where: [], sort: [] };

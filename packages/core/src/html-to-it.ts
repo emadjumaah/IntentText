@@ -365,7 +365,7 @@ function processImage(node: SimpleNode, lines: string[]): void {
 
   if (!src) return;
 
-  let line = `image: ${alt || "image"} | at: ${src}`;
+  let line = `image: ${alt || "image"} | src: ${src}`;
   if (caption) {
     line += ` | caption: ${caption}`;
   }

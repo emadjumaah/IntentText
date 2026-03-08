@@ -1,6 +1,6 @@
 {
   "name": "@intenttext/core",
-  "version": "2.13.2",
+  "version": "2.13.3",
   "description": "IntentText Parser, HTML Renderer, and Converters",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "build": "tsc",
-    "test": "vitest",
+    "test": "vitest run",
     "dev": "tsc --watch"
   },
   "keywords": [

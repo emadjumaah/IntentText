@@ -182,7 +182,7 @@ apt-get update && apt-get install -y nginx
 divider: End of Technical Sections
 
 link: *Full Documentation* | to: https://dalil.ai/docs | title: Dalil Docs
-image: *Launch Banner* | at: assets/banner.png | caption: Project Dalil launch artwork`;
+image: *Launch Banner* | src: assets/banner.png | caption: Project Dalil launch artwork`;
 
     const result = parseIntentText(input);
 
@@ -442,5 +442,40 @@ line 2`;
     expect(
       result.diagnostics?.some((d) => d.code === "EXTENSION_VALIDATION"),
     ).toBe(true);
+  });
+});
+
+describe("image: src: / at: property handling", () => {
+  it("parses image: with canonical src: property", () => {
+    const result = parseIntentText(
+      "image: Company logo | src: ./images/logo.png | width: 200px",
+    );
+    const img = result.blocks[0];
+    expect(img.type).toBe("image");
+    expect(img.properties?.src).toBe("./images/logo.png");
+    expect(img.properties?.at).toBeUndefined();
+    expect(
+      result.diagnostics?.some((d) => d.code === "DEPRECATED_PROPERTY"),
+    ).toBeFalsy();
+  });
+
+  it("normalizes deprecated at: to src: and emits DEPRECATED_PROPERTY warning", () => {
+    const result = parseIntentText(
+      "image: Old logo | at: ./images/old-logo.png",
+    );
+    const img = result.blocks[0];
+    expect(img.type).toBe("image");
+    expect(img.properties?.src).toBe("./images/old-logo.png");
+    expect(img.properties?.at).toBeUndefined();
+    expect(
+      result.diagnostics?.some((d) => d.code === "DEPRECATED_PROPERTY"),
+    ).toBe(true);
+  });
+
+  it("does not emit DEPRECATED_PROPERTY when both src: and at: are absent", () => {
+    const result = parseIntentText("image: Placeholder");
+    expect(
+      result.diagnostics?.some((d) => d.code === "DEPRECATED_PROPERTY"),
+    ).toBeFalsy();
   });
 });

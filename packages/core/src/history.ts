@@ -155,22 +155,35 @@ export function updateHistory(
   const currentBlockInfos = buildBlockInfos(currDoc.blocks);
   const matchMap = matchBlocksToRegistry(currentBlockInfos, registry);
 
-  // Assign IDs to current blocks
-  const currSnapshots: BlockSnapshot[] = currDoc.blocks
-    .filter((b) => b.type !== "title" && b.type !== "summary")
-    .map((b, i) => {
-      const existingId = matchMap.get(i);
-      const id = existingId || generateBlockId();
-      return {
-        id,
-        type: b.type,
-        content: b.content,
-        section: getSectionForBlock(currDoc.blocks, currDoc.blocks.indexOf(b)),
-        properties: Object.fromEntries(
-          Object.entries(b.properties || {}).map(([k, v]) => [k, String(v)]),
-        ),
-      };
-    });
+  // Assign IDs to current blocks — recursive walk mirrors buildSnapshots/buildBlockInfos
+  const currSnapshots: BlockSnapshot[] = [];
+  let currSection = "root";
+  function walkCurr(blockList: IntentBlock[]) {
+    for (const b of blockList) {
+      if (b.type === "section") currSection = b.content;
+      if (b.type !== "title" && b.type !== "summary") {
+        const flatIdx = currentBlockInfos.findIndex(
+          (info) =>
+            info.type === b.type &&
+            info.content === b.content &&
+            info.section === currSection,
+        );
+        const existingId = flatIdx !== -1 ? matchMap.get(flatIdx) : undefined;
+        const id = existingId || generateBlockId();
+        currSnapshots.push({
+          id,
+          type: b.type,
+          content: b.content,
+          section: currSection,
+          properties: Object.fromEntries(
+            Object.entries(b.properties || {}).map(([k, v]) => [k, String(v)]),
+          ),
+        });
+      }
+      if (b.children) walkCurr(b.children);
+    }
+  }
+  walkCurr(currDoc.blocks);
 
   // Compute diff
   const diff = computeTrustDiff(prevSnapshots, currSnapshots);

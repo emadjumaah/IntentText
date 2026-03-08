@@ -10,7 +10,7 @@ row: /auth/token | POST | Get access token
 row: /auth/refresh | POST | Refresh expired token
 row: /auth/revoke | POST | Revoke token
 
-sub2: Token Requirements
+sub: Token Requirements
 task: Implement JWT validation | owner: backend | priority: high | due: 2026-04-01
 done: OAuth flow diagram | time: 2026-02-20
 question: Should we support API keys for service accounts?
@@ -25,7 +25,7 @@ row: /users | POST | Yes (Admin) | 10/min
 row: /users/:id | PUT | Yes (Owner) | 50/min
 row: /users/:id | DELETE | Yes (Admin) | 10/min
 
-sub2: Query Parameters
+sub: Query Parameters
 note: Use query language to filter: type=user status=active
 task: Add pagination support | owner: api-team | priority: medium
 
@@ -50,7 +50,7 @@ sub: Status Codes
 - 429: Rate Limited
 - 500: Server Error
 
-sub2: Error Format
+sub: Error Format
 note: All errors follow RFC 7807 (Problem Details)
 code:
 {
@@ -81,17 +81,13 @@ sub: Events
 
 done: Webhook payload schema | time: 2026-02-25
 
-sub2: Verification
+sub: Verification
 code:
 const signature = crypto
   .createHmac('sha256', webhookSecret)
   .update(payload)
   .digest('hex');
 end:
-
-ai: Generate SDK code examples for the endpoints above | model: gpt-4
-
-synthesize: Quick Start Guide | scope: section | output: key-points
 
 ref: Authentication Guide | rel: related | file: ./auth-guide.it
 ref: Error Handling Best Practices | rel: related | file: ./errors.it

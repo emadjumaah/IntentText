@@ -15,7 +15,12 @@ export function computeDocumentHash(source: string): string {
   // hash fields reference the content without them
   const bodyLines = content
     .split("\n")
-    .filter((line) => !line.startsWith("sign:") && !line.startsWith("freeze:"));
+    .filter(
+      (line) =>
+        !line.startsWith("sign:") &&
+        !line.startsWith("freeze:") &&
+        !line.startsWith("amendment:"),
+    );
   const body = bodyLines.join("\n").trim();
   return "sha256:" + crypto.createHash("sha256").update(body).digest("hex");
 }
@@ -272,7 +277,10 @@ export interface VerifyResult {
     signer: string;
     role?: string;
     at: string;
+    /** true if this signer's stored hash matches the freeze hash (approved the sealed version) */
     valid: boolean;
+    /** true if this signer's stored hash matches the current document hash */
+    signedCurrentVersion: boolean;
   }>;
   hash?: string;
   expectedHash?: string;
@@ -303,7 +311,8 @@ export function verifyDocument(source: string): VerifyResult {
       signer: sig.signer,
       role: sig.role,
       at: sig.at,
-      valid: sig.hash === currentHash,
+      valid: sig.hash === expectedHash,
+      signedCurrentVersion: sig.hash === currentHash,
     })) || [];
 
   return {

@@ -42,7 +42,7 @@ console.log("hi")
     const itText = convertMarkdownToIntentText(md);
 
     expect(itText).toContain("link: Docs | to: https://example.com");
-    expect(itText).toContain("image: Alt | at: logo.png");
+    expect(itText).toContain("image: Alt | src: logo.png");
   });
 
   it("should handle multiple bold segments correctly", () => {
@@ -76,5 +76,13 @@ console.log("hi")
     const itText = convertMarkdownToIntentText(md);
     expect(itText).toContain("headers: Name | Age");
     expect(itText).toContain("row: Ahmed | 30");
+  });
+
+  it("converts Markdown image to image: with src: (not deprecated at:)", () => {
+    const result = convertMarkdownToIntentText(
+      "![Photo](https://example.com/photo.jpg)",
+    );
+    expect(result).toContain("src: https://example.com/photo.jpg");
+    expect(result).not.toContain("at: https://example.com/photo.jpg");
   });
 });

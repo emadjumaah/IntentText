@@ -199,7 +199,8 @@ export interface Diagnostic {
     | "TOOL_MISSING_API"
     | "PROMPT_MISSING_CONTENT"
     | "ASSERT_MISSING_CONDITION"
-    | "SECRET_MISSING_NAME";
+    | "SECRET_MISSING_NAME"
+    | "DEPRECATED_PROPERTY";
 }
 
 /** Execution status values for agentic workflow blocks. */

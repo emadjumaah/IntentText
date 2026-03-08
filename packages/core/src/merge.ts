@@ -304,7 +304,8 @@ function expandEachRows(
 
 /**
  * Merge data into a parsed IntentDocument template.
- * Resolves all {{variable}} references in content, properties, and metadata.
+ * Resolves {{variable}} references in block content, block properties, and
+ * metadata.title and metadata.summary. Other metadata fields are not resolved.
  * Pure function — returns a new document, never mutates the input.
  */
 export function mergeData(

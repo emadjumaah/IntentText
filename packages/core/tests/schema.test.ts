@@ -147,7 +147,7 @@ describe("Schema Validation (v1.2)", () => {
             id: "3",
             type: "image",
             content: "Photo",
-            properties: { at: "./assets/photo.png" },
+            properties: { src: "./assets/photo.png" },
           },
         ],
       };

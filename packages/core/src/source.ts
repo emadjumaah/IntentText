@@ -17,7 +17,7 @@ const PROPERTY_ORDER: Record<string, string[]> = {
   gate: ["approver", "timeout"],
   call: ["to", "input", "output"],
   handoff: ["from", "to"],
-  emit: ["event", "data"],
+  signal: ["event", "data"],
   policy: [
     "if",
     "always",
@@ -30,7 +30,7 @@ const PROPERTY_ORDER: Record<string, string[]> = {
     "after",
     "id",
   ],
-  image: ["at", "caption", "width", "height"],
+  image: ["src", "at", "caption", "width", "height"],
   link: ["to"],
   ref: ["to"],
   embed: ["to"],
@@ -139,7 +139,10 @@ function serializeBlock(block: IntentBlock): string {
   }
 
   // Special case: break
-  if (type === "break") return "break:";
+  if (type === "break") {
+    const props = serializeProperties(block);
+    return props ? `break: | ${props}` : "break:";
+  }
 
   // Special case: toc — keyword + properties only
   if (type === "toc") {
@@ -149,7 +152,8 @@ function serializeBlock(block: IntentBlock): string {
 
   // Special case: code block
   if (type === "code") {
-    return "```\n" + block.content + "\n```";
+    const lang = block.properties?.lang ? String(block.properties.lang) : "";
+    return "```" + lang + "\n" + block.content + "\n```";
   }
 
   // Special case: table — reconstruct pipe table

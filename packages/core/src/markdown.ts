@@ -91,7 +91,7 @@ export function convertMarkdownToIntentText(markdown: string): string {
     if (img) {
       const alt = convertInline(img[1].trim());
       const url = img[2].trim();
-      out.push(`image: ${alt} | at: ${url}`);
+      out.push(`image: ${alt} | src: ${url}`);
       continue;
     }
 

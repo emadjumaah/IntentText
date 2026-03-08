@@ -32,14 +32,13 @@ const {
 const readline = require("readline");
 const fs = require("fs");
 const path = require("path");
-const { glob } = require("fs");
 
 function main() {
   const args = process.argv.slice(2);
 
   if (args.length === 0) {
     console.log(`
-🚀 IntentText CLI v2.12.1
+🚀 IntentText CLI v2.13.2
 
 Usage:
   node cli.js <file.it>                     Parse and show JSON

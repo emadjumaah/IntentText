@@ -288,7 +288,7 @@ describe("v2.10 index builder — buildIndexEntry", () => {
   it("produces a hash for invalidation", () => {
     const { doc, source } = makeParsed("title: Test");
     const entry = buildIndexEntry(doc, source, "2025-01-01T00:00:00Z");
-    expect(entry.hash).toMatch(/^sha256:/);
+    expect(entry.hash).toMatch(/^hash:/);
   });
 
   it("stores modified_at timestamp", () => {
@@ -386,7 +386,7 @@ describe("v2.10 index builder — buildShallowIndex", () => {
   it("each file entry has hash and modified_at", () => {
     const files = { "test.it": makeParsed("title: Hello") };
     const index = buildShallowIndex(".", files, "2.10.0");
-    expect(index.files["test.it"].hash).toMatch(/^sha256:/);
+    expect(index.files["test.it"].hash).toMatch(/^hash:/);
     expect(index.files["test.it"].modified_at).toBe("2025-01-01T00:00:00Z");
   });
 });

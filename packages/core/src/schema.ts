@@ -104,7 +104,8 @@ export const PREDEFINED_SCHEMAS: Record<string, DocumentSchema> = {
       image: {
         type: "image",
         properties: {
-          at: { type: "url", required: true },
+          src: { type: "url", required: true },
+          at: { type: "url" }, // deprecated — parser normalizes at: → src:
           caption: { type: "string" },
         },
         allowUnknownProperties: true,

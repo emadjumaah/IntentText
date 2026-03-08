@@ -320,7 +320,8 @@ function renderBlock(block: IntentBlock): string {
 
     case "image":
       const imgSrc = escapeHtml(
-        sanitizeUrl(String(props.at || "")) || String(props.at || content),
+        sanitizeUrl(String(props.src ?? props.at ?? "")) ||
+          String(props.src ?? props.at ?? content),
       );
       const imgAlt = content;
       return `<figure class="intent-image">

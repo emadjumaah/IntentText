@@ -123,7 +123,7 @@ describe("convertHtmlToIntentText", () => {
     it("should convert img to image:", () => {
       expect(
         convertHtmlToIntentText('<img src="photo.jpg" alt="My Photo">'),
-      ).toBe("image: My Photo | at: photo.jpg");
+      ).toBe("image: My Photo | src: photo.jpg");
     });
 
     it("should include caption from title attribute", () => {
@@ -131,13 +131,13 @@ describe("convertHtmlToIntentText", () => {
         convertHtmlToIntentText(
           '<img src="photo.jpg" alt="Photo" title="A nice photo">',
         ),
-      ).toBe("image: Photo | at: photo.jpg | caption: A nice photo");
+      ).toBe("image: Photo | src: photo.jpg | caption: A nice photo");
     });
 
     it("should handle img inside p as block-level image", () => {
       expect(
         convertHtmlToIntentText('<p><img src="pic.png" alt="Pic"></p>'),
-      ).toBe("image: Pic | at: pic.png");
+      ).toBe("image: Pic | src: pic.png");
     });
   });
 
@@ -240,5 +240,13 @@ describe("convertHtmlToIntentText", () => {
     it("should handle whitespace-only", () => {
       expect(convertHtmlToIntentText("   \n  ")).toBe("");
     });
+  });
+
+  it("converts <img> to image: with src: (not deprecated at:)", () => {
+    const result = convertHtmlToIntentText(
+      '<img src="https://example.com/photo.jpg" alt="Photo">',
+    );
+    expect(result).toContain("src: https://example.com/photo.jpg");
+    expect(result).not.toContain("at: https://example.com/photo.jpg");
   });
 });

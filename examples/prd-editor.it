@@ -17,7 +17,7 @@ sub: Writers
 - As a writer, I want to drag-and-drop blocks to reorganize content
 - As a writer, I want templates for common document types
 
-sub: Developers  
+sub: Developers
 - As a developer, I want to query documents programmatically so I can build tools
 - As a developer, I want schema validation to ensure document integrity
 - As a developer, I want to embed IntentText in my applications
@@ -25,7 +25,7 @@ sub: Developers
 sub: Teams
 - As a team member, I want to see who is editing in real-time
 - As a team member, I want to comment on specific blocks
-- As a team member, I want @mentions to notify colleagues
+- As a team member, I want notifications to notify colleagues
 
 section: Functional Requirements
 sub: Editor Features
@@ -36,7 +36,7 @@ task: Drag-and-drop reordering | priority: medium | owner: frontend-team
 task: Keyboard shortcuts | priority: medium | owner: frontend-team
 done: Syntax highlighting research | time: 2026-02-20
 
-sub2: Advanced Editing
+sub: Advanced Editing
 task: Inline formatting toolbar | priority: medium
 task: Property editor UI | priority: medium
 task: Table editor | priority: low
@@ -44,7 +44,7 @@ task: Table editor | priority: low
 sub: Collaboration Features
 task: Real-time cursor tracking | priority: high | owner: backend-team
 task: Comment threads | priority: high | owner: backend-team
-task: @mention notifications | priority: medium | owner: backend-team
+task: Notification system | priority: medium | owner: backend-team
 task: Change history | priority: medium | owner: backend-team
 
 sub: Query & Validation
@@ -59,8 +59,8 @@ sub: Architecture
 - Storage: Git-based with CRDT for real-time
 - Rendering: Server-side + Client-side
 
-sub2: Performance
-note: ?Target: <100ms latency for real-time sync
+sub: Performance
+note: Target: <100ms latency for real-time sync
 task: Performance benchmarks | owner: backend-team | priority: high
 task: Load testing | owner: qa-team | priority: medium
 
@@ -86,10 +86,6 @@ task: Beta release | due: 2026-04-30
 task: Performance optimization | due: 2026-05-15
 task: Public launch | due: 2026-06-01
 
-ai: Generate user interview questions based on these requirements | target: user-stories
-
-embed: Mockup - Editor Interface | type: iframe | src: https://figma.com/embed/editor-mockup
-
-ref: Technical Architecture | to: ./architecture.it
-ref: API Documentation | to: ./api-docs.it
-ref: User Research Findings | to: ./user-research.it
+ref: Technical Architecture | file: ./architecture.it | rel: related
+ref: API Documentation | file: ./api-docs.it | rel: related
+ref: User Research Findings | file: ./user-research.it | rel: related

@@ -859,6 +859,19 @@ function parseLine(
       }
     }
 
+    // v2.14: image at: is deprecated — normalize to src: with a diagnostic
+    if (resolvedType === "image" && properties.at && !properties.src) {
+      ctx.diagnostics.push({
+        severity: "warning",
+        code: "DEPRECATED_PROPERTY",
+        message: "'at:' is deprecated on image: blocks. Use 'src:' instead.",
+        line: ctx.lineNumber,
+        column: 1,
+      });
+      properties.src = properties.at;
+      delete properties.at;
+    }
+
     // v2.1: coerce numeric properties for any block that uses them
     if (properties.timeout && !isNaN(Number(properties.timeout))) {
       properties.timeout = Number(properties.timeout);

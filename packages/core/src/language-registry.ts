@@ -633,7 +633,8 @@ export const LANGUAGE_REGISTRY: KeywordDefinition[] = [
     category: "trust",
     since: "2.8",
     status: "stable",
-    description: "Cryptographic digital signature",
+    description:
+      "Integrity hash seal — records signer name, role, timestamp, and SHA-256 hash of document body at signing time",
     aliases: [],
   },
   {

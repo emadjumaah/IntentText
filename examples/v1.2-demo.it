@@ -1,22 +1,22 @@
-title: Project Plan - IntentText v1.2 Launch
-summary: Comprehensive plan for the v1.2 release including all new features: Query, Schema, Templates, Knowledge Graph, AI, and Collaboration.
+title: Project Plan - IntentText Feature Demo
+summary: Comprehensive plan demonstrating IntentText features: Query, Schema, Templates, Themes, Trust, and Index.
 
 section: Overview
-note: This document demonstrates the full power of IntentText v1.2
+note: This document demonstrates the core features of IntentText
 sub: Key Features
 - Query Language for filtering documents
 - Schema Validation for structured data
-- Templates & Includes for reusability
-- Knowledge Graph for document relationships
-- AI-Native Features for LLM workflows
-- Collaboration Tools for teams
+- Templates with {{variable}} merging
+- Trust system with seal, sign, and verify
+- Index builder for multi-document queries
+- Theme system for styled rendering
 
 section: Query System Demo
 sub: Task Management
 task: Implement query parser | owner: Ahmed | due: 2026-03-01 | priority: high
 task: Add CLI query command | owner: Sarah | due: 2026-03-05 | priority: high
 done: Design query syntax | time: 2026-02-15
-sub2: Query Examples
+sub: Query Examples
 note: Query all pending tasks: type=task status=pending
 task: Write query documentation | owner: Mike | priority: medium
 
@@ -30,52 +30,38 @@ note: This document uses the 'project' schema
 done: Schema design document | time: 2026-02-20
 
 section: Templates Demo
-template: meeting-note | params: date, attendees, topic
-section: Meeting | {{date}}
-note: Attendees: {{attendees}}
-section: Topic | {{topic}}
-note: Discussion points...
-end:
+note: Templates use {{placeholders}} that are resolved with mergeData()
+text: Document for {{client_name}}
+text: Prepared by {{author}} on {{date}}
 
-use: meeting-note | date: 2026-03-10 | attendees: Ahmed, Sarah, Mike | topic: v1.2 Release Planning
+section: Trust System Demo
+note: Documents can be sealed, signed, and verified
+sub: Workflow
+1. Write your document
+2. Seal it with `cli.js seal` — adds freeze: and sign: blocks
+3. Verify with `cli.js verify` — confirms integrity via SHA-256 hash
 
-section: Knowledge Graph Demo
-note: Documents are automatically linked through references
-ref: Architecture Document | to: ./architecture.it
-ref: API Documentation | to: ./api-docs.it#section:Authentication
+sub: Amendment Support
+note: Frozen documents can be amended with amendment: blocks
+text: Amendments are excluded from the integrity hash, so the seal remains valid
 
-section: AI Features Demo
-ai: Summarize the task list below for stakeholders | model: gpt-4 | target: task-section
-sub: AI Tasks
-note: ?These timelines are estimates and need confirmation
-task: AI instruction parser | owner: AI-Team
-task: Uncertainty marker processor | owner: AI-Team
-done: Synthesis task definition | time: 2026-02-25
+section: Index and Multi-Document Query Demo
+note: Build indexes across folders for cross-document queries
+sub: Index Commands
+text: `cli.js index <dir>` builds a .it-index file
+text: `cli.js query <dir> --type task` queries across all .it files
 
-synthesize: Executive Summary | scope: document | output: summary
-
-section: Collaboration Demo
-sub: Team Coordination
-task: Review proposal | owner: @sarah | due: 2026-03-08
-note: @#engineering-team please review the query syntax
-comment: Should we add more comparison operators? | author: john | on: block-123
-comment-reply: Good idea, let's add :contains and :startsWith | author: sarah
-
-divider
-
-section: Embed Demo (v1.1)
-embed: Project Dashboard | type: iframe | src: https://dashboard.example.com/project/123
-embed: Architecture Diagram | type: mermaid | content: graph TD; A[Frontend] --> B[API]; B --> C[Database]
-
-section: Deep Hierarchy Demo (v1.1)
+section: Deep Hierarchy Demo
 sub: Level 1 - Backend
-sub2: Level 2 - API Layer
+text: Use section: and sub: for two-level hierarchy
 task: REST endpoints | owner: backend-team
-sub2: Level 2 - Database Layer
 task: Schema migrations | owner: backend-team
 done: Initial schema | time: 2026-01-15
 
+section: Embed Demo
+embed: Project Dashboard | type: iframe | src: https://dashboard.example.com/project/123
+
 section: Summary
-done: v1.2 Feature Complete | time: 2026-03-01
+done: Feature Complete | time: 2026-03-01
 task: Documentation final review | owner: all | priority: high
 task: Release announcement | owner: marketing | priority: medium

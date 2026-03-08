@@ -581,3 +581,138 @@ describe("Source Round-trip — Trust Blocks", () => {
     expect(output).toContain("status: locked");
   });
 });
+
+// ─── Nested Section History Tests ────────────────────────────────────────────
+
+describe("updateHistory — nested section content tracking", () => {
+  it("records a change to a text block inside a section", () => {
+    const base = `title: Doc\ntrack: | version: 1.0 | by: test\n\nsection: Alpha\ntext: original value`;
+    // First call establishes registry
+    const withHistory = updateHistory(base, base, { by: "test" });
+    // Now modify the text inside the section
+    const modified = withHistory.replace(
+      "text: original value",
+      "text: updated value",
+    );
+    const result = updateHistory(withHistory, modified, { by: "test" });
+    const doc = parseIntentText(result, { includeHistorySection: true });
+    const revisions = doc.history?.revisions ?? [];
+    const modRevisions = revisions.filter(
+      (r) => r.change === "modified" && r.block === "text",
+    );
+    expect(modRevisions.length).toBeGreaterThan(0);
+    expect(modRevisions[0].section).toBe("Alpha");
+  });
+
+  it("does not emit a spurious removed event for unchanged nested content", () => {
+    const base = `title: Doc\ntrack: | version: 1.0 | by: test\n\nsection: Beta\ntext: stable content`;
+    // First call establishes registry
+    const withHistory = updateHistory(base, base, { by: "test" });
+    const firstDoc = parseIntentText(withHistory, {
+      includeHistorySection: true,
+    });
+    const firstRevCount = firstDoc.history?.revisions?.length ?? 0;
+    // Second call with identical content — should add no new revisions
+    const result = updateHistory(withHistory, withHistory, { by: "test" });
+    const doc = parseIntentText(result, { includeHistorySection: true });
+    const revisions = doc.history?.revisions ?? [];
+    const newRevisions = revisions.slice(firstRevCount);
+    const removals = newRevisions.filter(
+      (r) => r.change === "removed" && r.block === "text",
+    );
+    expect(removals.length).toBe(0);
+  });
+});
+
+// ─── Amendment-Aware Verification Tests ──────────────────────────────────────
+
+describe("verifyDocument — amendment-aware verification", () => {
+  it("returns intact: true on a sealed document with an amendment: block", () => {
+    const base = `title: Contract\ntext: Original clause\n`;
+    const sealed = sealDocument(base, { signer: "Alice", role: "Legal" });
+    // Add an amendment line between the content and freeze:
+    const amended = sealed.source.replace(
+      /^(freeze:)/m,
+      "amendment: Clause updated per board resolution | by: Alice | at: 2026-03-08T10:00:00Z\n$1",
+    );
+    const result = verifyDocument(amended);
+    expect(result.intact).toBe(true);
+    expect(result.frozen).toBe(true);
+  });
+
+  it("returns intact: false when non-amendment content is modified after sealing", () => {
+    const base = `title: Contract\ntext: Original clause\n`;
+    const sealed = sealDocument(base, { signer: "Alice", role: "Legal" });
+    const tampered = sealed.source.replace(
+      "Original clause",
+      "Replaced clause",
+    );
+    const result = verifyDocument(tampered);
+    expect(result.intact).toBe(false);
+  });
+});
+
+// ─── Multi-Signer Verification Tests ─────────────────────────────────────────
+
+describe("verifyDocument — multi-signer semantics", () => {
+  it("validates signers against freeze hash, not current hash", () => {
+    const base = `title: Contract\ntext: Terms and conditions\n`;
+    const sealed = sealDocument(base, { signer: "Alice", role: "CEO" });
+    const result = verifyDocument(sealed.source);
+    expect(result.intact).toBe(true);
+    expect(result.signers?.[0].valid).toBe(true);
+    expect(result.signers?.[0].signedCurrentVersion).toBe(true);
+  });
+
+  it("signer who signed same version as freeze is valid even after tampering", () => {
+    const base = `title: Contract\ntext: Terms and conditions\n`;
+    const sealed = sealDocument(base, { signer: "Alice", role: "CEO" });
+    // Tamper with content — hash changes
+    const tampered = sealed.source.replace(
+      "Terms and conditions",
+      "Altered terms",
+    );
+    const result = verifyDocument(tampered);
+    expect(result.intact).toBe(false);
+    // Signer approved the sealed version — valid against freeze hash
+    expect(result.signers?.[0].valid).toBe(true);
+    // But not valid against the current (tampered) document
+    expect(result.signers?.[0].signedCurrentVersion).toBe(false);
+  });
+
+  it("multi-signer same version: both valid", () => {
+    const base = `title: Contract\ntext: Terms\n`;
+    const hash = computeDocumentHash(base);
+    const multiSigned =
+      base +
+      `sign: Alice | role: CEO | at: 2026-03-08T10:00:00Z | hash: ${hash}\n` +
+      `sign: Bob | role: CFO | at: 2026-03-08T11:00:00Z | hash: ${hash}\n` +
+      `freeze: | at: 2026-03-08T12:00:00Z | hash: ${hash} | status: locked\n`;
+    const result = verifyDocument(multiSigned);
+    expect(result.intact).toBe(true);
+    expect(result.signers).toHaveLength(2);
+    expect(result.signers?.[0].valid).toBe(true);
+    expect(result.signers?.[1].valid).toBe(true);
+  });
+
+  it("signer who signed earlier version shows valid: false", () => {
+    // Alice signs body V1, body changes to V2, Bob signs V2, freeze with V2 hash
+    const bodyV1 = `title: Contract\ntext: Original terms\n`;
+    const hashV1 = computeDocumentHash(bodyV1);
+    const bodyV2 = `title: Contract\ntext: Updated terms\n`;
+    const hashV2 = computeDocumentHash(bodyV2);
+    const doc =
+      bodyV2 +
+      `sign: Alice | role: CEO | at: 2026-03-08T10:00:00Z | hash: ${hashV1}\n` +
+      `sign: Bob | role: CFO | at: 2026-03-08T11:00:00Z | hash: ${hashV2}\n` +
+      `freeze: | at: 2026-03-08T12:00:00Z | hash: ${hashV2} | status: locked\n`;
+    const result = verifyDocument(doc);
+    expect(result.intact).toBe(true);
+    // Alice signed V1, freeze is V2 — she didn't approve the sealed version
+    expect(result.signers?.[0].signer).toBe("Alice");
+    expect(result.signers?.[0].valid).toBe(false);
+    // Bob signed V2, freeze is V2 — he approved the sealed version
+    expect(result.signers?.[1].signer).toBe("Bob");
+    expect(result.signers?.[1].valid).toBe(true);
+  });
+});

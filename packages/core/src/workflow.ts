@@ -31,7 +31,7 @@ const WORKFLOW_TYPES = new Set([
   "handoff",
   "trigger",
   "loop",
-  "emit",
+  "signal",
   "error",
   "audit",
 ]);

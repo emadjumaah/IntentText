@@ -53,7 +53,7 @@ function simpleHash(content: string): string {
   for (let i = 0; i < content.length; i++) {
     h = (Math.imul(31, h) + content.charCodeAt(i)) | 0;
   }
-  return "sha256:" + Math.abs(h).toString(16).padStart(8, "0");
+  return "hash:" + Math.abs(h).toString(16).padStart(8, "0");
 }
 
 // ── Build ───────────────────────────────────────────────
