@@ -726,7 +726,7 @@ function renderBlock(block: IntentBlock): string {
     case "input": {
       const inputType = props.type ? escapeHtml(String(props.type)) : "string";
       const inputRequired =
-        props.required === "true" || props.required === true;
+        props.required === "true" || String(props.required) === "true";
       const inputDef =
         props.default != null
           ? `<span class="it-input-default">= ${escapeHtml(String(props.default))}</span>`

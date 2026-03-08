@@ -78,7 +78,7 @@ export const PREDEFINED_SCHEMAS: Record<string, DocumentSchema> = {
     requiredBlocks: ["title", "section"],
     blockSchemas: {
       note: {
-        type: "note",
+        type: "text",
         content: { required: true },
       },
       ask: {
@@ -252,7 +252,7 @@ export const PREDEFINED_SCHEMAS: Record<string, DocumentSchema> = {
         allowUnknownProperties: true,
       },
       emit: {
-        type: "emit",
+        type: "signal",
         content: { required: true },
         properties: {
           phase: { type: "string" },
