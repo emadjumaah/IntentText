@@ -216,6 +216,11 @@ function extractInlineStyles(
 
 // Helper function to render a single block
 function renderBlock(block: IntentBlock): string {
+  // Pre-section metadata keywords — invisible in rendered output
+  if (block.type === ("agent" as string) || block.type === ("model" as string)) {
+    return "";
+  }
+
   const content = applyInlineFormatting(
     block.content,
     block.inline,
@@ -830,11 +835,6 @@ function renderBlock(block: IntentBlock): string {
       return "";
 
     case "meta":
-      // Invisible — metadata only, not rendered
-      return "";
-
-    case "agent":
-    case "model":
       // Invisible — metadata only, not rendered
       return "";
 

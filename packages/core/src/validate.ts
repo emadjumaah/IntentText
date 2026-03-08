@@ -73,6 +73,11 @@ export function validateDocumentSemantic(
     }
   }
 
+  // Detect template documents — skip per-block variable warnings for templates
+  const isTemplate =
+    doc.metadata?.meta?.type === "template" ||
+    allBlocks.some((b) => b.type === "input");
+
   // Track sections for structural checks
   let lastSection: IntentBlock | null = null;
   let blocksInCurrentSection = 0;
@@ -358,7 +363,10 @@ export function validateDocumentSemantic(
     }
 
     // Check for unresolved {{variables}} in content and property values
-    checkUnresolvedVars(block, declaredVars, issues);
+    // Skip for template documents — placeholders are resolved at merge time
+    if (!isTemplate) {
+      checkUnresolvedVars(block, declaredVars, issues);
+    }
 
     // v2.8: approve: without by
     if (block.type === "approve" && !block.properties?.by) {
