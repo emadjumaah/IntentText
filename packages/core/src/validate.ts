@@ -255,7 +255,7 @@ export function validateDocumentSemantic(
         block.properties?.if ||
         block.properties?.always ||
         block.properties?.never;
-      if (!hasCondition) {
+      if (!hasCondition && !isTemplate) {
         issues.push({
           blockId: block.id,
           blockType: block.type,
@@ -677,7 +677,8 @@ export function validateDocumentSemantic(
     }
     if (
       mb.properties?.trend != null &&
-      !validTrends.has(String(mb.properties.trend))
+      !validTrends.has(String(mb.properties.trend)) &&
+      !isTemplate
     ) {
       issues.push({
         blockId: mb.id,
@@ -735,7 +736,7 @@ export function validateDocumentSemantic(
         message: `figure: "${fb.content}" has no src: property`,
       });
     }
-    if (!fb.properties?.caption) {
+    if (!fb.properties?.caption && !isTemplate) {
       issues.push({
         blockId: fb.id,
         blockType: "figure",
