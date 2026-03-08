@@ -21,12 +21,12 @@ describe("HTML Renderer", () => {
     expect(html).toContain("<em>italic</em>");
   });
 
-  it("should render single-backtick inline code as monospace", () => {
+  it("should render single-backtick as inline label badge", () => {
     const input = "note: label is `mono` text";
     const parsed = parseIntentText(input);
     const html = renderHTML(parsed);
 
-    expect(html).toContain("<code>mono</code>");
+    expect(html).toContain('<span class="it-label">mono</span>');
   });
 
   it("should apply optional text alignment via align property", () => {

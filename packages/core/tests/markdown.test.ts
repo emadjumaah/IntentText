@@ -33,8 +33,8 @@ console.log("hi")
     const md = "**Bold** *italic* ~~strike~~ `code`";
     const itText = convertMarkdownToIntentText(md);
 
-    // paragraph becomes note:
-    expect(itText).toBe("note: *Bold* _italic_ ~strike~ `code`");
+    // paragraph becomes note:, inline code converts to triple backticks
+    expect(itText).toBe("note: *Bold* _italic_ ~strike~ ```code```");
   });
 
   it("should convert standalone links and images", () => {

@@ -450,12 +450,12 @@ function parseInlineNodes(text: string): {
       continue;
     }
 
-    // Check for single-backtick code span `text`
+    // Check for single-backtick label `text` — renders as badge/pill
     if (text[i] === "`") {
       const end = text.indexOf("`", i + 1);
       if (end > i + 1) {
-        const codeText = text.slice(i + 1, end);
-        addNode({ type: "code", value: codeText });
+        const labelText = text.slice(i + 1, end);
+        addNode({ type: "label", value: labelText });
         i = end + 1;
         continue;
       }
@@ -1065,6 +1065,7 @@ export function parseIntentText(
   let codeCaptureType: "keyword" | "fence" = "keyword";
   let codeContent: string[] = [];
   let codeStartLine = 0;
+  let pendingCodeProperties: Record<string, string | number> | null = null;
 
   // v2.8: Detect history boundary and split lines
   const historyBoundaryIdx = detectHistoryBoundary(lines);
@@ -1215,10 +1216,29 @@ export function parseIntentText(
         codeCaptureType === "fence" && trimmed.startsWith("```");
 
       if (isEndFence) {
+        // Extract pipe properties from closing fence (e.g., "``` | lang: js")
+        const afterClosingFence = trimmed.replace(/^```/, "").trim();
+        if (afterClosingFence.startsWith("|")) {
+          if (!pendingCodeProperties)
+            pendingCodeProperties = Object.create(null);
+          const fenceProps = splitPipeMetadata(
+            afterClosingFence.substring(1).trim(),
+          );
+          for (const fp of fenceProps) {
+            const fpm = fp.trim().match(/^([\w][\w-]*):\s*(.*)$/);
+            if (fpm && !pendingCodeProperties![fpm[1].trim()]) {
+              pendingCodeProperties![fpm[1].trim()] = fpm[2].trim();
+            }
+          }
+        }
+
         const codeBlock: IntentBlock = {
           id: nextId(),
           type: "code",
           content: codeContent.join("\n"),
+          ...(pendingCodeProperties
+            ? { properties: pendingCodeProperties }
+            : {}),
         };
         if (currentSection && currentSection.children) {
           currentSection.children.push(codeBlock);
@@ -1229,6 +1249,7 @@ export function parseIntentText(
         codeCaptureType = "keyword";
         codeContent = [];
         codeStartLine = 0;
+        pendingCodeProperties = null;
       } else {
         codeContent.push(line);
       }
@@ -1252,6 +1273,11 @@ export function parseIntentText(
 
     // ``` fence — start a fenced code block
     if (trimmed.startsWith("```")) {
+      // Extract language hint from fence opening (e.g., ```javascript)
+      const fenceLang = trimmed.replace(/^```/, "").trim();
+      if (fenceLang) {
+        pendingCodeProperties = { lang: fenceLang };
+      }
       codeCaptureMode = true;
       codeCaptureType = "fence";
       codeStartLine = i + 1;
@@ -1279,13 +1305,95 @@ export function parseIntentText(
     // Check for code block start via keyword
     const codeMatch = trimmed.match(/^code:\s*(.*)$/);
     if (codeMatch) {
-      const inlineCode = codeMatch[1];
-      // code: with content is a single-line code block
-      // code: without content is an empty code block (use ``` fences for multi-line)
+      const afterCode = codeMatch[1].trim();
+
+      // code: ```...``` | props — backtick-delimited code value
+      if (afterCode.startsWith("```")) {
+        const afterOpen = afterCode.substring(3);
+
+        // Check for closing ``` on the same line (single-line)
+        const closeIdx = afterOpen.indexOf("```");
+        if (closeIdx !== -1) {
+          // Single-line: code: ```content``` | lang: js
+          const codeValue = afterOpen.substring(0, closeIdx);
+          const afterClose = afterOpen.substring(closeIdx + 3).trim();
+
+          const props: Record<string, string | number> = Object.create(null);
+          if (afterClose.startsWith("|")) {
+            const parts = splitPipeMetadata(afterClose.substring(1).trim());
+            for (const part of parts) {
+              const pm = part.trim().match(/^([\w][\w-]*):\s*(.*)$/);
+              if (pm) props[pm[1].trim()] = pm[2].trim();
+            }
+          }
+
+          const codeBlock: IntentBlock = {
+            id: nextId(),
+            type: "code",
+            content: codeValue,
+            ...(Object.keys(props).length > 0 ? { properties: props } : {}),
+          };
+          if (currentSection && currentSection.children) {
+            currentSection.children.push(codeBlock);
+          } else {
+            blocks.push(codeBlock);
+          }
+          previousLineWasBlank = false;
+          continue;
+        } else {
+          // Multi-line: code: ``` (content on subsequent lines until closing ```)
+          if (afterOpen.trim()) {
+            codeContent.push(afterOpen);
+          }
+          codeCaptureMode = true;
+          codeCaptureType = "fence";
+          codeStartLine = i + 1;
+          previousLineWasBlank = false;
+          continue;
+        }
+      }
+
+      // Check if this is pipe-only metadata (no code content)
+      // e.g., "code: | lang: javascript" or "code:"
+      if (!afterCode || afterCode.startsWith("|")) {
+        const props: Record<string, string | number> = Object.create(null);
+        if (afterCode.startsWith("|")) {
+          const parts = splitPipeMetadata(afterCode.substring(1).trim());
+          for (const part of parts) {
+            const propMatch = part.trim().match(/^([\w][\w-]*):\s*(.*)$/);
+            if (propMatch) {
+              props[propMatch[1].trim()] = propMatch[2].trim();
+            }
+          }
+        }
+
+        // Look ahead for a ``` fence on the next non-blank line
+        let nextIdx = i + 1;
+        while (nextIdx < lines.length && !lines[nextIdx].trim()) nextIdx++;
+
+        if (nextIdx < lines.length && lines[nextIdx].trim().startsWith("```")) {
+          // Extract language hint from fence if not already in properties
+          const fenceLang = lines[nextIdx].trim().replace(/^```/, "").trim();
+          if (fenceLang && !props.lang) {
+            props.lang = fenceLang;
+          }
+
+          // Enter fence capture mode with properties from code: line
+          pendingCodeProperties = Object.keys(props).length > 0 ? props : null;
+          codeCaptureMode = true;
+          codeCaptureType = "fence";
+          codeStartLine = i + 1;
+          i = nextIdx; // Skip to the fence line
+          previousLineWasBlank = false;
+          continue;
+        }
+      }
+
+      // Single-line code block (content is everything after code:)
       const codeBlock: IntentBlock = {
         id: nextId(),
         type: "code",
-        content: inlineCode,
+        content: afterCode,
       };
       if (currentSection && currentSection.children) {
         currentSection.children.push(codeBlock);
@@ -1543,7 +1651,9 @@ export function parseIntentText(
       id: nextId(),
       type: "code",
       content: codeContent.join("\n"),
+      ...(pendingCodeProperties ? { properties: pendingCodeProperties } : {}),
     };
+    pendingCodeProperties = null;
 
     if (currentSection && currentSection.children) {
       currentSection.children.push(codeBlock);

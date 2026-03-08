@@ -80,6 +80,72 @@ echo "Hello World"
     expect(result.blocks[0].content).toBe('#!/bin/bash\necho "Hello World"');
   });
 
+  it("should extract language hint from standalone fence", () => {
+    const input = `\`\`\`typescript
+const x: number = 42;
+\`\`\``;
+    const result = parseIntentText(input);
+    expect(result.blocks[0].type).toBe("code");
+    expect(result.blocks[0].properties?.lang).toBe("typescript");
+    expect(result.blocks[0].content).toBe("const x: number = 42;");
+  });
+
+  it("should parse code: keyword followed by fenced block", () => {
+    const input = `code: | lang: python
+\`\`\`
+def hello():
+    print("world")
+\`\`\``;
+    const result = parseIntentText(input);
+    expect(result.blocks).toHaveLength(1);
+    expect(result.blocks[0].type).toBe("code");
+    expect(result.blocks[0].properties?.lang).toBe("python");
+    expect(result.blocks[0].content).toBe('def hello():\n    print("world")');
+  });
+
+  it("should prefer code: lang property over fence language hint", () => {
+    const input = `code: | lang: typescript
+\`\`\`js
+const x = 42;
+\`\`\``;
+    const result = parseIntentText(input);
+    expect(result.blocks[0].properties?.lang).toBe("typescript");
+  });
+
+  it("should parse single-line code: ```value``` syntax", () => {
+    const input = "code: ```const a = 10;``` | lang: js";
+    const result = parseIntentText(input);
+    expect(result.blocks).toHaveLength(1);
+    expect(result.blocks[0].type).toBe("code");
+    expect(result.blocks[0].content).toBe("const a = 10;");
+    expect(result.blocks[0].properties?.lang).toBe("js");
+  });
+
+  it("should parse multi-line code: ``` with content on subsequent lines", () => {
+    const input = `code: \`\`\`
+const a = 10;
+const b = 5;
+c = a + b;
+\`\`\` | lang: js`;
+    const result = parseIntentText(input);
+    expect(result.blocks).toHaveLength(1);
+    expect(result.blocks[0].type).toBe("code");
+    expect(result.blocks[0].content).toBe(
+      "const a = 10;\nconst b = 5;\nc = a + b;",
+    );
+    expect(result.blocks[0].properties?.lang).toBe("js");
+  });
+
+  it("should parse closing fence pipe properties on standalone fences", () => {
+    const input = `\`\`\`
+SELECT * FROM users
+\`\`\` | lang: sql`;
+    const result = parseIntentText(input);
+    expect(result.blocks[0].type).toBe("code");
+    expect(result.blocks[0].content).toBe("SELECT * FROM users");
+    expect(result.blocks[0].properties?.lang).toBe("sql");
+  });
+
   it("should detect Arabic text", () => {
     const input = "title: مرحبا بالعالم";
     const result = parseIntentText(input);
@@ -185,14 +251,14 @@ image: *Launch Banner* | at: assets/banner.png | caption: Project Dalil launch a
     expect(result.blocks[0].inline?.some((n) => n.type === "code")).toBe(true);
   });
 
-  it("should parse inline code using single backticks", () => {
+  it("should parse single backticks as inline label", () => {
     const input = "note: Label is `mono` text.";
     const result = parseIntentText(input);
 
     expect(result.blocks).toHaveLength(1);
     expect(result.blocks[0].type).toBe("text");
     expect(result.blocks[0].content).toBe("Label is mono text.");
-    expect(result.blocks[0].inline?.some((n) => n.type === "code")).toBe(true);
+    expect(result.blocks[0].inline?.some((n) => n.type === "label")).toBe(true);
   });
 
   it("should merge consecutive no-keyword prose lines into one body-text block", () => {

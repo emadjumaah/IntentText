@@ -37,9 +37,9 @@ describe("convertHtmlToIntentText", () => {
 
   describe("inline formatting", () => {
     it("should convert strong/b to *bold*", () => {
-      expect(
-        convertHtmlToIntentText("<p><strong>bold</strong> text</p>"),
-      ).toBe("note: *bold* text");
+      expect(convertHtmlToIntentText("<p><strong>bold</strong> text</p>")).toBe(
+        "note: *bold* text",
+      );
     });
 
     it("should convert em/i to _italic_", () => {
@@ -54,9 +54,9 @@ describe("convertHtmlToIntentText", () => {
       );
     });
 
-    it("should convert inline code to backticks", () => {
+    it("should convert inline code to triple backticks", () => {
       expect(convertHtmlToIntentText("<p><code>const x</code></p>")).toBe(
-        "note: `const x`",
+        "note: ```const x```",
       );
     });
 
@@ -192,17 +192,14 @@ describe("convertHtmlToIntentText", () => {
 
     it("should strip style tags", () => {
       expect(
-        convertHtmlToIntentText(
-          "<style>body{color:red}</style><p>Content</p>",
-        ),
+        convertHtmlToIntentText("<style>body{color:red}</style><p>Content</p>"),
       ).toBe("note: Content");
     });
   });
 
   describe("transparent containers", () => {
     it("should recurse through div/span/article", () => {
-      const html =
-        '<div><article><p>Inside article</p></article></div>';
+      const html = "<div><article><p>Inside article</p></article></div>";
       expect(convertHtmlToIntentText(html)).toBe("note: Inside article");
     });
   });

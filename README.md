@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/icon.png" alt="IntentText icon" width="96" />
+  <img src="icon.png" alt="IntentText icon" width="96" />
 </p>
 
 <h1 align="center">IntentText (.it)</h1>

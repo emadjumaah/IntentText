@@ -176,8 +176,8 @@ npm test
 
 ## Links
 
-- [Full Specification](https://github.com/intenttext/IntentText/blob/main/docs/SPEC.md)
-- [Usage Guide](https://github.com/intenttext/IntentText/blob/main/docs/USAGE.md)
+- [Full Specification](https://itdocs.vercel.app/docs/reference)
+- [Usage Guide](https://itdocs.vercel.app/docs/guide)
 - [Changelog](https://github.com/intenttext/IntentText/blob/main/CHANGELOG.md)
 - [Example Templates](https://github.com/intenttext/IntentText/tree/main/examples/templates)
 

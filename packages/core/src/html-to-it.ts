@@ -240,7 +240,7 @@ function getInlineText(node: SimpleNode): string {
     case "strike":
       return `~${inner.trim()}~`;
     case "code":
-      return `\`${inner}\``;
+      return `\`\`\`${inner}\`\`\``;
     case "a": {
       const href = node.getAttribute("href") || "";
       if (!href || href.startsWith("javascript:") || href.startsWith("data:")) {

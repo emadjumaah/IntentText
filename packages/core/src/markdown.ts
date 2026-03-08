@@ -19,8 +19,8 @@ export function convertMarkdownToIntentText(markdown: string): string {
 
     // Images/links are handled at the block level.
 
-    // Inline code keeps single-backtick syntax.
-    result = result.replace(/`([^`]+)`/g, "`$1`");
+    // Inline code: Markdown `code` -> IntentText ```code``` (triple backtick)
+    result = result.replace(/`([^`]+)`/g, "```$1```");
 
     // Protect bold markers during italic conversion
     const BOLD_START = "\x00BS\x00";

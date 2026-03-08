@@ -75,7 +75,8 @@ The format is based on Keep a Changelog.
 
 ### Added
 
-- Native single-backtick inline code parsing (`` `code` ``) in core parser.
+- Native single-backtick inline label parsing (`` `label` ``) in core parser — renders as badge/pill.
+- Triple-backtick inline code (` ```code``` `) for monospace code spans.
 - New inline node types for writer-first flows:
   - `highlight` from `^text^`
   - `inline-quote` from `==text==`
@@ -92,7 +93,7 @@ The format is based on Keep a Changelog.
 
 ### Changed
 
-- Markdown-to-IntentText converter now preserves inline code as single backticks instead of converting to triple-backtick inline form.
+- Markdown-to-IntentText converter now converts inline code to triple backticks (` ```code``` `), since single backtick is label syntax in IntentText.
 - Docs updated for writer-first syntax and prose behavior in README, SPEC, USAGE, and cheatsheet.
 
 ### Planned (Not Implemented Yet)
