@@ -67,6 +67,9 @@ sample-output.html
 *.tmp
 *.temp
 
+# Local npm pack artifacts
+intenttext-core-*.tgz
+
 # Keep demo files
 !preview.html
 !examples/*.html
