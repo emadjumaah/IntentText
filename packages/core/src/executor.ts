@@ -426,13 +426,18 @@ function evaluateCondition(
 
 // ── Document mutation helpers (operate on the cloned document) ──────────────
 
-/** Find a block by id in a document (searches recursively). */
+/** Find a block by id in a document (searches recursively).
+ *  Matches on block.id (auto-generated) OR block.properties.id (user-explicit).
+ *  This mirrors getStepId() in workflow.ts so executor lookups work for both.
+ */
 function findBlockById(
   doc: IntentDocument,
   blockId: string,
 ): IntentBlock | undefined {
   const all = flattenBlocks(doc.blocks);
-  return all.find((b) => b.id === blockId);
+  return all.find(
+    (b) => b.id === blockId || (b.properties?.id as string) === blockId,
+  );
 }
 
 /** Write status: property back to a block in the document. */
