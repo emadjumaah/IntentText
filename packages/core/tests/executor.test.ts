@@ -293,9 +293,7 @@ audit: Processed {{name}} at {{timestamp}}
 
     expect(result.status).toBe("completed");
     // Find the audit block in the result document
-    const auditBlock = result.document.blocks.find(
-      (b) => b.type === "audit",
-    );
+    const auditBlock = result.document.blocks.find((b) => b.type === "audit");
     expect(auditBlock?.content).toContain("Alice");
   });
 
@@ -311,9 +309,7 @@ result: Total is {{total}}
       },
     });
 
-    const resultBlock = result.document.blocks.find(
-      (b) => b.type === "result",
-    );
+    const resultBlock = result.document.blocks.find((b) => b.type === "result");
     expect(resultBlock?.content).toBe("Total is 42");
   });
 });
@@ -472,8 +468,7 @@ step: Slow | tool: slow
 `);
     const result = await executeWorkflow(doc, {
       tools: {
-        slow: () =>
-          new Promise((resolve) => setTimeout(resolve, 5000)),
+        slow: () => new Promise((resolve) => setTimeout(resolve, 5000)),
       },
       options: { stepTimeout: 50 },
     });
@@ -499,9 +494,7 @@ result: Done
       tools: { work: async () => "ok" },
     });
 
-    const trigger = result.document.blocks.find(
-      (b) => b.type === "trigger",
-    );
+    const trigger = result.document.blocks.find((b) => b.type === "trigger");
     const step = result.document.blocks.find((b) => b.type === "step");
     const res = result.document.blocks.find((b) => b.type === "result");
 
