@@ -217,10 +217,7 @@ function extractInlineStyles(
 // Helper function to render a single block
 function renderBlock(block: IntentBlock): string {
   // Pre-section metadata keywords — invisible in rendered output
-  if (
-    block.type === ("agent" as string) ||
-    block.type === ("model" as string)
-  ) {
+  if (block.type === "agent" || block.type === "model") {
     return "";
   }
 
@@ -262,20 +259,22 @@ function renderBlock(block: IntentBlock): string {
     case "body-text":
       return `<p class="intent-prose${alignClass}"${styleAttr}>${content}</p>`;
 
-    case "info":
-      return `<div class="intent-callout intent-info"${styleAttr}><span class="intent-callout-label">Note</span><div class="intent-callout-content">${content}</div></div>`;
-
-    case "warning":
-      return `<div class="intent-callout intent-warning"${styleAttr}><span class="intent-callout-label">Caution</span><div class="intent-callout-content">${content}</div></div>`;
-
-    case "tip":
-      return `<div class="intent-callout intent-tip"${styleAttr}><span class="intent-callout-label">Tip</span><div class="intent-callout-content">${content}</div></div>`;
-
-    case "success":
-      return `<div class="intent-callout intent-success"${styleAttr}><span class="intent-callout-label">Done</span><div class="intent-callout-content">${content}</div></div>`;
-
-    case "danger":
-      return `<div class="it-callout it-danger" role="alert"><span class="it-callout-icon" aria-hidden="true">⛔</span><div class="it-callout-body">${content}</div></div>`;
+    case "info": {
+      const CALLOUT_VARIANTS: Record<string, string> = {
+        info: "Note",
+        warning: "Caution",
+        danger: "Danger",
+        tip: "Tip",
+        success: "Done",
+      };
+      const subtype = (props.type as string) || "info";
+      const variant = subtype in CALLOUT_VARIANTS ? subtype : "info";
+      const label = CALLOUT_VARIANTS[variant];
+      if (variant === "danger") {
+        return `<div class="it-callout it-danger" role="alert"${styleAttr}><span class="it-callout-icon" aria-hidden="true">⛔</span><div class="it-callout-body">${content}</div></div>`;
+      }
+      return `<div class="intent-callout intent-${variant}"${styleAttr}><span class="intent-callout-label">${label}</span><div class="intent-callout-content">${content}</div></div>`;
+    }
 
     case "task":
     case "done": {
@@ -1043,6 +1042,15 @@ function renderBlock(block: IntentBlock): string {
         ${dlOwner ? `<div class="it-deadline-owner">${dlOwner}</div>` : ""}
         ${dlAuthority ? `<div class="it-deadline-authority">${dlAuthority}</div>` : ""}
       </div>`;
+    }
+
+    // Unknown x-ns: extensions that aren't in the registry
+    case "extension": {
+      const xType = props["x-type"]
+        ? escapeHtml(String(props["x-type"]))
+        : "unknown";
+      const xNs = props["x-ns"] ? escapeHtml(String(props["x-ns"])) : "ext";
+      return `<div class="it-extension it-ext-${xNs} it-ext-${xType}" data-x-type="${xType}" data-x-ns="${xNs}"${styleAttr}>${content}</div>`;
     }
 
     default:

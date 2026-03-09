@@ -10,6 +10,9 @@
  *   - An alias cannot point to another alias — only to canonical keywords.
  *   - Aliases are case-insensitive (handled by parser before lookup).
  */
-import { ALIAS_MAP } from "./language-registry";
+import { ALIAS_MAP, EXTENSION_LEGACY_ALIASES } from "./language-registry";
 
-export const ALIASES: Record<string, string> = ALIAS_MAP;
+export const ALIASES: Record<string, string> = {
+  ...ALIAS_MAP,
+  ...EXTENSION_LEGACY_ALIASES,
+};

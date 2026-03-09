@@ -13,7 +13,13 @@ import {
   RevisionEntry,
 } from "./types";
 import { ALIASES } from "./aliases";
-import { DEPRECATED_ALIASES } from "./language-registry";
+import {
+  DEPRECATED_ALIASES,
+  CALLOUT_ALIAS_MAP,
+  EXTENSION_KEYWORDS,
+  EXTENSION_NS_MAP,
+  CANONICAL_KEYWORDS,
+} from "./language-registry";
 
 // Fast sequential ID generator — deterministic and allocation-free vs uuid
 let _idCounter = 0;
@@ -171,7 +177,7 @@ function parseHistorySectionText(raw: string): HistorySection {
 
     if (trimmed.startsWith("revision:")) {
       const content = trimmed.replace(/^revision:\s*\|?\s*/, "");
-      const props: Record<string, string> = {};
+      const props: Record<string, string> = Object.create(null);
       const segments = content.split(" | ");
       for (const seg of segments) {
         const colonIdx = seg.indexOf(":");
@@ -248,18 +254,6 @@ function parseContextKeyValuePairs(rawContent: string): Record<string, string> {
     }
   }
   return result;
-}
-
-/**
- * Interpolate {{variable}} references in a property value.
- * Returns the original string if no {{}} found.
- * Returns a $ref object descriptor if the entire value is a single {{ref}}.
- * For mixed content, returns the string as-is (runtime handles interpolation).
- */
-function interpolateVariables(value: string): string {
-  // Just return the value as-is — the parser preserves {{variable}} syntax.
-  // The JSON output will contain the {{variable}} markers for runtime resolution.
-  return value;
 }
 
 // Helper function to detect Arabic text (RTL)
@@ -548,7 +542,7 @@ function expandPropertyShortcuts(content: string): {
   content: string;
   shortcuts: Record<string, string>;
 } {
-  const shortcuts: Record<string, string> = {};
+  const shortcuts: Record<string, string> = Object.create(null);
 
   // Priority shortcuts: !low, !medium, !high, !critical
   content = content.replace(/!low\b/gi, () => {
@@ -630,6 +624,65 @@ function parseLine(
   const trimmed = line.trim();
 
   if (!trimmed) return null;
+
+  // v2.14: x-ns: prefix form — e.g. "x-writer: byline | content: Emad | date: 2026"
+  // Skip if an extension has registered this exact keyword (e.g. "x-alert")
+  const xNsMatch = trimmed.match(/^x-([a-z]+):\s*(.*)$/);
+  const fullXKeyword = xNsMatch ? `x-${xNsMatch[1]}` : "";
+  const extensionOwnsKeyword = ctx.extensions.some((ext) =>
+    (ext.keywords || []).some((k) => k.toLowerCase() === fullXKeyword),
+  );
+  if (xNsMatch && !extensionOwnsKeyword) {
+    const namespace = xNsMatch[1];
+    const afterColon = xNsMatch[2];
+    const parts = splitPipeMetadata(afterColon);
+    const xType = (parts[0] || "").trim();
+    const properties: Record<string, string | number> = Object.create(null);
+
+    let blockContent = "";
+    for (let i = 1; i < parts.length; i++) {
+      const segment = parts[i];
+      const propMatch = segment.match(/^([^:]+):\s*(.*)$/);
+      if (propMatch) {
+        const key = propMatch[1].trim();
+        const rawValue = propMatch[2].trim();
+        if (!DANGEROUS_KEYS.has(key)) {
+          if (key === "content") {
+            blockContent = unescapeIntentText(rawValue);
+          } else {
+            properties[key] = unescapeIntentText(rawValue);
+          }
+        }
+      }
+    }
+
+    const { content: cleanContent, inline } = ctx.parseInline(blockContent);
+
+    // Known extension keyword → emit real type directly
+    const isKnownExt = EXTENSION_KEYWORDS.has(xType);
+    if (isKnownExt) {
+      return {
+        id: nextId(),
+        type: xType as BlockType,
+        content: cleanContent,
+        originalContent: afterColon,
+        properties: Object.keys(properties).length > 0 ? properties : undefined,
+        inline,
+      };
+    }
+
+    // Unknown extension → keep type: "extension" with x-type/x-ns metadata
+    properties["x-type"] = xType;
+    properties["x-ns"] = namespace;
+    return {
+      id: nextId(),
+      type: "extension" as BlockType,
+      content: cleanContent,
+      originalContent: afterColon,
+      properties,
+      inline,
+    };
+  }
 
   // Check for keyword blocks
   const keywordMatch = trimmed.match(/^([a-zA-Z][a-zA-Z0-9-]*):\s*(.*)$/);
@@ -784,7 +837,8 @@ function parseLine(
       };
     }
 
-    // Apply keyword aliases from the language registry
+    // Apply keyword aliases — all keywords (canonical, extension, legacy aliases)
+    // resolve through the unified ALIASES map then emit their real type.
     const resolvedType = (ALIASES[keyword] ?? keyword) as BlockType;
 
     // Emit deprecation warning for deprecated aliases
@@ -796,6 +850,13 @@ function parseLine(
         line: ctx.lineNumber,
         column: 1,
       });
+    }
+
+    // v2.14: Callout alias → info with type property injection
+    // When warning/danger/tip/success (or their sub-aliases) resolve to 'info',
+    // inject properties.type with the callout variant name.
+    if (CALLOUT_ALIAS_MAP[keyword] && resolvedType === "info") {
+      properties.type = CALLOUT_ALIAS_MAP[keyword];
     }
 
     // done: always carries status: "done" on the normalized task block
@@ -1139,7 +1200,7 @@ export function parseIntentText(
   }
 
   // v2.8.1: meta accumulator — merged from all meta: blocks before first section
-  const metaAccumulator: Record<string, string> = {};
+  const metaAccumulator: Record<string, string> = Object.create(null);
 
   const defaultParseInline = (text: string) => parseInlineNodes(text);
   const parseInline = (text: string) => {
@@ -1514,15 +1575,21 @@ export function parseIntentText(
 
     // v2: agent: and model: at the top of the document (before any section)
     // are treated as document-level metadata, not blocks.
-    if (METADATA_KEYWORDS.has(block.type) && !seenSectionBlock) {
-      // Parse pipe metadata from the block for model extraction
-      if (block.type === ("agent" as BlockType)) {
+    // v2.14: These are now extension blocks (type: 'extension', x-type: 'agent'/'model')
+    const xType =
+      block.type === "extension" ? block.properties?.["x-type"] : undefined;
+    if (
+      (METADATA_KEYWORDS.has(block.type) ||
+        xType === "agent" ||
+        xType === "model") &&
+      !seenSectionBlock
+    ) {
+      if (block.type === ("agent" as BlockType) || xType === "agent") {
         agenticMetadata.agent = block.content;
-        // If model: was a pipe property on the agent line, capture it
         if (block.properties?.model) {
           agenticMetadata.model = String(block.properties.model);
         }
-      } else if (block.type === ("model" as BlockType)) {
+      } else if (block.type === ("model" as BlockType) || xType === "model") {
         agenticMetadata.model = block.content;
       }
       continue;
@@ -1612,16 +1679,19 @@ export function parseIntentText(
       block.type === "divider" ||
       block.type === "image" ||
       block.type === "link" ||
-      block.type === "ref" ||
-      block.type === "embed" ||
       block.type === "code" ||
       block.type === "table" ||
       block.type === "body-text" ||
-      block.type === "font" ||
       block.type === "page" ||
       block.type === "break" ||
-      block.type === "dedication" ||
-      block.type === "toc"
+      block.type === "toc" ||
+      // v2.14: extension blocks that were formerly top-level layout/structure blocks
+      (block.type === "extension" &&
+        (DOCGEN_LAYOUT_TYPES.has(String(block.properties?.["x-type"])) ||
+          String(block.properties?.["x-type"]) === "ref" ||
+          String(block.properties?.["x-type"]) === "embed" ||
+          String(block.properties?.["x-type"]) === "dedication" ||
+          String(block.properties?.["x-type"]) === "toc"))
     ) {
       // Top-level blocks reset current section
       appendBlockWithProseMerge(blocks, block);

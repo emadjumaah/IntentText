@@ -172,7 +172,11 @@ describe("checkpoint: blocks", () => {
       "checkpoint",
     );
     expect(block.content).toBe("onboarding-complete");
-    expect(block.properties).toBeUndefined();
+    // Extension blocks have internal x-type/x-ns properties but no user-defined ones
+    const userProps = Object.keys(block.properties ?? {}).filter(
+      (k) => !k.startsWith("x-"),
+    );
+    expect(userProps).toHaveLength(0);
   });
 });
 

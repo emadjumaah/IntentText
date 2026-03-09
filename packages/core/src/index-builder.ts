@@ -89,20 +89,21 @@ export function buildIndexEntry(
       currentSection = block.content;
     }
     // Skip layout/structural blocks from the index
+    const bt = block.type;
     if (
-      block.type === "font" ||
-      block.type === "page" ||
-      block.type === "header" ||
-      block.type === "footer" ||
-      block.type === "watermark" ||
-      block.type === "meta" ||
-      block.type === "break" ||
-      block.type === "toc"
+      bt === "font" ||
+      bt === "page" ||
+      bt === "header" ||
+      bt === "footer" ||
+      bt === "watermark" ||
+      bt === "meta" ||
+      bt === "break" ||
+      bt === "toc"
     ) {
       continue;
     }
     blocks.push({
-      type: block.type,
+      type: bt,
       content: block.content,
       section: currentSection || undefined,
       properties: (block.properties as Record<string, string | number>) || {},

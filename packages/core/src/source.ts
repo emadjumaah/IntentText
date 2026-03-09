@@ -51,7 +51,7 @@ const PROPERTY_ORDER: Record<string, string[]> = {
 };
 
 /** Properties that are internal / default-valued and should be skipped. */
-const SKIP_INTERNAL = new Set(["id"]);
+const SKIP_INTERNAL = new Set(["id", "x-type", "x-ns"]);
 
 /** Header block types that should be emitted first. */
 const HEADER_TYPES = new Set([

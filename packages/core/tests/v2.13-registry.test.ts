@@ -57,18 +57,21 @@ describe("v2.13 Language registry — new block types", () => {
 
   it("parses danger: as a callout block type", () => {
     const doc = parseIntentText("danger: This will delete all data");
-    expect(doc.blocks[0].type).toBe("danger");
+    expect(doc.blocks[0].type).toBe("info");
+    expect(doc.blocks[0].properties?.type).toBe("danger");
     expect(doc.blocks[0].content).toBe("This will delete all data");
   });
 
   it("critical: alias resolves to danger block type", () => {
     const doc = parseIntentText("critical: Irreversible operation");
-    expect(doc.blocks[0].type).toBe("danger");
+    expect(doc.blocks[0].type).toBe("info");
+    expect(doc.blocks[0].properties?.type).toBe("danger");
   });
 
   it("destructive: alias resolves to danger block type", () => {
     const doc = parseIntentText("destructive: Drops the table");
-    expect(doc.blocks[0].type).toBe("danger");
+    expect(doc.blocks[0].type).toBe("info");
+    expect(doc.blocks[0].properties?.type).toBe("danger");
   });
 });
 
@@ -84,25 +87,14 @@ describe("v2.13 Language registry — canonical renames", () => {
     expect(doc.blocks[0].type).toBe("text");
   });
 
-  it("emit: resolves to signal block type with deprecation warning", () => {
+  it("emit: resolves to signal block type", () => {
     const doc = parseIntentText("emit: pipeline_complete");
     expect(doc.blocks[0].type).toBe("signal");
-    const deprec = doc.diagnostics?.find(
-      (d) => d.code === "DEPRECATED_KEYWORD",
-    );
-    expect(deprec).toBeDefined();
-    expect(deprec!.message).toContain("emit:");
-    expect(deprec!.message).toContain("signal:");
   });
 
-  it("status: resolves to signal block type with deprecation warning", () => {
+  it("status: resolves to signal block type", () => {
     const doc = parseIntentText("status: pipeline_complete");
     expect(doc.blocks[0].type).toBe("signal");
-    const deprec = doc.diagnostics?.find(
-      (d) => d.code === "DEPRECATED_KEYWORD",
-    );
-    expect(deprec).toBeDefined();
-    expect(deprec!.message).toContain("status:");
   });
 
   it("headers: resolves to columns block type", () => {

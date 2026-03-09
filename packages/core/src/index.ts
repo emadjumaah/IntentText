@@ -61,6 +61,15 @@ export { diffDocuments } from "./diff";
 export type { DocumentDiff, BlockModification } from "./diff";
 export { extractWorkflow } from "./workflow";
 export type { WorkflowStep, WorkflowGraph } from "./workflow";
+export { executeWorkflow } from "./executor";
+export type {
+  WorkflowRuntime,
+  ToolHandler,
+  ExecutionContext,
+  ExecutionResult,
+  ExecutionLogEntry,
+  ExecutionOptions,
+} from "./executor";
 // v2.8 trust and history
 export {
   computeDocumentHash,

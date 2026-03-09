@@ -84,6 +84,7 @@ export function validateDocumentSemantic(
 
   for (let i = 0; i < allBlocks.length; i++) {
     const block = allBlocks[i];
+    const eType = block.type;
 
     // Section tracking
     if (block.type === "section") {
@@ -149,7 +150,7 @@ export function validateDocumentSemantic(
     }
 
     // parallel: steps references
-    if (block.type === "parallel" && block.properties?.steps) {
+    if (eType === "parallel" && block.properties?.steps) {
       const refs = String(block.properties.steps)
         .split(",")
         .map((s) => s.trim());
@@ -167,7 +168,7 @@ export function validateDocumentSemantic(
     }
 
     // call: self-reference check
-    if (block.type === "call") {
+    if (eType === "call") {
       const titleBlock = allBlocks.find((b) => b.type === "title");
       const callTarget = block.content || String(block.properties?.to || "");
       if (titleBlock && callTarget && callTarget === titleBlock.content) {
@@ -228,7 +229,7 @@ export function validateDocumentSemantic(
     }
 
     // handoff: without to
-    if (block.type === "handoff" && !block.properties?.to) {
+    if (eType === "handoff" && !block.properties?.to) {
       issues.push({
         blockId: block.id,
         blockType: block.type,
@@ -239,7 +240,7 @@ export function validateDocumentSemantic(
     }
 
     // retry: without max
-    if (block.type === "retry" && !block.properties?.max) {
+    if (eType === "retry" && !block.properties?.max) {
       issues.push({
         blockId: block.id,
         blockType: block.type,
@@ -293,7 +294,7 @@ export function validateDocumentSemantic(
     }
 
     // input: should have a name (content)
-    if (block.type === "input" && !block.content) {
+    if (eType === "input" && !block.content) {
       issues.push({
         blockId: block.id,
         blockType: "input",
@@ -304,7 +305,7 @@ export function validateDocumentSemantic(
     }
 
     // output: should have a name (content)
-    if (block.type === "output" && !block.content) {
+    if (eType === "output" && !block.content) {
       issues.push({
         blockId: block.id,
         blockType: "output",
@@ -315,7 +316,7 @@ export function validateDocumentSemantic(
     }
 
     // tool: should have api: or content
-    if (block.type === "tool" && !block.content && !block.properties?.api) {
+    if (eType === "tool" && !block.content && !block.properties?.api) {
       issues.push({
         blockId: block.id,
         blockType: "tool",
@@ -326,7 +327,7 @@ export function validateDocumentSemantic(
     }
 
     // prompt: should have content
-    if (block.type === "prompt" && !block.content) {
+    if (eType === "prompt" && !block.content) {
       issues.push({
         blockId: block.id,
         blockType: "prompt",
@@ -337,11 +338,7 @@ export function validateDocumentSemantic(
     }
 
     // assert: should have content or expect:
-    if (
-      block.type === "assert" &&
-      !block.content &&
-      !block.properties?.expect
-    ) {
+    if (eType === "assert" && !block.content && !block.properties?.expect) {
       issues.push({
         blockId: block.id,
         blockType: "assert",
@@ -352,7 +349,7 @@ export function validateDocumentSemantic(
     }
 
     // secret: should have content (the secret name/identifier)
-    if (block.type === "secret" && !block.content) {
+    if (eType === "secret" && !block.content) {
       issues.push({
         blockId: block.id,
         blockType: "secret",
@@ -765,7 +762,9 @@ export function validateDocumentSemantic(
   }
 
   // ── v2.11: deadline: validation ─────────────────────────────────────────
-  const deadlineBlocks = allBlocks.filter((b) => b.type === "deadline");
+  const deadlineBlocks = allBlocks.filter(
+    (b) => b.type === "deadline",
+  );
   for (const dl of deadlineBlocks) {
     if (!dl.properties?.date) {
       issues.push({

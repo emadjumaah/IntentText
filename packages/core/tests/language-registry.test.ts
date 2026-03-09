@@ -5,6 +5,9 @@ import {
   ALIAS_MAP,
   DEPRECATED_ALIASES,
   BOUNDARY_KEYWORDS,
+  EXTENSION_KEYWORDS,
+  EXTENSION_LEGACY_ALIASES,
+  COMPAT_KEYWORDS,
 } from "../src/language-registry";
 import { KEYWORDS } from "../src/types";
 
@@ -25,16 +28,21 @@ describe("Language registry parity", () => {
     const registryAll = new Set([
       ...CANONICAL_KEYWORDS,
       ...Object.keys(ALIAS_MAP),
+      ...EXTENSION_KEYWORDS,
+      ...Object.keys(EXTENSION_LEGACY_ALIASES),
+      ...COMPAT_KEYWORDS,
     ]);
     for (const kw of KEYWORDS) {
       expect(registryAll.has(kw)).toBe(true);
     }
   });
 
-  it("no alias points to a non-canonical keyword", () => {
-    const canonicalSet = new Set(CANONICAL_KEYWORDS);
+  it("no alias points to a non-registry keyword", () => {
+    const allRegistryCanonicals = new Set(
+      LANGUAGE_REGISTRY.map((k) => k.canonical),
+    );
     for (const [alias, canonical] of Object.entries(ALIAS_MAP)) {
-      expect(canonicalSet.has(canonical)).toBe(true);
+      expect(allRegistryCanonicals.has(canonical)).toBe(true);
     }
   });
 
@@ -59,9 +67,12 @@ describe("Language registry parity", () => {
     }
   });
 
-  it("boundary keywords produce no block output", () => {
+  it("boundary keywords are in the registry", () => {
+    const allRegistryCanonicals = new Set(
+      LANGUAGE_REGISTRY.map((k) => k.canonical),
+    );
     for (const boundary of BOUNDARY_KEYWORDS) {
-      expect(CANONICAL_KEYWORDS).toContain(boundary);
+      expect(allRegistryCanonicals.has(boundary)).toBe(true);
     }
   });
 });

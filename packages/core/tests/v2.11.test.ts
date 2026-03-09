@@ -749,8 +749,8 @@ describe("v2.11 additional alias coverage", () => {
     expect(ALIASES["signature-line"]).toBe("signline");
   });
 
-  it("sig: alias resolves to signline:", () => {
-    expect(ALIASES["sig"]).toBe("signline");
+  it("sig: alias resolves to sign:", () => {
+    expect(ALIASES["sig"]).toBe("sign");
   });
 
   it("party: alias resolves to contact:", () => {
