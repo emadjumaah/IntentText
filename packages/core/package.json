@@ -9,9 +9,15 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc && npm run copy:wasm",
+    "build": "rm -rf dist && tsc && npm run copy:wasm && npm run shim:parser",
     "copy:wasm": "mkdir -p dist/rust-wasm && cp src/rust-wasm/* dist/rust-wasm/",
     "test": "vitest run",
+    "telemetry:report": "node scripts/report-fallback-telemetry.cjs",
+    "size:report": "node scripts/report-package-size.cjs",
+    "size:check": "node scripts/check-package-size.cjs",
+    "pack:check": "node scripts/check-pack-footprint.cjs",
+    "parser:coupling:check": "node scripts/check-no-parser-runtime-coupling.cjs",
+    "shim:parser": "node scripts/shim-parser-runtime.cjs",
     "dev": "tsc --watch"
   },
   "keywords": [

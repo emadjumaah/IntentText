@@ -185,11 +185,11 @@ describe("v2.10 theme system — renderer integration", () => {
     expect(html).toContain("--it-color-text:");
   });
 
-  it("renderHTML without theme option does not inject theme CSS", () => {
+  it("renderHTML without theme option injects default theme CSS", () => {
     const doc = parseIntentText("title: Hello World");
     const html = renderHTML(doc);
-    expect(html).not.toContain("--it-font-body:");
-    expect(html).not.toContain("--it-color-text:");
+    expect(html).toContain("--it-font-body:");
+    expect(html).toContain("--it-color-text:");
   });
 
   it("renderHTML with meta.theme picks up theme from document metadata", () => {
@@ -258,10 +258,10 @@ describe("v2.10 theme system — renderer integration", () => {
     expect(html).toContain("Times New Roman");
   });
 
-  it("renderHTML with unknown theme name produces no theme CSS", () => {
+  it("renderHTML with unknown theme name falls back to default theme CSS", () => {
     const doc = parseIntentText("title: Test");
     const html = renderHTML(doc, { theme: "nonexistent" });
-    expect(html).not.toContain("--it-font-body:");
+    expect(html).toContain("--it-font-body:");
   });
 });
 

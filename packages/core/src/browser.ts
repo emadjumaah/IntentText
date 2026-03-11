@@ -1,5 +1,5 @@
 // Browser entry point — exports what runs in the browser.
-export { parseIntentText, parseIntentTextSafe } from "./parser";
+export { parseIntentText, parseIntentTextSafe } from "./rust-core";
 export { renderHTML, renderPrint } from "./renderer";
 export { mergeData, parseAndMerge } from "./merge";
 export { convertMarkdownToIntentText } from "./markdown";

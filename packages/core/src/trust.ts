@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { IntentDocument, RegistryEntry } from "./types";
-import { parseIntentText } from "./parser";
+import { parseIntentText } from "./rust-core";
 
 // ─── Hash Computation ───────────────────────────────────────────────────────
 
@@ -48,6 +48,26 @@ export function findHistoryBoundaryInSource(source: string): number {
       }
     }
     pos += lines[i].length + 1;
+  }
+  return -1;
+}
+
+/**
+ * Detect the history boundary in an array of lines.
+ * Mirrors source-boundary semantics for callers that already split lines.
+ */
+export function detectHistoryBoundary(lines: string[]): number {
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim();
+    if (trimmed === "history:" || trimmed === "history: ") {
+      return i;
+    }
+    if (trimmed === "---" && i < lines.length - 1) {
+      const next = lines[i + 1]?.trim();
+      if (next === "// history" || next?.startsWith("// history")) {
+        return i;
+      }
+    }
   }
   return -1;
 }

@@ -33,7 +33,10 @@ export {
   renderHTML,
   validateDocumentSemantic,
   documentToSource,
+  getRustCoreFallbackTelemetry,
+  resetRustCoreFallbackTelemetry,
 } from "./rust-core";
+export type { RustCoreFallbackTelemetry } from "./rust-core";
 export type {
   SafeParseOptions,
   SafeParseResult,
@@ -92,7 +95,7 @@ export type {
 } from "./trust";
 export { updateHistory, parseHistorySection } from "./history";
 export type { SaveHistoryOptions } from "./history";
-export { detectHistoryBoundary } from "./parser";
+export { detectHistoryBoundary } from "./trust";
 // v2.10 index builder
 export {
   buildShallowIndex,
