@@ -1,274 +1,199 @@
-# v3 Unified Execution Plan (PDF Product + Language Stability)
+# v3 Concrete Execution Plan (Rust Core First)
 
-Date: 11/03/2026
+Date: 2026-03-12
 Status: active execution
 Owner: Emad
 
-This roadmap unifies three tracks in one sequence:
+This plan replaces the previous unified roadmap with a strict execution flow.
+Follow only the phases and checklists below, in order.
 
-- PDF product track (builder + `createPdf` runtime)
-- `v3.3` implicit text track
-- `v3.4` property continuation track
+## 1) Ground Rules
 
-Guardrail source: `IntentText/todo/old.md`
+1. Order is fixed: `v3.3` -> `v3.4` -> `v3.5`.
+2. Rust core is the source of truth for parser/merge/render behavior.
+3. No new TS or Python language features.
+4. TS/Python are compatibility shells only until removal checkpoints in this plan.
+5. No shortcut syntax, no multiline grammar redesign, no generalized `end:` redesign.
 
-Core rule: keep scope boring, stable, and professional. No shortcut syntax work in this roadmap.
+## 2) Carry-Over Items (Not Completed Yet)
 
-## 1) Priority Order (Do Not Reorder)
+These are the remaining open items inherited from the previous plan:
 
-1. M1 PDF/Core contract freeze and parity foundations.
-2. M2-M5 PDF runtime + builder delivery.
-3. `v3.3` implicit text (parser-only additive change).
-4. `v3.4` continuation properties (strict, additive syntax).
+1. Confirm phase trigger: parity gates green for two consecutive cycles on Rust-backed flow.
+2. Execute `v3.3` implicit text delivery (not started).
+3. Execute `v3.4` property continuation delivery (not started).
+4. Replace deferred-language release-note placeholder with concrete shipped versions.
+5. Remove extra TS/Python implementation files once Rust parity and adoption gates pass.
 
-Rationale:
+## 3) Entry Gate Before v3.3
 
-- Product adoption risk is preview/PDF drift, not missing syntax sugar.
-- Language-level grammar upgrades are useful but not blocking for PDF product value.
+Do not start implementation for `v3.3` until all items below are checked.
 
-## 2) Phase Plan
+- [ ] Run cycle 1 gates (Rust-backed): parity, replay, determinism, migration, runtime-error, pdf-smoke, erp-contract.
+- [ ] Run cycle 2 gates (same suite, separate CI cycle).
+- [ ] Record both cycle run IDs and outcomes in release notes draft.
+- [ ] Confirm no preview/PDF drift regressions in golden fixtures.
 
-## Phase A: M1 PDF/Core Contract Freeze (Start Now)
+Command baseline for each cycle (from `intenttext-builder`):
 
-Duration: 1-2 weeks
-
-Required outcomes:
-
-- Single-renderer contract frozen (builder preview and runtime share same core path).
-- Font policy frozen: bundled fonts only (no CDN/system dependency in render path).
-- Template storage schema frozen.
-- `validateTemplate()` structured output contract frozen.
-- page layout contract frozen (header/footer/full-page background behavior).
-- Golden parity harness baseline in place.
-
-M1 hard gates:
-
-- parity fixtures green
-- unresolved-variable behavior stable
-- font drift risk closed by design
-- header/footer/background contract documented and enforced in builder/runtime inputs
-
-## Phase B: PDF Product Delivery (M2-M5)
-
-Duration: 6-7 weeks total (as planned)
-
-Scope:
-
-- `renderHtml` via `IntentText core` + `createPdf` via runtime wrapper package
-- browser pool + ops hardening
-- online builder MVP with variable panel and export
-- deterministic versioning/replay
-- quickstart + integration examples
-
-Release target:
-
-- usable V1 package and hosted builder MVP
-
-## Phase C: v3.3 Implicit Text
-
-Trigger:
-
-- PDF V1 beta is stable and parity gates are green for two consecutive cycles.
-
-Scope:
-
-- parser-only additive implicit text behavior
-- no serializer rewrite
-- no new shortcuts
-
-Must keep:
-
-- unknown `word:` behavior unchanged
-- empty line behavior unchanged
-- trust/hash behavior unchanged for explicit source
-
-## Phase D: v3.4 Property Continuation
-
-Trigger:
-
-- v3.3 shipped and stable
-
-Scope:
-
-- indented `| key: value` continuation lines
-- strict grammar only
-- default serializer remains canonical one-line
-
-Must keep:
-
-- no multiline content grammar redesign
-- no implicit state/default blocks
-
-## 3) Folder and Document Layout
-
-Use this folder structure to keep planning clean:
-
-- `IntentText/todo/master-plans/v3-unified-execution-plan.md` (this file)
-- `IntentText/todo/print-builder-core-alignment-plan.md` (detailed PDF execution)
-- `IntentText/todo/v3.3-implicit-text-plan.md` (language delta)
-- `IntentText/todo/v3.4-property-continuation-plan.md` (language delta)
-
-Rule:
-
-- master plan controls order and gate criteria.
-- detail plans contain implementation specifics.
-
-## 4) Non-Goals for This Unified Plan
-
-- no shortcut syntax (`#`, `>`, `-`, `!`, `@owner` shorthand)
-- no generalized `end:` redesign
-- no broad keyword expansion
-- no parallel grammar initiatives during M1-M5 PDF delivery
-
-## 5) Risk Control Checklist
-
-Before starting any new feature, verify:
-
-1. Does this reduce preview/PDF drift risk?
-2. Does this improve deterministic rendering?
-3. Is this required for ERP developer adoption now?
-4. Does this avoid parser complexity growth?
-
-If "no" to 1-3 and "yes" to 4, defer.
-
-## 6) Immediate Next 10 Work Items (Action Queue)
-
-1. Finalize bundled font set and commit font policy.
-2. Finalize template storage schema (minimum + recommended fields).
-3. Define `validateTemplate` response schema and error taxonomy.
-4. Implement parity harness baseline (builder preview vs runtime HTML).
-5. Create 10 golden document templates (invoice/receipt/quote set).
-6. Build runtime package skeleton with browser pool controls.
-7. Add runtime observability fields (duration, queue wait, crash count).
-8. Build builder MVP shell (editor + variable panel + export).
-9. Add CI gates for parity, PDF smoke, determinism.
-10. Lock v3.3/v3.4 to "deferred until PDF beta stability" in release notes planning.
-11. Finalize page layout contract for header/footer/full-page background and wire into template metadata validation.
-
-## 7) Success Criteria
-
-- PDF product track reaches V1 without rendering drift incidents.
-- External developer can generate PDF with one API call and stable output.
-- Language upgrades (`v3.3`, `v3.4`) ship later as controlled additive improvements.
-
-## 8) M1 Progress Notes
-
-11/03/2026 updates:
-
-- Completed #2: template storage schema contract documented with SQL snippet (`intenttext-builder/docs/TEMPLATE_STORAGE_SCHEMA.md`).
-- Completed #3: `validateTemplate` contract formalized with issue taxonomy and variable inventory (`intenttext-builder/docs/VALIDATION_CONTRACT.md`).
-- Implemented contract in both local API server and Vercel API routes (`variables.all|required|optional|repeated`, issue `category`).
-- Added page layout contract baseline for builder/runtime parity (`intenttext-builder/docs/PAGE_LAYOUT_CONTRACT.md`).
-- Enforced page-layout contract validation in `validate-template` (page size, margins, safe area, header/footer/background fit and image constraints, opacity rules).
-- Started #4: added initial golden fixture pack (`invoice/receipt/quote + repeat + letterhead`) and parity harness skeleton (`intenttext-builder/scripts/parity-check.mjs`).
-- Expanded #4 fixture pack to 10 templates and added CI gate (`intenttext-builder/.github/workflows/ci.yml`) to run `build` + `parity:check`.
-- Completed #6 baseline: runtime package skeleton added at `intenttext-builder/packages/pdf-runtime` with typed browser pool controls.
-- Started #7 baseline: runtime metrics contract (`durationMs`, `queueWaitMs`, `crashCount`) exposed from `createPdf` in skeleton docs/code.
-- Added `/api/render-pdf` in local API and Vercel API routes, wired to runtime package output (`pdfBase64` + metrics).
-- Added PDF smoke harness (`intenttext-builder/scripts/pdf-smoke.mjs`) and CI step (`npm run pdf:smoke`) after runtime build.
-- Implemented runtime retry behavior in `createPdf` using `retryAttempts` with bounded backoff.
-- Added retry-focused unit test harness in `packages/pdf-runtime` and CI execution (`npm --prefix packages/pdf-runtime test`).
-- Added `createPdf` integration-style retry tests (first-attempt failure, second-attempt success path) using test hooks in runtime package.
-- Added determinism gate (`intenttext-builder/scripts/determinism-check.mjs`) and CI step (`npm run determinism:check`).
-- Added optional smoke PDF artifact output and CI artifact upload for inspection (`pdf-smoke-artifact`).
-- Completed #1: font policy freeze and enforcement (`intenttext-builder/docs/FONT_POLICY.md`, `npm run font-policy:check`, CI gate).
-- Added builder template artifact export/import UI with version metadata (`intenttext-builder/src/App.tsx`, `docs/TEMPLATE_ARTIFACT_FORMAT.md`).
-- Added artifact checksum/signature generation and import verification (`checksum_sha256`, `integrity_signature`) in builder export/import flow.
-- Added artifact export modes (`template_only`, `template_with_sample_data`) with integrity-preserving canonical hashing.
-- Added structured `render-pdf` runtime error contract (`template_error`, `data_error`, `render_error`, `pdf_backend_error`) with CI contract checks.
-- Added `template_version` metadata to builder artifacts with integrity-preserving hashing and import verification.
-- Added `/replay-html` endpoint + `replay:check` CI gate for versioned deterministic replay (`template_version`, `renderer_version`, `theme_version`).
-- Added migration-hook skeleton (`intenttext-builder/api/migration-hooks.js`) and wired replay flow to return migration metadata (`from`, `to`, `applied_hooks`).
-- Added first concrete migration hooks for legacy artifact version metadata (camelCase key normalization and deterministic default version fill), with replay gate coverage.
-
-## 9) Core Language Notes (Post-PDF Gate)
-
-- Table-canonical proposal captured for post-PDF evaluation: prefer `table:` for repeated row modeling and keep `each:`/`repeat:` interoperable.
-- Header-as-row patterns should remain backward compatible during any transition and only be deprecated after migration tooling + parity proof.
-- Governing update rules documented in `todo/core-update-rules.md` and anchored to `todo/old.md` guardrails.
-
-## 10) Current Position (As Of 11/03/2026)
-
-Current phase checkpoint:
-
-- Phase A (M1 contract freeze): effectively complete and gated.
-- Phase B (M2-M5): exit checklist executed; delivery scope can be marked complete.
-- Phase C trigger status: pending confirmation of "parity green for two consecutive cycles" before grammar work starts.
-
-Completed in current sequence:
-
-1. Runtime error contract for `render-pdf` + CI gate.
-2. Replay endpoint contract (`/replay-html`) + deterministic replay gate.
-3. Migration framework:
-   - shared migration hooks module
-   - replay migration metadata (`from`, `to`, `applied_hooks`)
-   - concrete legacy version hooks (camelCase normalization + deterministic default fill)
-
-Next queued sequence (immediate):
-
-1. Completed: migration fixture pack (legacy + canonical artifacts) for reproducible migration cases.
-2. Completed: dedicated `migration:check` script and CI gate (separate from replay gate).
-3. Completed: wired builder import path to shared migration pipeline so old artifacts upgrade consistently in UI and API.
-4. Completed: added builder import migration visibility panel (applied hooks + version transition + integrity mode) for operator transparency.
-5. Completed: added one-click "Re-export Upgraded Artifact" action after legacy/migrated import to normalize and re-sign artifacts immediately.
-
-## 11) Core/Builder Alignment Rule (Critical)
-
-ERP runtime model (non-negotiable):
-
-- Builder is a template producer.
-- ERP uses `IntentText core` (+ runtime wrapper for PDF) to produce final documents.
-- Therefore any style/layout feature exposed in builder must be represented in core-readable template semantics, not builder-only UI state.
-
-Current status:
-
-- Aligned today for rendering path: builder preview and runtime APIs already call `core.parseAndMerge` + `core.renderHTML`.
-- Clarification: `IntentText core` exposes parse/merge/render (HTML/print semantics), while `createPdf` is implemented in runtime package (`intenttext-builder/packages/pdf-runtime`) that converts core HTML to PDF.
-- Partially aligned for style semantics: contracts for page/header/footer/background are documented and validated, but we still need a stricter "core-awareness gate" for any future builder style controls.
-
-New hard rule for upcoming work:
-
-1. No builder style control ships unless there is a mapped core keyword/property and fixture coverage.
-2. No builder-only CSS metadata may affect final output unless persisted as core-readable template properties.
-3. Every style feature must pass parity and PDF smoke gates from the same template artifact.
-
-Immediate next sequence (core-style alignment):
-
-1. Completed: added `intenttext-builder/docs/CORE_STYLE_COMPATIBILITY.md` mapping builder controls -> core properties/keywords.
-2. Completed: added style-focused parity fixtures (layout zones + inline style properties) to golden pack and parity/core-style gates.
-3. Completed: added `core-style:check` gate (local + CI) that rejects unsupported builder style metadata in templates.
-
-## 12) Next Sequence (ERP Adoption)
-
-1. Completed: added ERP integration flow guide (`intenttext-builder/docs/ERP_INTEGRATION_FLOW.md`) clarifying core HTML vs runtime PDF responsibilities.
-2. Completed: added runnable backend integration example (`intenttext-builder/examples/erp-print-node.mjs`) for HTML and PDF paths.
-3. Completed: added API-level ERP quickstart doc (`intenttext-builder/docs/ERP_API_QUICKSTART.md`) with payloads/responses for `/api/render-html` and `/api/render-pdf`.
-4. Completed: added replay/versioning API quickstart (`intenttext-builder/docs/ERP_REPLAY_QUICKSTART.md`) for `/api/replay-html` audit/debug workflows.
-5. Completed: added compact ERP production checklist (`intenttext-builder/docs/ERP_PRODUCTION_CHECKLIST.md`) covering fonts, assets, retries, timeouts, observability, replay, and security.
-6. Completed: added copy-paste ERP backend handlers (Express/Fastify) and wiring guide (`examples/erp-express-handlers.mjs`, `examples/erp-fastify-handlers.mjs`, `docs/ERP_BACKEND_HANDLERS.md`).
-7. Completed: added ERP contract check script (`npm run erp-contract:check`) and CI gate validating `/api/render-html`, `/api/render-pdf`, and `/api/replay-html` response shapes.
-8. Completed: added minimal standalone ERP sample service package (`examples/erp-sample-service/`) with handlers + config + run instructions.
-9. Completed: ran final Phase B exit checklist and marked Phase B delivery scope complete.
-
-## 13) Phase B Exit Checklist (Final)
-
-Checklist run from `intenttext-builder` root:
-
-- `npm run build`
 - `npm run parity:check`
-- `npm run font-policy:check`
-- `npm run core-style:check`
+- `npm run replay:check`
 - `npm run determinism:check`
 - `npm run migration:check`
 - `npm run runtime-error:check`
-- `npm run replay:check`
-- `npm run pdf-runtime:build`
 - `npm run pdf:smoke`
 - `npm run erp-contract:check`
 
-Result summary:
+## 4) Phase v3.3 - Implicit Text (Rust Parser Only)
 
-- All checks passed in local execution.
-- ERP adoption package is complete, including standalone sample service (`examples/erp-sample-service/`).
-- Decision: Phase B can be marked complete for roadmap delivery scope.
-- Guardrail kept: Phase C work remains blocked until parity gates are green for two consecutive cycles (per section 2 trigger).
+Objective:
+Ship additive implicit text behavior without changing trust/hash stability for explicit source.
+
+Scope:
+
+- parser-only additive behavior
+- no serializer rewrite
+- unknown `word:` behavior unchanged
+- empty-line behavior unchanged
+
+Work packages:
+
+1. Spec freeze (`v3.3`):
+
+- [ ] Write final grammar examples and edge-case matrix.
+- [ ] Mark exact acceptance examples for `implicit text` in docs.
+
+2. Rust implementation:
+
+- [ ] Implement parser changes in `intenttext-rust/src/parser.rs` (and related modules only as needed).
+- [ ] Add/adjust parser tests in `intenttext-rust/tests/` for positive and negative cases.
+- [ ] Verify trust/hash invariants for explicit syntax remain unchanged.
+
+3. Cross-runtime compatibility checks (temporary):
+
+- [ ] Run fixture comparisons between Rust output and existing JS/Python consumers.
+- [ ] Patch adapters only if required to consume Rust-compatible output.
+- [ ] Do not add new parsing logic in TS/Python.
+
+4. Release and docs:
+
+- [ ] Update docs for `v3.3` behavior with before/after examples.
+- [ ] Add migration notes: explicit syntax remains canonical and stable.
+- [ ] Tag `v3.3` as shipped.
+
+TS/Python removal placement in v3.3:
+
+- [ ] Remove TS/Python duplicate parser branches for behaviors now guaranteed by Rust `v3.3`.
+- [ ] Keep only thin wrappers and compatibility interfaces needed by downstream packages.
+
+Exit gate (`v3.3`):
+
+- [ ] Rust tests green.
+- [ ] Golden parity unchanged where behavior is not meant to change.
+- [ ] New `v3.3` fixtures pass.
+- [ ] No trust/hash regressions for explicit-source artifacts.
+
+## 5) Phase v3.4 - Property Continuation (Strict Additive)
+
+Objective:
+Add strict indented continuation property lines: `| key: value`.
+
+Scope:
+
+- strict grammar only
+- default serializer remains canonical one-line
+- no implicit state blocks
+- no multiline content grammar redesign
+
+Work packages:
+
+1. Spec freeze (`v3.4`):
+
+- [ ] Define exact indentation and continuation validity rules.
+- [ ] Define deterministic normalization expectations.
+- [ ] Define invalid-form diagnostics.
+
+2. Rust implementation:
+
+- [ ] Implement continuation parse rules in Rust core.
+- [ ] Add fixtures for valid/invalid continuation lines.
+- [ ] Add diagnostics tests for malformed continuation syntax.
+
+3. Runtime and toolchain alignment:
+
+- [ ] Ensure render/replay/migration paths accept `v3.4` artifacts.
+- [ ] Verify builder import/export handles `v3.4` content without side effects.
+- [ ] Keep style/property mapping aligned with core compatibility rules.
+
+4. Release and docs:
+
+- [ ] Document `v3.4` syntax and constraints with examples.
+- [ ] Publish upgrade notes from `v3.3` to `v3.4`.
+- [ ] Tag `v3.4` as shipped.
+
+TS/Python removal placement in v3.4:
+
+- [ ] Remove TS/Python continuation parsing code paths (if any) and route fully through Rust-backed behavior.
+- [ ] Keep only API clients, transport glue, and type wrappers that do not duplicate grammar logic.
+
+Exit gate (`v3.4`):
+
+- [ ] Rust tests green including continuation diagnostics.
+- [ ] Replay/determinism unchanged for previously valid artifacts.
+- [ ] `v3.4` fixtures pass in runtime and builder flows.
+
+## 6) Phase v3.5 - Runtime Convergence and Cleanup
+
+Objective:
+Complete migration to Rust core and remove extra TS/Python language implementation files.
+
+Scope:
+
+- remove duplicate language logic outside Rust core
+- keep supported SDK/client surfaces
+- lock governance for future syntax changes
+
+Work packages:
+
+1. Inventory and removal plan:
+
+- [ ] Inventory TS/Python files that implement parser/merge/query/render language logic.
+- [ ] Classify each file: remove, keep-as-wrapper, or move.
+- [ ] Approve deletion list.
+
+2. Code cleanup:
+
+- [ ] Remove duplicate TS language implementation files.
+- [ ] Remove duplicate Python language implementation files.
+- [ ] Keep only wrappers that call Rust-backed functionality or stable APIs.
+
+3. CI and packaging cleanup:
+
+- [ ] Update CI to stop running removed TS/Python language tests.
+- [ ] Keep CI for Rust core, runtime contract, replay/determinism/parity/pdfs.
+- [ ] Update package manifests and docs for removed modules/files.
+
+4. Documentation and release notes:
+
+- [ ] Replace "deferred until PDF beta stability" language with actual `v3.3`/`v3.4`/`v3.5` outcomes.
+- [ ] Publish migration guide for integrators affected by TS/Python removals.
+- [ ] Tag `v3.5` as shipped.
+
+Exit gate (`v3.5`):
+
+- [ ] No duplicate grammar logic remains outside Rust core.
+- [ ] All contract gates green.
+- [ ] Integrator docs updated and examples validated.
+
+## 7) Decision Protocol (Strict)
+
+Before opening a phase, verify previous phase exit gate is fully checked.
+If any gate fails, stop and fix before continuing.
+No side initiatives are allowed outside this plan.
+
+## 8) Current Execution Position
+
+Current position on 2026-03-12:
+
+- Phase B delivery scope: complete.
+- Next actionable step: complete section 3 entry gate (two consecutive parity-green cycles) before any `v3.3` code changes.

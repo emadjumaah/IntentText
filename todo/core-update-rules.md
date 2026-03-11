@@ -1,6 +1,6 @@
 # Core Update Rules (Forever)
 
-Source guardrail: `todo/old.md`
+Source guardrail: `todo/master-plans/v3-unified-execution-plan.md`
 
 Use these rules before any parser, keyword, runtime, or SDK change.
 
