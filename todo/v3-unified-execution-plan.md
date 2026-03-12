@@ -29,10 +29,10 @@ These are the remaining open items inherited from the previous plan:
 
 Do not start implementation for `v3.3` until all items below are checked.
 
-- [ ] Run cycle 1 gates (Rust-backed): parity, replay, determinism, migration, runtime-error, pdf-smoke, erp-contract.
-- [ ] Run cycle 2 gates (same suite, separate CI cycle).
-- [ ] Record both cycle run IDs and outcomes in release notes draft.
-- [ ] Confirm no preview/PDF drift regressions in golden fixtures.
+- [x] Run cycle 1 gates (Rust-backed): parity, replay, determinism, migration, runtime-error, pdf-smoke, erp-contract.
+- [x] Run cycle 2 gates (same suite, separate CI cycle).
+- [x] Record both cycle run IDs and outcomes in release notes draft.
+- [x] Confirm no preview/PDF drift regressions in golden fixtures.
 
 Command baseline for each cycle (from `intenttext-builder`):
 
@@ -60,20 +60,20 @@ Work packages:
 
 1. Spec freeze (`v3.3`):
 
-- [ ] Write final grammar examples and edge-case matrix.
-- [ ] Mark exact acceptance examples for `implicit text` in docs.
+- [x] Write final grammar examples and edge-case matrix.
+- [x] Mark exact acceptance examples for `implicit text` in docs.
 
 2. Rust implementation:
 
-- [ ] Implement parser changes in `intenttext-rust/src/parser.rs` (and related modules only as needed).
-- [ ] Add/adjust parser tests in `intenttext-rust/tests/` for positive and negative cases.
-- [ ] Verify trust/hash invariants for explicit syntax remain unchanged.
+- [x] Implement parser changes in `intenttext-rust/src/parser.rs` (and related modules only as needed).
+- [x] Add/adjust parser tests in `intenttext-rust/tests/` for positive and negative cases.
+- [x] Verify trust/hash invariants for explicit syntax remain unchanged.
 
 3. Cross-runtime compatibility checks (temporary):
 
-- [ ] Run fixture comparisons between Rust output and existing JS/Python consumers.
-- [ ] Patch adapters only if required to consume Rust-compatible output.
-- [ ] Do not add new parsing logic in TS/Python.
+- [x] Run fixture comparisons between Rust output and existing JS/Python consumers.
+- [x] Patch adapters only if required to consume Rust-compatible output.
+- [x] Do not add new parsing logic in TS/Python.
 
 4. Release and docs:
 
@@ -88,10 +88,10 @@ TS/Python removal placement in v3.3:
 
 Exit gate (`v3.3`):
 
-- [ ] Rust tests green.
-- [ ] Golden parity unchanged where behavior is not meant to change.
-- [ ] New `v3.3` fixtures pass.
-- [ ] No trust/hash regressions for explicit-source artifacts.
+- [x] Rust tests green.
+- [x] Golden parity unchanged where behavior is not meant to change.
+- [x] New `v3.3` fixtures pass.
+- [x] No trust/hash regressions for explicit-source artifacts.
 
 ## 5) Phase v3.4 - Property Continuation (Strict Additive)
 
@@ -196,4 +196,9 @@ No side initiatives are allowed outside this plan.
 Current position on 2026-03-12:
 
 - Phase B delivery scope: complete.
-- Next actionable step: complete section 3 entry gate (two consecutive parity-green cycles) before any `v3.3` code changes.
+- Section 3 entry gate: complete (two consecutive full green cycles).
+- Section 4.1 spec freeze: complete (implicit text grammar + acceptance matrix documented).
+- Section 4.2 and 4.3: trust/hash + cross-runtime compatibility checks complete.
+- Rust smoke fixture matrix: green after fixture expectation alignment with current parser/renderer contract.
+- v3.3 exit gate: complete.
+- Next actionable step: execute section 4.4 release/docs updates and prepare publish commit set.
